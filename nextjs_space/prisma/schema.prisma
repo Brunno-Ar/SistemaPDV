@@ -1,0 +1,172 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/pdv_system/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  master
+  admin
+  caixa
+}
+
+enum MetodoPagamento {
+  dinheiro
+  debito
+  credito
+  pix
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  AJUSTE_QUEBRA
+  AJUSTE_INVENTARIO
+  DEVOLUCAO
+  VENDA
+}
+
+// Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   @db.Text
+  nome          String?
+  role          Role      @default(caixa)
+  empresaId     String?   @map("empresa_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  accounts      Account[]
+  sessions      Session[]
+  sales         Sale[]
+  movimentacoes MovimentacaoEstoque[]
+  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Empresa {
+  id          String   @id @default(cuid())
+  nome        String
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  users       User[]
+  products    Product[]
+  sales       Sale[]
+  movimentacoes MovimentacaoEstoque[]
+
+  @@map("empresas")
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  nome          String
+  sku           String   @unique
+  precoVenda    Decimal  @map("preco_venda") @db.Decimal(10, 2)
+  estoqueAtual  Int      @default(0) @map("estoque_atual")
+  estoqueMinimo Int      @default(0) @map("estoque_minimo")
+  imagemUrl     String?  @map("imagem_url")
+  empresaId     String?  @map("empresa_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
+  saleItems     SaleItem[]
+  movimentacoes MovimentacaoEstoque[]
+
+  @@map("products")
+}
+
+model Sale {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  empresaId       String?         @map("empresa_id")
+  dataHora        DateTime        @default(now()) @map("data_hora")
+  valorTotal      Decimal         @map("valor_total") @db.Decimal(10, 2)
+  metodoPagamento MetodoPagamento @map("metodo_pagamento")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  
+  user      User       @relation(fields: [userId], references: [id])
+  empresa   Empresa?   @relation(fields: [empresaId], references: [id])
+  saleItems SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id            String  @id @default(cuid())
+  saleId        String  @map("sale_id")
+  productId     String  @map("product_id")
+  quantidade    Int
+  precoUnitario Decimal @map("preco_unitario") @db.Decimal(10, 2)
+  subtotal      Decimal @db.Decimal(10, 2)
+  
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+model MovimentacaoEstoque {
+  id               String           @id @default(cuid())
+  produtoId        String           @map("produto_id")
+  usuarioId        String           @map("usuario_id")
+  empresaId        String           @map("empresa_id")
+  tipo             TipoMovimentacao
+  quantidade       Int
+  motivo           String?
+  dataMovimentacao DateTime         @default(now()) @map("data_movimentacao")
+  
+  produto  Product @relation(fields: [produtoId], references: [id])
+  usuario  User    @relation(fields: [usuarioId], references: [id])
+  empresa  Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("movimentacoes_estoque")
+}
