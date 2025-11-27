@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
           quantity: item.quantidade,
           unitPrice: Number(item.precoUnitario),
           subtotal: Number(item.subtotal),
+          discount: Number(item.descontoAplicado || 0),
         })),
         paymentMethod: sale.metodoPagamento,
       })),

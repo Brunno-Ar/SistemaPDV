@@ -43,6 +43,7 @@ interface MovementItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  discount?: number;
 }
 
 interface UnifiedMovement {
@@ -65,7 +66,13 @@ interface UnifiedMovement {
   reason?: string;
 }
 
-export default function MovimentacoesClient() {
+interface MovimentacoesClientProps {
+  companyId?: string;
+}
+
+export default function MovimentacoesClient({
+  companyId,
+}: MovimentacoesClientProps) {
   const [movements, setMovements] = useState<UnifiedMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -86,7 +93,9 @@ export default function MovimentacoesClient() {
       if (endDate) params.append("endDate", endDate);
 
       const response = await fetch(
-        `/api/admin/movimentacoes?${params.toString()}`
+        `/api/admin/movimentacoes?${params.toString()}${
+          companyId ? `&companyId=${companyId}` : ""
+        }`
       );
       const data = await response.json();
 
@@ -273,11 +282,18 @@ export default function MovimentacoesClient() {
                           {mov.items?.map((item, idx) => (
                             <div
                               key={idx}
-                              className="flex justify-between text-sm"
+                              className="flex justify-between text-sm items-center"
                             >
-                              <span>
-                                {item.quantity}x {item.productName}
-                              </span>
+                              <div className="flex flex-col">
+                                <span>
+                                  {item.quantity}x {item.productName}
+                                </span>
+                                {item.discount && item.discount > 0 ? (
+                                  <span className="text-xs text-green-600">
+                                    Desconto: -{formatCurrency(item.discount)}
+                                  </span>
+                                ) : null}
+                              </div>
                               <span className="font-mono">
                                 {formatCurrency(item.subtotal)}
                               </span>

@@ -6,33 +6,23 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-// Função para gerar SKU único
+// Generate a unique SKU (3 letters + 6 digits)
 async function generateUniqueSKU(prisma: PrismaClient): Promise<string> {
   let sku = "";
   let exists = true;
-
   while (exists) {
-    // Gerar SKU: 3 letras maiúsculas + 6 dígitos
     const letters = Array(3)
       .fill(null)
       .map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26)))
       .join("");
-
     const numbers = Array(6)
       .fill(null)
       .map(() => Math.floor(Math.random() * 10))
       .join("");
-
     sku = `${letters}-${numbers}`;
-
-    // Verificar se já existe
-    const existingProduct = await prisma.product.findUnique({
-      where: { sku },
-    });
-
-    exists = !!existingProduct;
+    const existing = await prisma.product.findUnique({ where: { sku } });
+    exists = !!existing;
   }
-
   return sku;
 }
 
@@ -42,7 +32,6 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-
     if (
       !session?.user ||
       (session.user.role !== "admin" && session.user.role !== "master")
@@ -55,16 +44,13 @@ export async function PUT(
         { status: 403 }
       );
     }
-
     const empresaId = session.user.empresaId;
-
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
         { status: 400 }
       );
     }
-
     const body = await request.json();
     const {
       nome,
@@ -74,8 +60,9 @@ export async function PUT(
       estoqueAtual,
       estoqueMinimo,
       imagemUrl,
+      categoryId,
     } = body;
-
+    // Validate required fields
     if (
       !nome ||
       precoVenda === undefined ||
@@ -87,7 +74,6 @@ export async function PUT(
         { status: 400 }
       );
     }
-
     if (precoVenda <= 0 || precoCompra < 0) {
       return NextResponse.json(
         {
@@ -97,76 +83,59 @@ export async function PUT(
         { status: 400 }
       );
     }
-
     if (estoqueAtual < 0) {
       return NextResponse.json(
         { error: "Estoque não pode ser negativo" },
         { status: 400 }
       );
     }
-
     if (estoqueMinimo !== undefined && estoqueMinimo < 0) {
       return NextResponse.json(
         { error: "Estoque mínimo não pode ser negativo" },
         { status: 400 }
       );
     }
-
-    // Verificar se o produto existe e pertence à empresa
+    // Verify product belongs to the company
     const existingProduct = await prisma.product.findFirst({
-      where: {
-        id: params.id,
-        empresaId: empresaId,
-      },
+      where: { id: params.id, empresaId },
     });
-
     if (!existingProduct) {
       return NextResponse.json(
         { error: "Produto não encontrado ou não pertence à sua empresa" },
         { status: 404 }
       );
     }
-
-    // 🔥 VALIDAÇÃO: Verificar se o novo nome já existe em outro produto da empresa
+    // Check for duplicate name
     if (nome.trim() !== existingProduct.nome) {
-      const productWithSameName = await prisma.product.findFirst({
+      const duplicate = await prisma.product.findFirst({
         where: {
           nome: nome.trim(),
-          empresaId: empresaId,
-          id: {
-            not: params.id, // Excluir o próprio produto da busca
-          },
+          empresaId,
+          id: { not: params.id },
         },
       });
-
-      if (productWithSameName) {
+      if (duplicate) {
         return NextResponse.json(
           {
             error: `Já existe outro produto chamado "${nome}" cadastrado nesta empresa. Use um nome diferente.`,
           },
-          { status: 409 } // 409 Conflict
+          { status: 409 }
         );
       }
     }
-
-    // Gerenciar SKU
+    // Handle SKU generation / uniqueness
     let finalSku = sku;
     if (!finalSku || finalSku.trim() === "") {
-      // Se SKU veio vazio, verificar se o produto já tem um. Se tiver, mantém.
-      // Se não tiver (caso de erro antigo), gera um novo.
       if (existingProduct.sku && existingProduct.sku.trim() !== "") {
         finalSku = existingProduct.sku;
       } else {
         finalSku = await generateUniqueSKU(prisma);
       }
     }
-
-    // Verificar se SKU já existe em outro produto (se mudou)
     if (finalSku !== existingProduct.sku) {
       const skuExists = await prisma.product.findUnique({
         where: { sku: finalSku },
       });
-
       if (skuExists) {
         return NextResponse.json(
           { error: "SKU já existe em outro produto. Escolha um SKU único." },
@@ -174,7 +143,7 @@ export async function PUT(
         );
       }
     }
-
+    // Update product
     const product = await prisma.product.update({
       where: { id: params.id },
       data: {
@@ -190,10 +159,9 @@ export async function PUT(
             : existingProduct.estoqueMinimo,
         imagemUrl:
           imagemUrl !== undefined ? imagemUrl : existingProduct.imagemUrl,
-        categoryId: categoryId || null,
+        categoryId: categoryId ?? null,
       },
     });
-
     return NextResponse.json({
       message: "Produto atualizado com sucesso",
       product: {
@@ -217,7 +185,6 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-
     if (
       !session?.user ||
       (session.user.role !== "admin" && session.user.role !== "master")
@@ -230,37 +197,26 @@ export async function DELETE(
         { status: 403 }
       );
     }
-
     const empresaId = session.user.empresaId;
-
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
         { status: 400 }
       );
     }
-
-    // Verificar se o produto existe e pertence à empresa
     const existingProduct = await prisma.product.findFirst({
-      where: {
-        id: params.id,
-        empresaId: empresaId,
-      },
+      where: { id: params.id, empresaId },
     });
-
     if (!existingProduct) {
       return NextResponse.json(
         { error: "Produto não encontrado ou não pertence à sua empresa" },
         { status: 404 }
       );
     }
-
-    // Verificar se o produto já foi vendido
-    const hasBeenSold = await prisma.saleItem.findFirst({
+    const sold = await prisma.saleItem.findFirst({
       where: { productId: params.id },
     });
-
-    if (hasBeenSold) {
+    if (sold) {
       return NextResponse.json(
         {
           error: "Não é possível excluir este produto pois ele já foi vendido.",
@@ -268,14 +224,8 @@ export async function DELETE(
         { status: 400 }
       );
     }
-
-    await prisma.product.delete({
-      where: { id: params.id },
-    });
-
-    return NextResponse.json({
-      message: "Produto excluído com sucesso",
-    });
+    await prisma.product.delete({ where: { id: params.id } });
+    return NextResponse.json({ message: "Produto excluído com sucesso" });
   } catch (error) {
     console.error("Erro ao excluir produto:", error);
     return NextResponse.json(
