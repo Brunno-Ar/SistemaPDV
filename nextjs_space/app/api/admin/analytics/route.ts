@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
-
-const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
@@ -76,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     // Função auxiliar para calcular lucro
     async function calcularLucro(whereCondition: any) {
-      // Buscar vendas
+      // Buscar vendas (Faturamento)
       const vendas = await prisma.sale.aggregate({
         where: whereCondition,
         _sum: { valorTotal: true },
@@ -85,24 +83,22 @@ export async function GET(request: NextRequest) {
 
       const faturamento = Number(vendas._sum.valorTotal || 0);
 
-      // Buscar itens de venda com produtos para calcular custo
+      // Buscar itens de venda (Custo)
+      // Otimização: Selecionar apenas campos numéricos do SaleItem
+      // Evita JOIN com Product e reduz payload
       const saleItems = await prisma.saleItem.findMany({
         where: {
           sale: whereCondition,
         },
-        include: {
-          product: {
-            select: {
-              precoCompra: true,
-            },
-          },
+        select: {
+          quantidade: true,
+          custoUnitario: true,
         },
       });
 
-      // Calcular custo total (quantidade * preço de compra)
+      // Calcular custo total (quantidade * custo unitário histórico)
       const custoTotal = saleItems.reduce((total: number, item: any) => {
-        const custoItem =
-          item.quantidade * Number(item.product?.precoCompra || 0);
+        const custoItem = item.quantidade * Number(item.custoUnitario || 0);
         return total + custoItem;
       }, 0);
 
