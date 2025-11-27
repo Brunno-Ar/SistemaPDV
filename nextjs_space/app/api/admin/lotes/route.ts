@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
-
-const prisma = new PrismaClient();
 
 /**
  * GET /api/admin/lotes
@@ -188,7 +186,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar data de validade APENAS SE FORNECIDA
-    let dataValidadeDate = null;
+    let dataValidadeDate: Date | null = null;
     if (dataValidade) {
       dataValidadeDate = new Date(dataValidade);
       const hoje = new Date();
