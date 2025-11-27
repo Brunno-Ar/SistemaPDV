@@ -2,10 +2,8 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from "@/lib/db";
 import EmpresaDetalheClient from './_components/empresa-detalhe-client'
-
-const prisma = new PrismaClient()
 
 interface PageProps {
   params: {
