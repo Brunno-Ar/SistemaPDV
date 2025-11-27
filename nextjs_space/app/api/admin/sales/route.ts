@@ -55,9 +55,12 @@ export async function GET(request: NextRequest) {
       empresaId: empresaId, // SEMPRE filtrar por empresa
     };
     if (startDate && endDate) {
+      const start = new Date(`${startDate}T00:00:00.000`);
+      const end = new Date(`${endDate}T23:59:59.999`);
+
       dateFilter.dataHora = {
-        gte: new Date(startDate + "T00:00:00"),
-        lte: new Date(endDate + "T23:59:59"),
+        gte: start,
+        lte: end,
       };
     }
 

@@ -1,312 +1,410 @@
+"use client";
 
-'use client'
-
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Building2, Plus, Check, Clock, Pause, RefreshCw, Trash2, Eye, Key, MessageSquare, DollarSign, Users, Package, ExternalLink } from 'lucide-react'
-import { toast } from '@/hooks/use-toast'
-import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Building2,
+  Plus,
+  Check,
+  Clock,
+  Pause,
+  RefreshCw,
+  Trash2,
+  Eye,
+  Key,
+  MessageSquare,
+  DollarSign,
+  Users,
+  Package,
+  ExternalLink,
+  Eraser,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Empresa {
-  id: string
-  nome: string
-  status: 'PENDENTE' | 'ATIVO' | 'PAUSADO'
-  vencimentoPlano: string | null
-  createdAt: string
+  id: string;
+  nome: string;
+  status: "PENDENTE" | "ATIVO" | "PAUSADO";
+  vencimentoPlano: string | null;
+  createdAt: string;
   _count: {
-    users: number
-    products: number
-    sales: number
-  }
+    users: number;
+    products: number;
+    sales: number;
+  };
 }
 
 export default function EmpresasClient() {
-  const router = useRouter()
-  const [empresas, setEmpresas] = useState<Empresa[]>([])
-  const [loading, setLoading] = useState(true)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [spyDialogOpen, setSpyDialogOpen] = useState(false)
-  const [avisoDialogOpen, setAvisoDialogOpen] = useState(false)
-  const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [empresaToDelete, setEmpresaToDelete] = useState<Empresa | null>(null)
-  const [spyData, setSpyData] = useState<any>(null)
-  const [avisoData, setAvisoData] = useState({ mensagem: '', importante: false })
+  const router = useRouter();
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [spyDialogOpen, setSpyDialogOpen] = useState(false);
+  const [avisoDialogOpen, setAvisoDialogOpen] = useState(false);
+  const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [empresaToDelete, setEmpresaToDelete] = useState<Empresa | null>(null);
+  const [spyData, setSpyData] = useState<any>(null);
+  const [avisoData, setAvisoData] = useState({
+    mensagem: "",
+    importante: false,
+  });
   const [formData, setFormData] = useState({
-    nomeEmpresa: '',
-    adminEmail: '',
-    adminSenha: '',
-    adminNome: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
+    nomeEmpresa: "",
+    adminEmail: "",
+    adminSenha: "",
+    adminNome: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchEmpresas()
-  }, [])
+    fetchEmpresas();
+  }, []);
 
   const fetchEmpresas = async () => {
     try {
-      const response = await fetch('/api/master/empresas')
-      if (!response.ok) throw new Error('Erro ao buscar empresas')
-      const data = await response.json()
-      setEmpresas(Array.isArray(data) ? data : [])
+      const response = await fetch("/api/master/empresas");
+      if (!response.ok) throw new Error("Erro ao buscar empresas");
+      const data = await response.json();
+      setEmpresas(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Erro ao buscar empresas:', error)
-      setEmpresas([])
+      console.error("Erro ao buscar empresas:", error);
+      setEmpresas([]);
       toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar as empresas',
-        variant: 'destructive',
-      })
+        title: "Erro",
+        description: "Não foi possível carregar as empresas",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open)
+    setDialogOpen(open);
     // Reset form quando o dialog é fechado
     if (!open) {
       setFormData({
-        nomeEmpresa: '',
-        adminEmail: '',
-        adminSenha: '',
-        adminNome: '',
-      })
+        nomeEmpresa: "",
+        adminEmail: "",
+        adminSenha: "",
+        adminNome: "",
+      });
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitting(true)
+    e.preventDefault();
+    setSubmitting(true);
 
     try {
-      const response = await fetch('/api/master/empresas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/master/empresas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar empresa')
+        throw new Error(data.error || "Erro ao criar empresa");
       }
 
       toast({
-        title: 'Sucesso',
+        title: "Sucesso",
         description: `Empresa "${data.empresa.nome}" criada com sucesso!`,
-      })
+      });
 
       // ✅ Fecha o dialog usando o handler que reseta o form
-      handleDialogChange(false)
-      
+      handleDialogChange(false);
+
       // ✅ Re-fetch após fechar
-      fetchEmpresas()
+      fetchEmpresas();
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao criar empresa',
-        variant: 'destructive',
-      })
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao criar empresa",
+        variant: "destructive",
+      });
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
-  const handleAction = async (action: string, empresaId: string, userId?: string) => {
+  const handleAction = async (
+    action: string,
+    empresaId: string,
+    userId?: string
+  ) => {
     try {
-      const response = await fetch('/api/master/empresas/actions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/master/empresas/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, empresaId, userId }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro na ação')
+        throw new Error(data.error || "Erro na ação");
       }
 
       toast({
-        title: 'Sucesso',
+        title: "Sucesso",
         description: data.message,
-      })
+      });
 
-      fetchEmpresas()
+      fetchEmpresas();
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao executar ação',
-        variant: 'destructive',
-      })
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao executar ação",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const handleSpy = async (empresa: Empresa) => {
-    setSelectedEmpresa(empresa)
-    setSpyDialogOpen(true)
-    
-    try {
-      const response = await fetch('/api/master/empresas/actions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'spy', empresaId: empresa.id }),
-      })
+    setSelectedEmpresa(empresa);
+    setSpyDialogOpen(true);
 
-      const data = await response.json()
+    try {
+      const response = await fetch("/api/master/empresas/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "spy", empresaId: empresa.id }),
+      });
+
+      const data = await response.json();
 
       if (response.ok) {
-        setSpyData(data.data)
+        setSpyData(data.data);
       }
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: 'Erro ao buscar dados da empresa',
-        variant: 'destructive',
-      })
+        title: "Erro",
+        description: "Erro ao buscar dados da empresa",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const handleResetSenha = async (empresaId: string) => {
     try {
       // Buscar primeiro admin da empresa
-      const usersResponse = await fetch(`/api/master/empresas?empresaId=${empresaId}`)
-      const empresa = await usersResponse.json()
-      
-      const adminUser = empresa.users?.find((u: any) => u.role === 'admin')
-      
+      const usersResponse = await fetch(
+        `/api/master/empresas?empresaId=${empresaId}`
+      );
+      const empresa = await usersResponse.json();
+
+      const adminUser = empresa.users?.find((u: any) => u.role === "admin");
+
       if (!adminUser) {
-        throw new Error('Nenhum admin encontrado nesta empresa')
+        throw new Error("Nenhum admin encontrado nesta empresa");
       }
 
-      await handleAction('resetSenha', empresaId, adminUser.id)
-      
+      await handleAction("resetSenha", empresaId, adminUser.id);
+
       toast({
-        title: 'Senha Resetada',
+        title: "Senha Resetada",
         description: `Senha do admin ${adminUser.email} resetada para: Mudar123`,
-      })
+      });
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao resetar senha',
-        variant: 'destructive',
-      })
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao resetar senha",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const handleCriarAviso = async () => {
     if (!selectedEmpresa || !avisoData.mensagem) {
       toast({
-        title: 'Erro',
-        description: 'Preencha a mensagem do aviso',
-        variant: 'destructive',
-      })
-      return
+        title: "Erro",
+        description: "Preencha a mensagem do aviso",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
-      const response = await fetch('/api/master/empresas/actions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/master/empresas/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: 'criarAviso',
+          action: "criarAviso",
           empresaId: selectedEmpresa.id,
           mensagem: avisoData.mensagem,
           importante: avisoData.importante,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar aviso')
+        throw new Error(data.error || "Erro ao criar aviso");
       }
 
       toast({
-        title: 'Sucesso',
-        description: 'Aviso criado com sucesso!',
-      })
+        title: "Sucesso",
+        description: "Aviso criado com sucesso!",
+      });
 
-      setAvisoDialogOpen(false)
-      setAvisoData({ mensagem: '', importante: false })
+      setAvisoDialogOpen(false);
+      setAvisoData({ mensagem: "", importante: false });
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao criar aviso',
-        variant: 'destructive',
-      })
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao criar aviso",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const handleOpenDeleteDialog = (empresa: Empresa) => {
-    setEmpresaToDelete(empresa)
-    setDeleteConfirmText('')
-    setDeleteDialogOpen(true)
-  }
+    setEmpresaToDelete(empresa);
+    setDeleteConfirmText("");
+    setDeleteDialogOpen(true);
+  };
 
   const handleConfirmDelete = async () => {
-    if (!empresaToDelete) return
+    if (!empresaToDelete) return;
 
     try {
-      const response = await fetch('/api/master/empresas', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/master/empresas", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ empresaId: empresaToDelete.id }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao excluir empresa')
+        throw new Error(data.error || "Erro ao excluir empresa");
       }
 
       toast({
-        title: 'Sucesso',
+        title: "Sucesso",
         description: data.message,
-      })
+      });
 
-      setDeleteDialogOpen(false)
-      setDeleteConfirmText('')
-      setEmpresaToDelete(null)
-      fetchEmpresas()
+      setDeleteDialogOpen(false);
+      setDeleteConfirmText("");
+      setEmpresaToDelete(null);
+      fetchEmpresas();
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao excluir empresa',
-        variant: 'destructive',
-      })
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao excluir empresa",
+        variant: "destructive",
+      });
     }
-  }
+  };
+
+  // --- Lógica de Limpeza de Dados ---
+  const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
+  const [clearDataConfirmText, setClearDataConfirmText] = useState("");
+  const [empresaToClear, setEmpresaToClear] = useState<Empresa | null>(null);
+
+  const handleOpenClearDataDialog = (empresa: Empresa) => {
+    setEmpresaToClear(empresa);
+    setClearDataConfirmText("");
+    setClearDataDialogOpen(true);
+  };
+
+  const handleConfirmClearData = async () => {
+    if (!empresaToClear) return;
+
+    try {
+      const response = await fetch("/api/master/empresas/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "limparDadosTeste",
+          empresaId: empresaToClear.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao limpar dados");
+      }
+
+      toast({
+        title: "Sucesso",
+        description: data.message,
+      });
+
+      setClearDataDialogOpen(false);
+      setClearDataConfirmText("");
+      setEmpresaToClear(null);
+      fetchEmpresas(); // Atualiza a lista para zerar os contadores
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao limpar dados",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'ATIVO':
-        return <Badge className="bg-green-500">Ativo</Badge>
-      case 'PENDENTE':
-        return <Badge variant="secondary">Pendente</Badge>
-      case 'PAUSADO':
-        return <Badge variant="destructive">Pausado</Badge>
+      case "ATIVO":
+        return <Badge className="bg-green-500">Ativo</Badge>;
+      case "PENDENTE":
+        return <Badge variant="secondary">Pendente</Badge>;
+      case "PAUSADO":
+        return <Badge variant="destructive">Pausado</Badge>;
       default:
-        return <Badge>{status}</Badge>
+        return <Badge>{status}</Badge>;
     }
-  }
+  };
 
   const formatDate = (date: string | null) => {
-    if (!date) return 'Não definido'
-    return new Date(date).toLocaleDateString('pt-BR')
-  }
+    if (!date) return "Não definido";
+    return new Date(date).toLocaleDateString("pt-BR");
+  };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Carregando empresas...</div>
+    return (
+      <div className="flex items-center justify-center h-64">
+        Carregando empresas...
+      </div>
+    );
   }
 
   return (
@@ -315,7 +413,9 @@ export default function EmpresasClient() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Gestão de Empresas (SaaS)</h1>
-          <p className="text-gray-600">Controle de planos, aprovação e segurança</p>
+          <p className="text-gray-600">
+            Controle de planos, aprovação e segurança
+          </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
@@ -334,7 +434,9 @@ export default function EmpresasClient() {
                 <Input
                   id="nomeEmpresa"
                   value={formData.nomeEmpresa}
-                  onChange={(e) => setFormData({ ...formData, nomeEmpresa: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nomeEmpresa: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -343,7 +445,9 @@ export default function EmpresasClient() {
                 <Input
                   id="adminNome"
                   value={formData.adminNome}
-                  onChange={(e) => setFormData({ ...formData, adminNome: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, adminNome: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -353,7 +457,9 @@ export default function EmpresasClient() {
                   id="adminEmail"
                   type="email"
                   value={formData.adminEmail}
-                  onChange={(e) => setFormData({ ...formData, adminEmail: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, adminEmail: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -363,12 +469,14 @@ export default function EmpresasClient() {
                   id="adminSenha"
                   type="password"
                   value={formData.adminSenha}
-                  onChange={(e) => setFormData({ ...formData, adminSenha: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, adminSenha: e.target.value })
+                  }
                   required
                 />
               </div>
               <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Criando...' : 'Criar Empresa'}
+                {submitting ? "Criando..." : "Criar Empresa"}
               </Button>
             </form>
           </DialogContent>
@@ -378,12 +486,11 @@ export default function EmpresasClient() {
       {/* Lista de Empresas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {empresas.map((empresa) => (
-          <Card 
-            key={empresa.id} 
+          <Card
+            key={empresa.id}
             className="relative cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
             onClick={() => router.push(`/master/empresas/${empresa.id}`)}
           >
-            
             <CardHeader className="relative z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -403,29 +510,35 @@ export default function EmpresasClient() {
                 <div className="grid grid-cols-3 gap-2 text-center bg-gray-50 p-2 rounded">
                   <div>
                     <Users className="h-4 w-4 mx-auto text-gray-600" />
-                    <p className="text-sm font-semibold">{empresa._count.users}</p>
+                    <p className="text-sm font-semibold">
+                      {empresa._count.users}
+                    </p>
                     <p className="text-xs text-gray-600">Usuários</p>
                   </div>
                   <div>
                     <Package className="h-4 w-4 mx-auto text-gray-600" />
-                    <p className="text-sm font-semibold">{empresa._count.products}</p>
+                    <p className="text-sm font-semibold">
+                      {empresa._count.products}
+                    </p>
                     <p className="text-xs text-gray-600">Produtos</p>
                   </div>
                   <div>
                     <DollarSign className="h-4 w-4 mx-auto text-gray-600" />
-                    <p className="text-sm font-semibold">{empresa._count.sales}</p>
+                    <p className="text-sm font-semibold">
+                      {empresa._count.sales}
+                    </p>
                     <p className="text-xs text-gray-600">Vendas</p>
                   </div>
                 </div>
 
                 {/* Ações SaaS */}
                 <div className="flex flex-wrap gap-2 relative z-10">
-                  {empresa.status === 'PENDENTE' && (
-                    <Button 
-                      size="sm" 
+                  {empresa.status === "PENDENTE" && (
+                    <Button
+                      size="sm"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        handleAction('aprovar', empresa.id)
+                        e.stopPropagation();
+                        handleAction("aprovar", empresa.id);
                       }}
                       className="bg-green-600 hover:bg-green-700 relative"
                     >
@@ -433,27 +546,27 @@ export default function EmpresasClient() {
                       Aprovar
                     </Button>
                   )}
-                  
-                  {empresa.status === 'ATIVO' && (
+
+                  {empresa.status === "ATIVO" && (
                     <>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={(e) => {
-                          e.stopPropagation()
-                          handleAction('renovar', empresa.id)
+                          e.stopPropagation();
+                          handleAction("renovar", empresa.id);
                         }}
                         className="relative"
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />
                         +30d
                       </Button>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
                         onClick={(e) => {
-                          e.stopPropagation()
-                          handleAction('pausar', empresa.id)
+                          e.stopPropagation();
+                          handleAction("pausar", empresa.id);
                         }}
                         className="relative"
                       >
@@ -463,13 +576,13 @@ export default function EmpresasClient() {
                     </>
                   )}
 
-                  {empresa.status === 'PAUSADO' && (
-                    <Button 
-                      size="sm" 
+                  {empresa.status === "PAUSADO" && (
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        handleAction('reativar', empresa.id)
+                        e.stopPropagation();
+                        handleAction("reativar", empresa.id);
                       }}
                       className="bg-green-50 relative"
                     >
@@ -478,12 +591,12 @@ export default function EmpresasClient() {
                     </Button>
                   )}
 
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      handleSpy(empresa)
+                      e.stopPropagation();
+                      handleSpy(empresa);
                     }}
                     className="relative"
                   >
@@ -491,12 +604,12 @@ export default function EmpresasClient() {
                     Spy
                   </Button>
 
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      handleResetSenha(empresa.id)
+                      e.stopPropagation();
+                      handleResetSenha(empresa.id);
                     }}
                     className="relative"
                   >
@@ -504,13 +617,13 @@ export default function EmpresasClient() {
                     Reset
                   </Button>
 
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedEmpresa(empresa)
-                      setAvisoDialogOpen(true)
+                      e.stopPropagation();
+                      setSelectedEmpresa(empresa);
+                      setAvisoDialogOpen(true);
                     }}
                     className="relative"
                   >
@@ -518,12 +631,25 @@ export default function EmpresasClient() {
                     Aviso
                   </Button>
 
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenClearDataDialog(empresa);
+                    }}
+                    className="relative text-orange-600 hover:bg-orange-50 hover:text-orange-700 border-orange-200"
+                    title="Limpar Dados de Teste"
+                  >
+                    <Eraser className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    size="sm"
                     variant="destructive"
                     onClick={(e) => {
-                      e.stopPropagation()
-                      handleOpenDeleteDialog(empresa)
+                      e.stopPropagation();
+                      handleOpenDeleteDialog(empresa);
                     }}
                     className="relative"
                   >
@@ -557,11 +683,15 @@ export default function EmpresasClient() {
                 </div>
                 <div className="bg-gray-50 p-3 rounded text-center">
                   <p className="text-sm text-gray-600">Produtos</p>
-                  <p className="text-xl font-semibold">{spyData.totalProdutos}</p>
+                  <p className="text-xl font-semibold">
+                    {spyData.totalProdutos}
+                  </p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded text-center">
                   <p className="text-sm text-gray-600">Usuários</p>
-                  <p className="text-xl font-semibold">{spyData.totalUsuarios}</p>
+                  <p className="text-xl font-semibold">
+                    {spyData.totalUsuarios}
+                  </p>
                 </div>
               </div>
             </div>
@@ -581,7 +711,9 @@ export default function EmpresasClient() {
               <Textarea
                 id="mensagem"
                 value={avisoData.mensagem}
-                onChange={(e) => setAvisoData({ ...avisoData, mensagem: e.target.value })}
+                onChange={(e) =>
+                  setAvisoData({ ...avisoData, mensagem: e.target.value })
+                }
                 placeholder="Digite o aviso..."
                 rows={4}
               />
@@ -591,7 +723,9 @@ export default function EmpresasClient() {
                 type="checkbox"
                 id="importante"
                 checked={avisoData.importante}
-                onChange={(e) => setAvisoData({ ...avisoData, importante: e.target.checked })}
+                onChange={(e) =>
+                  setAvisoData({ ...avisoData, importante: e.target.checked })
+                }
               />
               <Label htmlFor="importante">Marcar como importante</Label>
             </div>
@@ -609,9 +743,11 @@ export default function EmpresasClient() {
             <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-4">
               <p>
-                Esta ação é <strong className="text-red-600">IRREVERSÍVEL</strong> e excluirá 
-                permanentemente a empresa <strong className="text-black">{empresaToDelete?.nome}</strong> 
-                e todos os dados relacionados:
+                Esta ação é{" "}
+                <strong className="text-red-600">IRREVERSÍVEL</strong> e
+                excluirá permanentemente a empresa{" "}
+                <strong className="text-black">{empresaToDelete?.nome}</strong>e
+                todos os dados relacionados:
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>{empresaToDelete?._count.users || 0} usuário(s)</li>
@@ -620,7 +756,11 @@ export default function EmpresasClient() {
               </ul>
               <div className="space-y-2 pt-2">
                 <p className="font-semibold">
-                  Digite <span className="text-red-600 font-mono">{empresaToDelete?.nome}</span> abaixo para confirmar:
+                  Digite{" "}
+                  <span className="text-red-600 font-mono">
+                    {empresaToDelete?.nome}
+                  </span>{" "}
+                  abaixo para confirmar:
                 </p>
                 <Input
                   value={deleteConfirmText}
@@ -632,10 +772,12 @@ export default function EmpresasClient() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setDeleteConfirmText('')
-              setEmpresaToDelete(null)
-            }}>
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteConfirmText("");
+                setEmpresaToDelete(null);
+              }}
+            >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
@@ -648,6 +790,74 @@ export default function EmpresasClient() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Clear Data Confirmation Dialog */}
+      <AlertDialog
+        open={clearDataDialogOpen}
+        onOpenChange={setClearDataDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar Dados de Teste?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded p-3 text-orange-800 text-sm">
+                ⚠️ <strong>Atenção:</strong> Esta ação é ideal para zerar uma
+                conta após testes.
+              </div>
+              <p>
+                Você está prestes a apagar <strong>TODAS</strong> as
+                movimentações da empresa{" "}
+                <strong className="text-black">{empresaToClear?.nome}</strong>:
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                <li>Todas as Vendas e Itens</li>
+                <li>Todo o Histórico de Estoque</li>
+                <li>Todos os Caixas e Avisos</li>
+                <li>
+                  <strong>O Estoque de todos os produtos será ZERADO.</strong>
+                </li>
+              </ul>
+              <p className="text-sm">
+                * A empresa, usuários e o cadastro de produtos{" "}
+                <strong>NÃO</strong> serão excluídos.
+              </p>
+              <div className="space-y-2 pt-2">
+                <p className="font-semibold text-sm">
+                  Digite{" "}
+                  <span className="text-red-600 font-mono">LIMPAR DADOS</span>{" "}
+                  abaixo para confirmar:
+                </p>
+                <Input
+                  value={clearDataConfirmText}
+                  onChange={(e) =>
+                    setClearDataConfirmText(e.target.value.toUpperCase())
+                  }
+                  placeholder="LIMPAR DADOS"
+                  className="font-mono uppercase"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setClearDataConfirmText("");
+                setEmpresaToClear(null);
+              }}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmClearData}
+              disabled={clearDataConfirmText !== "LIMPAR DADOS"}
+              className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Limpar Tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-  )
+  );
 }

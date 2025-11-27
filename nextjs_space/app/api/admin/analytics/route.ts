@@ -63,9 +63,14 @@ export async function GET(request: NextRequest) {
       empresaId: empresaId, // SEMPRE filtrar por empresa
     };
     if (startDate && endDate) {
+      // Garantir que as datas cubram o dia inteiro (00:00:00 até 23:59:59)
+      // Adicionamos o time e o timezone offset se necessário, mas por enquanto vamos garantir o range de horas
+      const start = new Date(`${startDate}T00:00:00.000`);
+      const end = new Date(`${endDate}T23:59:59.999`);
+
       dateFilter.dataHora = {
-        gte: new Date(startDate + "T00:00:00"),
-        lte: new Date(endDate + "T23:59:59"),
+        gte: start,
+        lte: end,
       };
     }
 

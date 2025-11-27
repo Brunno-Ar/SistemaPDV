@@ -137,11 +137,24 @@ export async function POST(request: NextRequest) {
     const { produtoId, numeroLote, dataValidade, quantidade } = body;
 
     // Validações
-    if (!produtoId || !numeroLote || !dataValidade || !quantidade) {
+    if (!produtoId || !dataValidade || !quantidade) {
       return NextResponse.json(
-        { error: "Todos os campos são obrigatórios" },
+        { error: "Todos os campos obrigatórios devem ser preenchidos" },
         { status: 400 }
       );
+    }
+
+    // Gerar número do lote se não fornecido
+    let finalNumeroLote = numeroLote;
+    if (!finalNumeroLote || finalNumeroLote.trim() === "") {
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, "0");
+      finalNumeroLote = `LOTE${year}${month}${day}-${random}`;
     }
 
     if (quantidade <= 0) {
@@ -183,7 +196,7 @@ export async function POST(request: NextRequest) {
       // Criar o lote
       const novoLote = await tx.lote.create({
         data: {
-          numeroLote,
+          numeroLote: finalNumeroLote,
           dataValidade: dataValidadeDate,
           quantidade,
           produtoId,
@@ -214,7 +227,7 @@ export async function POST(request: NextRequest) {
           empresaId,
           tipo: "ENTRADA",
           quantidade,
-          motivo: `Entrada de lote ${numeroLote} - Validade: ${dataValidadeDate.toLocaleDateString(
+          motivo: `Entrada de lote ${finalNumeroLote} - Validade: ${dataValidadeDate.toLocaleDateString(
             "pt-BR"
           )}`,
         },

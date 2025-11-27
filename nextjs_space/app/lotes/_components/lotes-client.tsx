@@ -1,11 +1,10 @@
+"use client";
 
-'use client'
-
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -13,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -21,228 +20,248 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { Plus, AlertTriangle, CheckCircle, XCircle, Package } from 'lucide-react'
-import { toast } from '@/hooks/use-toast'
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import {
+  Plus,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Package,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface Product {
-  id: string
-  nome: string
-  sku: string
-  estoqueAtual: number
+  id: string;
+  nome: string;
+  sku: string;
+  estoqueAtual: number;
 }
 
 interface Lote {
-  id: string
-  numeroLote: string
-  dataValidade: string
-  quantidade: number
-  produtoId: string
-  createdAt: string
+  id: string;
+  numeroLote: string;
+  dataValidade: string;
+  quantidade: number;
+  produtoId: string;
+  createdAt: string;
   produto: {
-    nome: string
-    sku: string
-  }
-  status?: string
-  diasParaVencer?: number
+    nome: string;
+    sku: string;
+  };
+  status?: string;
+  diasParaVencer?: number;
 }
 
 export default function LotesClient() {
-  const [lotes, setLotes] = useState<Lote[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [lotes, setLotes] = useState<Lote[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
-    produtoId: '',
-    numeroLote: '',
-    dataValidade: '',
-    quantidade: ''
-  })
+    produtoId: "",
+    numeroLote: "",
+    dataValidade: "",
+    quantidade: "",
+  });
 
   useEffect(() => {
-    fetchLotes()
-    fetchProducts()
-  }, [])
+    fetchLotes();
+    fetchProducts();
+  }, []);
 
   const fetchLotes = async () => {
     try {
-      const response = await fetch('/api/admin/lotes')
-      const data = await response.json()
+      const response = await fetch("/api/admin/lotes");
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao carregar lotes')
+        throw new Error(data.error || "Erro ao carregar lotes");
       }
 
       if (Array.isArray(data)) {
-        setLotes(data)
+        setLotes(data);
       } else {
-        setLotes([])
+        setLotes([]);
       }
     } catch (error) {
-      console.error('Erro ao carregar lotes:', error)
-      setLotes([])
+      console.error("Erro ao carregar lotes:", error);
+      setLotes([]);
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao carregar lotes',
-        variant: 'destructive'
-      })
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao carregar lotes",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/admin/products')
-      const data = await response.json()
+      const response = await fetch("/api/admin/products");
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao carregar produtos')
+        throw new Error(data.error || "Erro ao carregar produtos");
       }
 
       if (Array.isArray(data)) {
-        setProducts(data)
+        setProducts(data);
       } else {
-        setProducts([])
+        setProducts([]);
       }
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error)
-      setProducts([])
+      console.error("Erro ao carregar produtos:", error);
+      setProducts([]);
     }
-  }
+  };
 
   const handleOpenDialog = () => {
     setFormData({
-      produtoId: '',
-      numeroLote: '',
-      dataValidade: '',
-      quantidade: ''
-    })
-    setDialogOpen(true)
-  }
+      produtoId: "",
+      numeroLote: "",
+      dataValidade: "",
+      quantidade: "",
+    });
+    setDialogOpen(true);
+  };
 
   const handleCloseDialog = () => {
-    setDialogOpen(false)
+    setDialogOpen(false);
     setFormData({
-      produtoId: '',
-      numeroLote: '',
-      dataValidade: '',
-      quantidade: ''
-    })
-  }
+      produtoId: "",
+      numeroLote: "",
+      dataValidade: "",
+      quantidade: "",
+    });
+  };
 
   const handleDialogChange = (open: boolean) => {
     if (!open) {
-      handleCloseDialog()
+      handleCloseDialog();
     } else {
-      setDialogOpen(true)
+      setDialogOpen(true);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!formData.produtoId || !formData.numeroLote || !formData.dataValidade || !formData.quantidade) {
+    if (!formData.produtoId || !formData.dataValidade || !formData.quantidade) {
       toast({
-        title: 'Erro',
-        description: 'Todos os campos são obrigatórios',
-        variant: 'destructive'
-      })
-      return
+        title: "Erro",
+        description: "Preencha os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const quantidade = parseInt(formData.quantidade)
+    const quantidade = parseInt(formData.quantidade);
 
     if (quantidade <= 0) {
       toast({
-        title: 'Erro',
-        description: 'Quantidade deve ser maior que zero',
-        variant: 'destructive'
-      })
-      return
+        title: "Erro",
+        description: "Quantidade deve ser maior que zero",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
-      const response = await fetch('/api/admin/lotes', {
-        method: 'POST',
+      const response = await fetch("/api/admin/lotes", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           produtoId: formData.produtoId,
           numeroLote: formData.numeroLote,
           dataValidade: formData.dataValidade,
-          quantidade
+          quantidade,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar lote')
+        throw new Error(data.error || "Erro ao criar lote");
       }
 
       toast({
-        title: 'Sucesso',
-        description: 'Lote criado com sucesso',
-      })
+        title: "Sucesso",
+        description: "Lote criado com sucesso",
+      });
 
-      handleCloseDialog()
-      fetchLotes()
-      fetchProducts() // Atualizar lista de produtos para mostrar novo estoque
+      handleCloseDialog();
+      fetchLotes();
+      fetchProducts(); // Atualizar lista de produtos para mostrar novo estoque
     } catch (error) {
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao criar lote',
-        variant: 'destructive'
-      })
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao criar lote",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const getStatusBadge = (lote: Lote) => {
-    if (lote.status === 'vencido') {
+    if (lote.status === "vencido") {
       return (
         <Badge variant="destructive" className="flex items-center gap-1">
           <XCircle className="h-3 w-3" />
           Vencido
         </Badge>
-      )
-    } else if (lote.status === 'proximo_vencimento') {
+      );
+    } else if (lote.status === "proximo_vencimento") {
       return (
-        <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 flex items-center gap-1">
+        <Badge
+          variant="default"
+          className="bg-yellow-500 hover:bg-yellow-600 flex items-center gap-1"
+        >
           <AlertTriangle className="h-3 w-3" />
           Vence em {lote.diasParaVencer} dias
         </Badge>
-      )
+      );
     } else {
       return (
-        <Badge variant="default" className="bg-green-500 hover:bg-green-600 flex items-center gap-1">
+        <Badge
+          variant="default"
+          className="bg-green-500 hover:bg-green-600 flex items-center gap-1"
+        >
           <CheckCircle className="h-3 w-3" />
           Normal
         </Badge>
-      )
+      );
     }
-  }
+  };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Carregando lotes...</div>
+    return (
+      <div className="flex items-center justify-center h-64">
+        Carregando lotes...
+      </div>
+    );
   }
 
   // Contadores
-  const totalLotes = lotes.length
-  const lotesVencidos = lotes.filter(l => l.status === 'vencido').length
-  const lotesProximoVencimento = lotes.filter(l => l.status === 'proximo_vencimento').length
-  const lotesNormais = lotes.filter(l => l.status === 'normal').length
+  const totalLotes = lotes.length;
+  const lotesVencidos = lotes.filter((l) => l.status === "vencido").length;
+  const lotesProximoVencimento = lotes.filter(
+    (l) => l.status === "proximo_vencimento"
+  ).length;
+  const lotesNormais = lotes.filter((l) => l.status === "normal").length;
 
   return (
     <div className="space-y-6">
@@ -256,7 +275,9 @@ export default function LotesClient() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total de Lotes</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Total de Lotes
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -268,7 +289,9 @@ export default function LotesClient() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Lotes Normais</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Lotes Normais
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -280,7 +303,9 @@ export default function LotesClient() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Próximo Vencimento</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Próximo Vencimento
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -292,7 +317,9 @@ export default function LotesClient() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Lotes Vencidos</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Lotes Vencidos
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -331,7 +358,9 @@ export default function LotesClient() {
                   <Label htmlFor="produtoId">Produto</Label>
                   <Select
                     value={formData.produtoId}
-                    onValueChange={(value) => setFormData({ ...formData, produtoId: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, produtoId: value })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um produto" />
@@ -351,9 +380,10 @@ export default function LotesClient() {
                   <Input
                     id="numeroLote"
                     value={formData.numeroLote}
-                    onChange={(e) => setFormData({ ...formData, numeroLote: e.target.value })}
-                    placeholder="Ex: LOTE2025-001"
-                    required
+                    onChange={(e) =>
+                      setFormData({ ...formData, numeroLote: e.target.value })
+                    }
+                    placeholder="Ex: LOTE2025-001 (Gerado automaticamente se vazio)"
                   />
                 </div>
 
@@ -363,7 +393,9 @@ export default function LotesClient() {
                     id="dataValidade"
                     type="date"
                     value={formData.dataValidade}
-                    onChange={(e) => setFormData({ ...formData, dataValidade: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dataValidade: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -375,19 +407,23 @@ export default function LotesClient() {
                     type="number"
                     min="1"
                     value={formData.quantidade}
-                    onChange={(e) => setFormData({ ...formData, quantidade: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, quantidade: e.target.value })
+                    }
                     placeholder="Quantidade de unidades"
                     required
                   />
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">
-                  <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseDialog}
+                  >
                     Cancelar
                   </Button>
-                  <Button type="submit">
-                    Criar Lote
-                  </Button>
+                  <Button type="submit">Criar Lote</Button>
                 </div>
               </form>
             </DialogContent>
@@ -398,7 +434,9 @@ export default function LotesClient() {
             <div className="p-8 text-center text-gray-500">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p>Nenhum lote cadastrado</p>
-              <p className="text-sm">Clique em "Adicionar Lote" para registrar um novo lote</p>
+              <p className="text-sm">
+                Clique em "Adicionar Lote" para registrar um novo lote
+              </p>
             </div>
           ) : (
             <Table>
@@ -417,19 +455,21 @@ export default function LotesClient() {
                     <TableCell>
                       <div>
                         <p className="font-medium">{lote.produto.nome}</p>
-                        <p className="text-sm text-gray-500">SKU: {lote.produto.sku}</p>
+                        <p className="text-sm text-gray-500">
+                          SKU: {lote.produto.sku}
+                        </p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">{lote.numeroLote}</TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {lote.numeroLote}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{lote.quantidade} un</Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(lote.dataValidade).toLocaleDateString('pt-BR')}
+                      {new Date(lote.dataValidade).toLocaleDateString("pt-BR")}
                     </TableCell>
-                    <TableCell>
-                      {getStatusBadge(lote)}
-                    </TableCell>
+                    <TableCell>{getStatusBadge(lote)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -438,5 +478,5 @@ export default function LotesClient() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

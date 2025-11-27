@@ -1,34 +1,36 @@
-
-import NextAuth from "next-auth"
+import NextAuth from "next-auth";
 
 declare module "next-auth" {
   interface Session {
     user: {
-      id: string
-      email: string
-      name: string
-      role: string
-      empresaId?: string | null
-      empresaNome?: string | null
-      status?: string | null
-    }
-    lastActivity?: number
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+      empresaId?: string | null;
+      empresaNome?: string | null;
+      status?: string | null;
+      vencimentoPlano?: string | null;
+    };
+    lastActivity?: number;
   }
 
   interface User {
-    role: string
-    empresaId?: string | null
-    empresaNome?: string | null
-    status?: string | null
+    role: string;
+    empresaId?: string | null;
+    empresaNome?: string | null;
+    status?: string | null;
+    vencimentoPlano?: string | null;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    role: string
-    empresaId?: string | null
-    empresaNome?: string | null
-    status?: string | null
-    lastActivity?: number
+    role: string;
+    empresaId?: string | null;
+    empresaNome?: string | null;
+    status?: string | null;
+    vencimentoPlano?: string | null;
+    lastActivity?: number;
   }
 }

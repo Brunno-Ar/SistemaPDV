@@ -217,18 +217,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Gerar SKU automaticamente se não fornecido
-    if (!sku || sku.trim() === "") {
-      sku = await generateUniqueSKU();
+    // Gerar SKU se não fornecido
+    let productSku = sku;
+    if (!productSku || productSku.trim() === "") {
+      productSku = await generateUniqueSKU();
     } else {
-      // Se SKU foi fornecido, verificar se já existe
+      // Verificar se SKU já existe
       const existingProduct = await prisma.product.findUnique({
-        where: { sku },
+        where: { sku: productSku },
       });
 
       if (existingProduct) {
         return NextResponse.json(
-          { error: "SKU já existe. Será gerado automaticamente." },
+          { error: "SKU já existe. Escolha outro." },
           { status: 400 }
         );
       }
