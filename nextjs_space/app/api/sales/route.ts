@@ -243,66 +243,72 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar a transação de venda com lógica FEFO
-    const result = await prisma.$transaction(async (tx: any) => {
-      // Criar a venda
-      const sale = await tx.sale.create({
-        data: {
-          userId: session.user.id,
-          empresaId: empresaId,
-          valorTotal: valorTotal,
-          metodoPagamento: metodoPagamento,
-        },
-      });
-
-      // Criar os itens da venda, aplicar FEFO e atualizar estoque
-      for (const item of items) {
-        const product = products.find((p: any) => p.id === item.productId)!;
-        const descontoAplicado = item.descontoAplicado || 0;
-        const subtotal =
-          item.quantidade * item.precoUnitario - descontoAplicado;
-
-        // Criar item da venda
-        await tx.saleItem.create({
+    const result = await prisma.$transaction(
+      async (tx: any) => {
+        // Criar a venda
+        const sale = await tx.sale.create({
           data: {
-            saleId: sale.id,
-            productId: item.productId,
-            quantidade: item.quantidade,
-            precoUnitario: item.precoUnitario,
-            custoUnitario: product.precoCompra, // SNAPSHOT DO CUSTO
-            descontoAplicado: descontoAplicado,
-            subtotal: subtotal,
-          },
-        });
-
-        // *** APLICAR LÓGICA FEFO ***
-        // Descontar dos lotes com vencimento mais próximo
-        const { lotesUsados } = await descontarLotesFEFO(
-          tx,
-          item.productId,
-          item.quantidade
-        );
-
-        // Recalcular o estoque total do produto (cache)
-        const novoEstoque = await recalcularEstoqueCache(tx, item.productId);
-
-        // Criar movimentação de estoque com informação dos lotes
-        await tx.movimentacaoEstoque.create({
-          data: {
-            produtoId: item.productId,
-            usuarioId: session.user.id,
+            userId: session.user.id,
             empresaId: empresaId,
-            tipo: "VENDA",
-            quantidade: -item.quantidade, // Negativo porque é saída
-            motivo: `Venda #${sale.id.substring(
-              0,
-              8
-            )} - Lotes: ${lotesUsados.join(", ")}`,
+            valorTotal: valorTotal,
+            metodoPagamento: metodoPagamento,
           },
         });
-      }
 
-      return sale;
-    });
+        // Criar os itens da venda, aplicar FEFO e atualizar estoque
+        for (const item of items) {
+          const product = products.find((p: any) => p.id === item.productId)!;
+          const descontoAplicado = item.descontoAplicado || 0;
+          const subtotal =
+            item.quantidade * item.precoUnitario - descontoAplicado;
+
+          // Criar item da venda
+          await tx.saleItem.create({
+            data: {
+              saleId: sale.id,
+              productId: item.productId,
+              quantidade: item.quantidade,
+              precoUnitario: item.precoUnitario,
+              custoUnitario: product.precoCompra, // SNAPSHOT DO CUSTO
+              descontoAplicado: descontoAplicado,
+              subtotal: subtotal,
+            },
+          });
+
+          // *** APLICAR LÓGICA FEFO ***
+          // Descontar dos lotes com vencimento mais próximo
+          const { lotesUsados } = await descontarLotesFEFO(
+            tx,
+            item.productId,
+            item.quantidade
+          );
+
+          // Recalcular o estoque total do produto (cache)
+          const novoEstoque = await recalcularEstoqueCache(tx, item.productId);
+
+          // Criar movimentação de estoque com informação dos lotes
+          await tx.movimentacaoEstoque.create({
+            data: {
+              produtoId: item.productId,
+              usuarioId: session.user.id,
+              empresaId: empresaId,
+              tipo: "VENDA",
+              quantidade: -item.quantidade, // Negativo porque é saída
+              motivo: `Venda #${sale.id.substring(
+                0,
+                8
+              )} - Lotes: ${lotesUsados.join(", ")}`,
+            },
+          });
+        }
+
+        return sale;
+      },
+      {
+        maxWait: 5000, // Tempo máximo de espera para iniciar a transação
+        timeout: 20000, // Tempo máximo para execução da transação (20s)
+      }
+    );
 
     return NextResponse.json({
       message: "Venda finalizada com sucesso",
