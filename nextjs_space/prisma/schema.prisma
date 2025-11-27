@@ -1,0 +1,239 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+// Enums
+enum Role {
+  master
+  admin
+  caixa
+}
+
+enum StatusEmpresa {
+  PENDENTE
+  ATIVO
+  PAUSADO
+}
+
+enum StatusCaixa {
+  ABERTO
+  FECHADO
+}
+
+enum MetodoPagamento {
+  dinheiro
+  debito
+  credito
+  pix
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  AJUSTE_QUEBRA
+  AJUSTE_INVENTARIO
+  DEVOLUCAO
+  VENDA
+}
+
+// Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   @db.Text
+  nome          String?
+  role          Role      @default(caixa)
+  empresaId     String?   @map("empresa_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  accounts      Account[]
+  sessions      Session[]
+  sales         Sale[]
+  movimentacoes MovimentacaoEstoque[]
+  caixas        Caixa[]
+  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Empresa {
+  id              String         @id @default(cuid())
+  nome            String
+  status          StatusEmpresa  @default(PENDENTE)
+  vencimentoPlano DateTime?      @map("vencimento_plano")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  
+  users           User[]
+  products        Product[]
+  sales           Sale[]
+  movimentacoes   MovimentacaoEstoque[]
+  avisos          Aviso[]
+  caixas          Caixa[]
+
+  @@map("empresas")
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  nome          String
+  sku           String   @unique
+  precoVenda    Decimal  @map("preco_venda") @db.Decimal(10, 2)
+  precoCompra   Decimal  @default(0) @map("preco_compra") @db.Decimal(10, 2)
+  estoqueAtual  Int      @default(0) @map("estoque_atual") // Campo de cache - soma de todos os lotes
+  estoqueMinimo Int      @default(5) @map("estoque_minimo")
+  imagemUrl     String?  @map("imagem_url")
+  empresaId     String?  @map("empresa_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
+  saleItems     SaleItem[]
+  movimentacoes MovimentacaoEstoque[]
+  lotes         Lote[]
+
+  @@map("products")
+}
+
+model Lote {
+  id            String   @id @default(cuid())
+  numeroLote    String   @map("numero_lote")
+  dataValidade  DateTime @map("data_validade")
+  quantidade    Int      @default(0)
+  produtoId     String   @map("produto_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  produto       Product  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@map("lotes")
+  @@index([produtoId])
+  @@index([dataValidade])
+}
+
+model Sale {
+  id              String          @id @default(cuid())
+  userId          String          @map("user_id")
+  empresaId       String?         @map("empresa_id")
+  dataHora        DateTime        @default(now()) @map("data_hora")
+  valorTotal      Decimal         @map("valor_total") @db.Decimal(10, 2)
+  metodoPagamento MetodoPagamento @map("metodo_pagamento")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  
+  user      User       @relation(fields: [userId], references: [id])
+  empresa   Empresa?   @relation(fields: [empresaId], references: [id])
+  saleItems SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id               String  @id @default(cuid())
+  saleId           String  @map("sale_id")
+  productId        String  @map("product_id")
+  quantidade       Int
+  precoUnitario    Decimal @map("preco_unitario") @db.Decimal(10, 2)
+  descontoAplicado Decimal @default(0) @map("desconto_aplicado") @db.Decimal(10, 2)
+  subtotal         Decimal @db.Decimal(10, 2)
+  
+  sale    Sale    @relation(fields: [saleId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+model MovimentacaoEstoque {
+  id               String           @id @default(cuid())
+  produtoId        String           @map("produto_id")
+  usuarioId        String           @map("usuario_id")
+  empresaId        String           @map("empresa_id")
+  tipo             TipoMovimentacao
+  quantidade       Int
+  motivo           String?
+  dataMovimentacao DateTime         @default(now()) @map("data_movimentacao")
+  
+  produto  Product @relation(fields: [produtoId], references: [id])
+  usuario  User    @relation(fields: [usuarioId], references: [id])
+  empresa  Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("movimentacoes_estoque")
+}
+
+model Aviso {
+  id         String   @id @default(cuid())
+  mensagem   String   @db.Text
+  importante Boolean  @default(false)
+  empresaId  String   @map("empresa_id")
+  criadoEm   DateTime @default(now()) @map("criado_em")
+  
+  empresa    Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("avisos")
+  @@index([empresaId])
+}
+
+model Caixa {
+  id              String       @id @default(cuid())
+  usuarioId       String       @map("usuario_id")
+  empresaId       String       @map("empresa_id")
+  saldoInicial    Decimal      @map("saldo_inicial") @db.Decimal(10, 2)
+  saldoFinal      Decimal?     @map("saldo_final") @db.Decimal(10, 2)
+  quebraDeCaixa   Decimal?     @map("quebra_de_caixa") @db.Decimal(10, 2)
+  status          StatusCaixa  @default(ABERTO)
+  dataAbertura    DateTime     @default(now()) @map("data_abertura")
+  dataFechamento  DateTime?    @map("data_fechamento")
+  
+  usuario         User         @relation(fields: [usuarioId], references: [id])
+  empresa         Empresa      @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("caixas")
+  @@index([usuarioId])
+  @@index([empresaId])
+  @@index([status])
+}
