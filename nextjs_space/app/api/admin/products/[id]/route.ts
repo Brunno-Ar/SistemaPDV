@@ -7,6 +7,36 @@ export const dynamic = "force-dynamic";
 
 const prisma = new PrismaClient();
 
+// Função para gerar SKU único
+async function generateUniqueSKU(prisma: PrismaClient): Promise<string> {
+  let sku = "";
+  let exists = true;
+
+  while (exists) {
+    // Gerar SKU: 3 letras maiúsculas + 6 dígitos
+    const letters = Array(3)
+      .fill(null)
+      .map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26)))
+      .join("");
+
+    const numbers = Array(6)
+      .fill(null)
+      .map(() => Math.floor(Math.random() * 10))
+      .join("");
+
+    sku = `${letters}-${numbers}`;
+
+    // Verificar se já existe
+    const existingProduct = await prisma.product.findUnique({
+      where: { sku },
+    });
+
+    exists = !!existingProduct;
+  }
+
+  return sku;
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -49,7 +79,6 @@ export async function PUT(
 
     if (
       !nome ||
-      !sku ||
       precoVenda === undefined ||
       precoCompra === undefined ||
       estoqueAtual === undefined
@@ -121,10 +150,22 @@ export async function PUT(
       }
     }
 
-    // Verificar se SKU já existe em outro produto
-    if (sku !== existingProduct.sku) {
+    // Gerenciar SKU
+    let finalSku = sku;
+    if (!finalSku || finalSku.trim() === "") {
+      // Se SKU veio vazio, verificar se o produto já tem um. Se tiver, mantém.
+      // Se não tiver (caso de erro antigo), gera um novo.
+      if (existingProduct.sku && existingProduct.sku.trim() !== "") {
+        finalSku = existingProduct.sku;
+      } else {
+        finalSku = await generateUniqueSKU(prisma);
+      }
+    }
+
+    // Verificar se SKU já existe em outro produto (se mudou)
+    if (finalSku !== existingProduct.sku) {
       const skuExists = await prisma.product.findUnique({
-        where: { sku },
+        where: { sku: finalSku },
       });
 
       if (skuExists) {
@@ -139,7 +180,7 @@ export async function PUT(
       where: { id: params.id },
       data: {
         nome,
-        sku,
+        sku: finalSku,
         precoVenda,
         precoCompra:
           precoCompra !== undefined ? precoCompra : existingProduct.precoCompra,

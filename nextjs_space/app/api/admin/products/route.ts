@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       const product = await tx.product.create({
         data: {
           nome,
-          sku,
+          sku: productSku,
           precoVenda,
           precoCompra: precoCompra || 0,
           estoqueAtual:

@@ -84,11 +84,6 @@ export function NavBar() {
       icon: ArrowRightLeft,
     },
     {
-      href: "/estoque-baixo",
-      label: "Estoque Baixo",
-      icon: TrendingDown,
-    },
-    {
       href: "/equipe",
       label: "Equipe",
       icon: Users,
