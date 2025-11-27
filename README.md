@@ -1,10 +1,10 @@
-# 🚀 Nexus PDV (SaaS) - Plataforma de Gestão Multi-Tenant
+# 🚀 Flow PDV (SaaS) - Plataforma de Gestão Multi-Tenant
 
 ![Status](https://img.shields.io/badge/Status-Em_Desenvolvimento-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 > **Uma solução Enterprise para gestão de varejo, arquitetada para escalar.**
-> O Nexus PDV não é apenas um ponto de venda; é um ecossistema SaaS completo que permite a gestão centralizada de múltiplas empresas, com controle financeiro rigoroso, gestão de estoque inteligente (FEFO) e hierarquia de acesso granular.
+> O Flow PDV não é apenas um ponto de venda; é um ecossistema SaaS completo que permite a gestão centralizada de múltiplas empresas, com controle financeiro rigoroso, gestão de estoque inteligente (FEFO) e hierarquia de acesso granular.
 
 ---
 
@@ -77,5 +77,5 @@ Siga os passos abaixo para rodar o projeto localmente:
 
 ### 1. Clone o repositório
 ```bash
-git clone [https://github.com/seu-usuario/nexus-pdv.git](https://github.com/seu-usuario/nexus-pdv.git)
-cd nexus-pdv
+git clone [https://github.com/seu-usuario/Flow-pdv.git](https://github.com/seu-usuario/flow-pdv.git)
+cd flow-pdv
