@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   AlertTriangle,
@@ -48,7 +49,7 @@ interface Product {
 interface Lote {
   id: string;
   numeroLote: string;
-  dataValidade: string;
+  dataValidade: string | null;
   quantidade: number;
   produtoId: string;
   createdAt: string;
@@ -73,6 +74,7 @@ export default function LotesClient() {
     dataValidade: "",
     quantidade: "",
   });
+  const [semValidade, setSemValidade] = useState(false);
 
   useEffect(() => {
     fetchLotes();
@@ -134,6 +136,7 @@ export default function LotesClient() {
       dataValidade: "",
       quantidade: "",
     });
+    setSemValidade(false);
     setDialogOpen(true);
   };
 
@@ -145,6 +148,7 @@ export default function LotesClient() {
       dataValidade: "",
       quantidade: "",
     });
+    setSemValidade(false);
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -158,7 +162,11 @@ export default function LotesClient() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.produtoId || !formData.dataValidade || !formData.quantidade) {
+    if (
+      !formData.produtoId ||
+      (!semValidade && !formData.dataValidade) ||
+      !formData.quantidade
+    ) {
       toast({
         title: "Erro",
         description: "Preencha os campos obrigatórios",
@@ -187,7 +195,7 @@ export default function LotesClient() {
         body: JSON.stringify({
           produtoId: formData.produtoId,
           numeroLote: formData.numeroLote,
-          dataValidade: formData.dataValidade,
+          dataValidade: semValidade ? null : formData.dataValidade,
           quantidade,
         }),
       });
@@ -217,7 +225,17 @@ export default function LotesClient() {
   };
 
   const getStatusBadge = (lote: Lote) => {
-    if (lote.status === "vencido") {
+    if (lote.status === "sem_validade") {
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-gray-100 text-gray-800 hover:bg-gray-200 flex items-center gap-1"
+        >
+          <CheckCircle className="h-3 w-3" />
+          Sem Validade
+        </Badge>
+      );
+    } else if (lote.status === "vencido") {
       return (
         <Badge variant="destructive" className="flex items-center gap-1">
           <XCircle className="h-3 w-3" />
@@ -388,7 +406,27 @@ export default function LotesClient() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="dataValidade">Data de Validade</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="dataValidade">Data de Validade</Label>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="semValidade"
+                        checked={semValidade}
+                        onCheckedChange={(checked) => {
+                          setSemValidade(checked as boolean);
+                          if (checked) {
+                            setFormData({ ...formData, dataValidade: "" });
+                          }
+                        }}
+                      />
+                      <Label
+                        htmlFor="semValidade"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Produto sem validade
+                      </Label>
+                    </div>
+                  </div>
                   <Input
                     id="dataValidade"
                     type="date"
@@ -396,7 +434,8 @@ export default function LotesClient() {
                     onChange={(e) =>
                       setFormData({ ...formData, dataValidade: e.target.value })
                     }
-                    required
+                    required={!semValidade}
+                    disabled={semValidade}
                   />
                 </div>
 
@@ -467,7 +506,11 @@ export default function LotesClient() {
                       <Badge variant="outline">{lote.quantidade} un</Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(lote.dataValidade).toLocaleDateString("pt-BR")}
+                      {lote.dataValidade
+                        ? new Date(lote.dataValidade).toLocaleDateString(
+                            "pt-BR"
+                          )
+                        : "Indeterminado"}
                     </TableCell>
                     <TableCell>{getStatusBadge(lote)}</TableCell>
                   </TableRow>

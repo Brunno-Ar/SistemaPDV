@@ -25,7 +25,7 @@ async function descontarLotesFEFO(
       },
     },
     orderBy: {
-      dataValidade: "asc", // FEFO: Os que vencem primeiro saem primeiro
+      dataValidade: "asc", // FEFO: Os que vencem primeiro saem primeiro (Nulos ficam por último no Postgres ASC)
     },
   });
 
@@ -50,16 +50,17 @@ async function descontarLotesFEFO(
       .padStart(5, "0");
     const numeroLote = `LOTE-AUTO-${dataFormatada}-${numeroAleatorio}`;
 
-    // Data de validade: 1 ano a partir de hoje (para lotes automáticos)
-    const dataValidade = new Date();
-    dataValidade.setFullYear(dataValidade.getFullYear() + 1);
+    // Data de validade: null (indefinida) ou 1 ano? Vamos usar null se opcional, ou manter 1 ano.
+    // O prompt diz "Torne dataValidade opcional". Vamos usar null para produtos sem validade explícita.
+    // Mas para o lote automático, talvez seja melhor null.
 
     const loteAutomatico = await tx.lote.create({
       data: {
         numeroLote,
-        dataValidade,
+        dataValidade: null, // Sem validade definida
         quantidade: produto.estoqueAtual,
         produtoId: produtoId,
+        precoCompra: produto.precoCompra, // Copiar custo atual
       },
     });
 
@@ -200,7 +201,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar estoque e buscar produtos (apenas da empresa do usuário)
-    const productIds = items.map((item) => item.productId);
+    const productIds = items.map((item: any) => item.productId);
     const products = await prisma.product.findMany({
       where: {
         id: { in: productIds },
@@ -261,6 +262,7 @@ export async function POST(request: NextRequest) {
             productId: item.productId,
             quantidade: item.quantidade,
             precoUnitario: item.precoUnitario,
+            custoUnitario: product.precoCompra, // SNAPSHOT DO CUSTO
             descontoAplicado: descontoAplicado,
             subtotal: subtotal,
           },

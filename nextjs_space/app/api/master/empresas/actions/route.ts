@@ -245,9 +245,12 @@ export async function POST(request: NextRequest) {
             where: { empresaId },
           });
 
-          // 3. Apagar Movimentações de Estoque
+          // 3. Apagar Movimentações de Estoque (APENAS VENDAS)
           await tx.movimentacaoEstoque.deleteMany({
-            where: { empresaId },
+            where: {
+              empresaId,
+              tipo: "VENDA",
+            },
           });
 
           // 4. Apagar Caixas
@@ -255,31 +258,8 @@ export async function POST(request: NextRequest) {
             where: { empresaId },
           });
 
-          // 5. Apagar Avisos
-          await tx.aviso.deleteMany({
-            where: { empresaId },
-          });
-
-          // 6. Zerar Estoque dos Produtos (Reset)
-          await tx.product.updateMany({
-            where: { empresaId },
-            data: { estoqueAtual: 0 },
-          });
-
-          // 7. Zerar Lotes (Opcional, mas recomendado para consistência)
-          // Como Product.estoqueAtual é cache, precisamos zerar ou apagar os lotes.
-          // Vamos apagar os lotes para começar do zero.
-          const produtos = await tx.product.findMany({
-            where: { empresaId },
-            select: { id: true },
-          });
-          const produtoIds = produtos.map((p) => p.id);
-
-          if (produtoIds.length > 0) {
-            await tx.lote.deleteMany({
-              where: { produtoId: { in: produtoIds } },
-            });
-          }
+          // 5. NÃO apagar Avisos, Produtos (estoque) ou Lotes.
+          // O objetivo é limpar apenas o histórico financeiro de vendas.
         });
 
         return NextResponse.json({

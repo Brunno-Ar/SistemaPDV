@@ -82,21 +82,28 @@ export async function GET(request: NextRequest) {
     trintaDias.setDate(hoje.getDate() + 30);
 
     const lotesComStatus = lotes.map((lote: any) => {
-      const dataValidade = new Date(lote.dataValidade);
-      let status = "normal";
+      let status = "sem_validade";
+      let diasParaVencer = null;
 
-      if (dataValidade < hoje) {
-        status = "vencido";
-      } else if (dataValidade <= trintaDias) {
-        status = "proximo_vencimento";
+      if (lote.dataValidade) {
+        const dataValidade = new Date(lote.dataValidade);
+        status = "normal";
+
+        if (dataValidade < hoje) {
+          status = "vencido";
+        } else if (dataValidade <= trintaDias) {
+          status = "proximo_vencimento";
+        }
+
+        diasParaVencer = Math.ceil(
+          (dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
+        );
       }
 
       return {
         ...lote,
         status,
-        diasParaVencer: Math.ceil(
-          (dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
-        ),
+        diasParaVencer,
       };
     });
 
@@ -134,12 +141,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { produtoId, numeroLote, dataValidade, quantidade } = body;
+    const { produtoId, numeroLote, dataValidade, quantidade, precoCompra } =
+      body;
 
     // Validações
-    if (!produtoId || !dataValidade || !quantidade) {
+    if (!produtoId || !quantidade) {
       return NextResponse.json(
-        { error: "Todos os campos obrigatórios devem ser preenchidos" },
+        { error: "Produto e Quantidade são obrigatórios" },
         { status: 400 }
       );
     }
@@ -179,47 +187,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar se a data de validade não está no passado
-    const dataValidadeDate = new Date(dataValidade);
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
+    // Validar data de validade APENAS SE FORNECIDA
+    let dataValidadeDate = null;
+    if (dataValidade) {
+      dataValidadeDate = new Date(dataValidade);
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
 
-    if (dataValidadeDate < hoje) {
-      return NextResponse.json(
-        { error: "Data de validade não pode estar no passado" },
-        { status: 400 }
-      );
+      if (dataValidadeDate < hoje) {
+        return NextResponse.json(
+          { error: "Data de validade não pode estar no passado" },
+          { status: 400 }
+        );
+      }
     }
+
+    const custoLote = Number(precoCompra || 0);
 
     // Criar lote e atualizar estoque em uma transação
     const result = await prisma.$transaction(async (tx: any) => {
-      // Criar o lote
+      // 1. Calcular Custo Médio Ponderado
+      // Fórmula: ((QtdAtual * CustoAtual) + (QtdLote * CustoLote)) / (QtdAtual + QtdLote)
+      const qtdAtual = product.estoqueAtual;
+      const custoAtual = Number(product.precoCompra);
+
+      let novoCustoMedio = custoAtual;
+      const novaQtdTotal = qtdAtual + quantidade;
+
+      if (novaQtdTotal > 0) {
+        novoCustoMedio =
+          (qtdAtual * custoAtual + quantidade * custoLote) / novaQtdTotal;
+      }
+
+      // 2. Criar o lote
       const novoLote = await tx.lote.create({
         data: {
           numeroLote: finalNumeroLote,
           dataValidade: dataValidadeDate,
           quantidade,
           produtoId,
+          precoCompra: custoLote,
         },
       });
 
-      // Recalcular o estoque total do produto
-      const todosLotes = await tx.lote.findMany({
-        where: { produtoId },
-      });
-
-      const estoqueTotal = todosLotes.reduce(
-        (sum: number, lote: any) => sum + lote.quantidade,
-        0
-      );
-
-      // Atualizar o campo de cache do produto
+      // 3. Atualizar Produto (Estoque e Custo Médio)
       await tx.product.update({
         where: { id: produtoId },
-        data: { estoqueAtual: estoqueTotal },
+        data: {
+          estoqueAtual: novaQtdTotal,
+          precoCompra: novoCustoMedio,
+        },
       });
 
-      // Criar movimentação de estoque
+      // 4. Criar movimentação de estoque
       await tx.movimentacaoEstoque.create({
         data: {
           produtoId,
@@ -227,13 +247,13 @@ export async function POST(request: NextRequest) {
           empresaId,
           tipo: "ENTRADA",
           quantidade,
-          motivo: `Entrada de lote ${finalNumeroLote} - Validade: ${dataValidadeDate.toLocaleDateString(
-            "pt-BR"
+          motivo: `Entrada de lote ${finalNumeroLote} - Custo: R$${custoLote.toFixed(
+            2
           )}`,
         },
       });
 
-      return { novoLote, estoqueTotal };
+      return { novoLote, estoqueTotal: novaQtdTotal };
     });
 
     return NextResponse.json({

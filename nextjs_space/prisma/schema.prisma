@@ -109,7 +109,9 @@ model Empresa {
   nome            String
   status          StatusEmpresa  @default(PENDENTE)
   vencimentoPlano DateTime?      @map("vencimento_plano")
+  diaVencimento   Int            @default(1) @map("dia_vencimento")
   createdAt       DateTime       @default(now()) @map("created_at")
+  dataCriacao     DateTime       @default(now()) @map("data_criacao") // Redundante mas solicitado
   
   users           User[]
   products        Product[]
@@ -143,12 +145,13 @@ model Product {
 }
 
 model Lote {
-  id            String   @id @default(cuid())
-  numeroLote    String   @map("numero_lote")
-  dataValidade  DateTime @map("data_validade")
-  quantidade    Int      @default(0)
-  produtoId     String   @map("produto_id")
-  createdAt     DateTime @default(now()) @map("created_at")
+  id            String    @id @default(cuid())
+  numeroLote    String    @map("numero_lote")
+  dataValidade  DateTime? @map("data_validade")
+  precoCompra   Decimal   @default(0) @map("preco_compra") @db.Decimal(10, 2)
+  quantidade    Int       @default(0)
+  produtoId     String    @map("produto_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
   
   produto       Product  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 
@@ -179,6 +182,7 @@ model SaleItem {
   productId        String  @map("product_id")
   quantidade       Int
   precoUnitario    Decimal @map("preco_unitario") @db.Decimal(10, 2)
+  custoUnitario    Decimal @default(0) @map("custo_unitario") @db.Decimal(10, 2)
   descontoAplicado Decimal @default(0) @map("desconto_aplicado") @db.Decimal(10, 2)
   subtotal         Decimal @db.Decimal(10, 2)
   

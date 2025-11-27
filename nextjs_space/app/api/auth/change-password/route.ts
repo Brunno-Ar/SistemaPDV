@@ -16,13 +16,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    // LOG PARA DEBUG
-    console.log("Tentativa de alteração de senha:", {
-      userId: session.user.id,
-      role: session.user.role,
-      email: session.user.email,
-    });
-
+    // Permite que qualquer usuário autenticado altere sua própria senha
+    // O ID é pego da sessão, garantindo que o usuário só altere a própria conta
     const body = await request.json();
     const { senhaAtual, novaSenha } = body;
 
