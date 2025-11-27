@@ -15,7 +15,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const empresaId = session.user.empresaId;
+    const { searchParams } = new URL(request.url);
+    const companyIdParam = searchParams.get("companyId");
+
+    let empresaId = session.user.empresaId;
+
+    // Se for master e tiver companyId na query, usa o da query
+    if (session.user.role === "master" && companyIdParam) {
+      empresaId = companyIdParam;
+    }
+
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não encontrada" },
@@ -23,7 +32,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const type = searchParams.get("type"); // 'VENDA', 'ENTRADA', 'PERDA', 'AJUSTE', 'TODOS'
