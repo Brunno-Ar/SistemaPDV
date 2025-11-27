@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -90,6 +91,7 @@ interface EstoqueClientProps {
 }
 
 export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,7 +200,13 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-  }, []);
+
+    // Check for URL filters
+    const filterParam = searchParams.get("filter");
+    if (filterParam === "low_stock") {
+      setStatusFilter("baixo");
+    }
+  }, [searchParams]);
 
   const fetchCategories = async () => {
     try {

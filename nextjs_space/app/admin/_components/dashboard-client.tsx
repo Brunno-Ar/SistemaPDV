@@ -138,7 +138,7 @@ export default function DashboardClient() {
                 </div>
               ))}
               {produtosEstoqueBaixo.length > 3 && (
-                <Link href="/estoque">
+                <Link href="/estoque?filter=low_stock">
                   <Button
                     variant="outline"
                     className="w-full mt-2 bg-white hover:bg-red-50 text-red-700 border-red-200"
