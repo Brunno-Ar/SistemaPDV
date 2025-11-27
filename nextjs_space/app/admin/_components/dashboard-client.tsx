@@ -37,10 +37,24 @@ interface DashboardStats {
   lucroSemana: number;
 }
 
+interface LoteVencimento {
+  id: string;
+  numeroLote: string;
+  dataValidade: string;
+  quantidade: number;
+  produto: {
+    nome: string;
+    sku: string;
+  };
+}
+
 export default function DashboardClient() {
   const [produtosEstoqueBaixo, setProdutosEstoqueBaixo] = useState<Product[]>(
     []
   );
+  const [lotesVencimentoProximo, setLotesVencimentoProximo] = useState<
+    LoteVencimento[]
+  >([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -55,6 +69,13 @@ export default function DashboardClient() {
       if (estoqueBaixoResponse.ok) {
         const estoqueBaixoData = await estoqueBaixoResponse.json();
         setProdutosEstoqueBaixo(estoqueBaixoData);
+      }
+
+      // Buscar lotes com vencimento próximo
+      const vencimentoResponse = await fetch("/api/admin/vencimento-proximo");
+      if (vencimentoResponse.ok) {
+        const vencimentoData = await vencimentoResponse.json();
+        setLotesVencimentoProximo(vencimentoData);
       }
 
       // Buscar estatísticas do dashboard
@@ -91,45 +112,100 @@ export default function DashboardClient() {
         <p className="text-gray-600 mt-1">Visão geral do sistema</p>
       </div>
 
-      {/* Alertas de Estoque Baixo */}
-      {produtosEstoqueBaixo.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-            <h3 className="text-lg font-semibold text-red-900">
-              Atenção: {produtosEstoqueBaixo.length} produto(s) com estoque
-              baixo!
-            </h3>
-          </div>
-          <div className="space-y-2">
-            {produtosEstoqueBaixo.slice(0, 3).map((produto) => (
-              <div
-                key={produto.id}
-                className="flex items-center justify-between bg-white p-3 rounded-lg border border-red-100"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">{produto.nome}</p>
-                  <p className="text-sm text-gray-600">SKU: {produto.sku}</p>
-                </div>
-                <Badge variant="destructive">
-                  {produto.estoqueAtual} / {produto.estoqueMinimo} un.
-                </Badge>
-              </div>
-            ))}
-            {produtosEstoqueBaixo.length > 3 && (
-              <Link href="/estoque-baixo">
-                <Button
-                  variant="outline"
-                  className="w-full mt-2 bg-white hover:bg-red-50 text-red-700 border-red-200"
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Alertas de Estoque Baixo */}
+        {produtosEstoqueBaixo.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <h3 className="text-lg font-semibold text-red-900">
+                Estoque Baixo ({produtosEstoqueBaixo.length})
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {produtosEstoqueBaixo.slice(0, 3).map((produto) => (
+                <div
+                  key={produto.id}
+                  className="flex items-center justify-between bg-white p-3 rounded-lg border border-red-100"
                 >
-                  Ver todos os {produtosEstoqueBaixo.length} produtos
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            )}
+                  <div>
+                    <p className="font-medium text-gray-900">{produto.nome}</p>
+                    <p className="text-sm text-gray-600">SKU: {produto.sku}</p>
+                  </div>
+                  <Badge variant="destructive">
+                    {produto.estoqueAtual} / {produto.estoqueMinimo} un.
+                  </Badge>
+                </div>
+              ))}
+              {produtosEstoqueBaixo.length > 3 && (
+                <Link href="/estoque">
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2 bg-white hover:bg-red-50 text-red-700 border-red-200"
+                  >
+                    Ver todos
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Alertas de Vencimento Próximo */}
+        {lotesVencimentoProximo.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="h-5 w-5 text-yellow-600" />
+              <h3 className="text-lg font-semibold text-yellow-900">
+                Vencimento Próximo ({lotesVencimentoProximo.length})
+              </h3>
+            </div>
+            <div className="space-y-2">
+              {lotesVencimentoProximo.slice(0, 3).map((lote) => {
+                const diasParaVencer = Math.ceil(
+                  (new Date(lote.dataValidade).getTime() -
+                    new Date().getTime()) /
+                    (1000 * 60 * 60 * 24)
+                );
+                return (
+                  <div
+                    key={lote.id}
+                    className="flex items-center justify-between bg-white p-3 rounded-lg border border-yellow-100"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {lote.produto.nome}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Vence em:{" "}
+                        {new Date(lote.dataValidade).toLocaleDateString(
+                          "pt-BR"
+                        )}{" "}
+                        (<strong>{diasParaVencer} dias</strong>)
+                      </p>
+                    </div>
+                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
+                      {lote.quantidade} un.
+                    </Badge>
+                  </div>
+                );
+              })}
+              {lotesVencimentoProximo.length > 3 && (
+                <Link href="/lotes">
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2 bg-white hover:bg-yellow-50 text-yellow-700 border-yellow-200"
+                  >
+                    Ver todos
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

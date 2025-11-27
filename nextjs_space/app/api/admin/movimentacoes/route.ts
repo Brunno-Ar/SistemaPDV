@@ -1,208 +1,132 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { PrismaClient } from "@prisma/client";
 
-// GET - Listar movimentações de estoque da empresa
+export const dynamic = "force-dynamic";
+
+const prisma = new PrismaClient();
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (
-      !session ||
-      (session.user.role !== "admin" && session.user.role !== "master")
-    ) {
+    if (!session?.user) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const empresaId = session.user.empresaId;
+    if (!empresaId) {
       return NextResponse.json(
-        { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
+        { error: "Empresa não encontrada" },
+        { status: 400 }
       );
     }
 
     const { searchParams } = new URL(request.url);
-    const queryCompanyId = searchParams.get("companyId");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
+    const type = searchParams.get("type"); // 'VENDA', 'ENTRADA', 'PERDA', 'AJUSTE', 'TODOS'
 
-    // 🔥 MODO DEUS: Lógica Híbrida (Sessão vs. Query Param)
-    let targetEmpresaId = session.user.empresaId; // Padrão: empresa do usuário logado
-
-    // Se vier um ID na URL, verifica se é MASTER tentando acessar
-    if (queryCompanyId) {
-      if (session.user.role !== "master") {
-        return NextResponse.json(
-          { error: "Acesso Negado: Apenas Master pode filtrar por empresa." },
-          { status: 403 }
-        );
-      }
-      targetEmpresaId = queryCompanyId; // Sobrescreve o ID alvo
+    // Filtro de Data
+    const dateFilter: any = {};
+    if (startDate && endDate) {
+      dateFilter.gte = new Date(startDate);
+      dateFilter.lte = new Date(endDate);
+      // Ajustar para o final do dia
+      dateFilter.lte.setHours(23, 59, 59, 999);
     }
 
-    // Validar que o ID alvo existe
-    if (!targetEmpresaId) {
-      return NextResponse.json(
-        { error: "Empresa não identificada" },
-        { status: 400 }
-      );
-    }
-
-    const empresaId = targetEmpresaId;
-
-    const movimentacoes = await prisma.movimentacaoEstoque.findMany({
-      where: {
-        empresaId: empresaId,
-      },
-      include: {
-        produto: {
-          select: {
-            nome: true,
-            sku: true,
-          },
-        },
-        usuario: {
-          select: {
-            nome: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-      orderBy: {
-        dataMovimentacao: "desc",
-      },
-      take: 100, // Limitar a 100 registros mais recentes
-    });
-
-    return NextResponse.json(movimentacoes);
-  } catch (error) {
-    console.error("Erro ao buscar movimentações:", error);
-    return NextResponse.json(
-      { error: "Erro ao buscar movimentações" },
-      { status: 500 }
-    );
-  }
-}
-
-// POST - Criar nova movimentação (entrada ou ajuste)
-export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-
-    if (
-      !session ||
-      (session.user.role !== "admin" && session.user.role !== "master")
-    ) {
-      return NextResponse.json(
-        { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
-      );
-    }
-
-    const empresaId = session.user.empresaId;
-    const usuarioId = session.user.id;
-
-    if (!empresaId) {
-      return NextResponse.json(
-        { error: "Empresa não identificada" },
-        { status: 400 }
-      );
-    }
-
-    const body = await request.json();
-    const { produtoId, tipo, quantidade, motivo } = body;
-
-    // Validações
-    if (!produtoId || !tipo || quantidade === undefined || quantidade === 0) {
-      return NextResponse.json(
-        { error: "Produto, tipo e quantidade são obrigatórios" },
-        { status: 400 }
-      );
-    }
-
-    // Tipos válidos
-    const tiposValidos = [
-      "ENTRADA",
-      "AJUSTE_QUEBRA",
-      "AJUSTE_INVENTARIO",
-      "DEVOLUCAO",
-    ];
-    if (!tiposValidos.includes(tipo)) {
-      return NextResponse.json(
-        { error: "Tipo de movimentação inválido" },
-        { status: 400 }
-      );
-    }
-
-    // Verificar se o produto pertence à empresa
-    const produto = await prisma.product.findFirst({
-      where: {
-        id: produtoId,
-        empresaId: empresaId,
-      },
-    });
-
-    if (!produto) {
-      return NextResponse.json(
-        { error: "Produto não encontrado ou não pertence à sua empresa" },
-        { status: 404 }
-      );
-    }
-
-    // Criar movimentação e atualizar estoque em transação
-    const result = await prisma.$transaction(async (tx: any) => {
-      // 1. Criar a movimentação
-      const movimentacao = await tx.movimentacaoEstoque.create({
-        data: {
-          produtoId,
-          usuarioId,
+    // 1. Buscar Vendas (Se o tipo for TODOS ou VENDA)
+    let sales: any[] = [];
+    if (!type || type === "TODOS" || type === "VENDA") {
+      sales = await prisma.sale.findMany({
+        where: {
           empresaId,
-          tipo,
-          quantidade,
-          motivo: motivo || null,
+          dataHora: startDate && endDate ? dateFilter : undefined,
         },
         include: {
-          produto: {
-            select: {
-              nome: true,
-              sku: true,
+          user: {
+            select: { name: true, email: true },
+          },
+          saleItems: {
+            include: {
+              product: {
+                select: { nome: true, sku: true },
+              },
             },
           },
         },
+        orderBy: { dataHora: "desc" },
       });
-
-      // 2. Atualizar o estoque do produto
-      const novoEstoque = produto.estoqueAtual + quantidade;
-
-      if (novoEstoque < 0) {
-        throw new Error("Estoque não pode ficar negativo");
-      }
-
-      await tx.product.update({
-        where: { id: produtoId },
-        data: {
-          estoqueAtual: novoEstoque,
-        },
-      });
-
-      return movimentacao;
-    });
-
-    return NextResponse.json(
-      {
-        message: "Movimentação registrada com sucesso",
-        movimentacao: result,
-      },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error("Erro ao criar movimentação:", error);
-
-    if (error.message === "Estoque não pode ficar negativo") {
-      return NextResponse.json(
-        { error: "Estoque não pode ficar negativo" },
-        { status: 400 }
-      );
     }
 
+    // 2. Buscar Movimentações de Estoque (Se o tipo for TODOS ou OUTROS)
+    // Mapeamento de filtros do frontend para tipos do banco
+    let stockMovementTypes: any = undefined;
+    if (type && type !== "TODOS" && type !== "VENDA") {
+      if (type === "ENTRADA") stockMovementTypes = "ENTRADA";
+      if (type === "PERDA") stockMovementTypes = "AJUSTE_QUEBRA"; // Assumindo que PERDA = AJUSTE_QUEBRA
+      if (type === "AJUSTE") stockMovementTypes = "AJUSTE_INVENTARIO";
+    }
+
+    let movements: any[] = [];
+    if (!type || type === "TODOS" || type !== "VENDA") {
+      movements = await prisma.movimentacaoEstoque.findMany({
+        where: {
+          empresaId,
+          tipo: stockMovementTypes ? stockMovementTypes : { not: "VENDA" }, // Ignora vendas aqui pois já buscamos na tabela Sale
+          dataMovimentacao: startDate && endDate ? dateFilter : undefined,
+        },
+        include: {
+          produto: {
+            select: { nome: true, sku: true },
+          },
+          usuario: {
+            select: { name: true, email: true },
+          },
+        },
+        orderBy: { dataMovimentacao: "desc" },
+      });
+    }
+
+    // 3. Unificar e Padronizar
+    const unifiedTimeline = [
+      ...sales.map((sale) => ({
+        id: sale.id,
+        type: "VENDA",
+        date: sale.dataHora,
+        user: sale.user?.name || "Desconhecido",
+        totalValue: Number(sale.valorTotal),
+        items: sale.saleItems.map((item: any) => ({
+          productName: item.product.nome,
+          quantity: item.quantidade,
+          unitPrice: Number(item.precoUnitario),
+          subtotal: Number(item.subtotal),
+        })),
+        paymentMethod: sale.metodoPagamento,
+      })),
+      ...movements.map((mov) => ({
+        id: mov.id,
+        type: mov.tipo, // ENTRADA, AJUSTE_QUEBRA, etc.
+        date: mov.dataMovimentacao,
+        user: mov.usuario?.name || "Desconhecido",
+        productName: mov.produto.nome,
+        quantity: mov.quantidade,
+        reason: mov.motivo,
+      })),
+    ];
+
+    // 4. Ordenar por Data (Decrescente)
+    unifiedTimeline.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    return NextResponse.json(unifiedTimeline);
+  } catch (error) {
+    console.error("Erro ao buscar movimentações:", error);
     return NextResponse.json(
-      { error: "Erro ao criar movimentação" },
+      { error: "Erro interno do servidor" },
       { status: 500 }
     );
   }

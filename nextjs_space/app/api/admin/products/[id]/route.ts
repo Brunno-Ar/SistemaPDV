@@ -191,6 +191,7 @@ export async function PUT(
             : existingProduct.estoqueMinimo,
         imagemUrl:
           imagemUrl !== undefined ? imagemUrl : existingProduct.imagemUrl,
+        categoryId: categoryId || null,
       },
     });
 

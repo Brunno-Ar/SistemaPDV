@@ -85,7 +85,16 @@ export async function GET(request: NextRequest) {
       where: {
         empresaId: empresaId,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        nome: "asc",
+      },
+      include: {
+        category: {
+          select: {
+            nome: true,
+          },
+        },
+      },
     });
 
     // Converter Decimal para number para serialização JSON
@@ -99,7 +108,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Erro ao buscar produtos:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { error: "Erro interno ao buscar produtos" },
       { status: 500 }
     );
   }
@@ -131,7 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    let {
+    const {
       nome,
       sku,
       precoVenda,
@@ -141,6 +150,7 @@ export async function POST(request: NextRequest) {
       imagemUrl,
       loteInicial,
       validadeInicial,
+      categoryId,
     } = body;
 
     if (
@@ -154,6 +164,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // ... (validations remain the same)
 
     if (precoVenda <= 0 || precoCompra < 0) {
       return NextResponse.json(
@@ -251,6 +263,7 @@ export async function POST(request: NextRequest) {
           estoqueMinimo: estoqueMinimo || 5,
           empresaId,
           imagemUrl: imagemUrl || null,
+          categoryId: categoryId || null,
         },
       });
 

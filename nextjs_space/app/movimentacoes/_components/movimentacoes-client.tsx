@@ -1,229 +1,355 @@
+"use client";
 
-'use client';
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  ShoppingCart,
+  ArrowDownCircle,
+  AlertTriangle,
+  Wrench,
+  Search,
+  Calendar as CalendarIcon,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { toast } from "@/hooks/use-toast";
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, User, ShoppingCart, DollarSign, Package, Tag, TrendingDown } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-
-interface VendaItem {
-  id: string;
-  produto: string;
-  sku: string;
-  quantidade: number;
-  precoUnitario: number;
-  descontoAplicado: number;
+interface MovementItem {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
   subtotal: number;
 }
 
-interface Venda {
+interface UnifiedMovement {
   id: string;
-  dataHora: string;
-  valorTotal: number;
-  metodoPagamento: string;
-  vendedor: string;
-  itens: VendaItem[];
+  type:
+    | "VENDA"
+    | "ENTRADA"
+    | "AJUSTE_QUEBRA"
+    | "AJUSTE_INVENTARIO"
+    | "DEVOLUCAO";
+  date: string;
+  user: string;
+  // Fields for Sales
+  totalValue?: number;
+  items?: MovementItem[];
+  paymentMethod?: string;
+  // Fields for Stock Movements
+  productName?: string;
+  quantity?: number;
+  reason?: string;
 }
 
-interface MovimentacoesClientProps {
-  companyId?: string; // Opcional: usado pelo Master
-}
-
-export default function MovimentacoesClient({ companyId }: MovimentacoesClientProps = {}) {
-  const [vendas, setVendas] = useState<Venda[]>([]);
+export default function MovimentacoesClient() {
+  const [movements, setMovements] = useState<UnifiedMovement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("TODOS");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
-    fetchVendas();
-  }, [companyId]); // Re-fetch quando companyId mudar
+    fetchMovements();
+  }, [typeFilter, startDate, endDate]);
 
-  const fetchVendas = async () => {
+  const fetchMovements = async () => {
+    setLoading(true);
     try {
-      // 🔥 Incluir companyId se fornecido
-      const url = companyId 
-        ? `/api/admin/vendas?companyId=${companyId}` 
-        : '/api/admin/vendas'
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Erro ao buscar vendas');
+      const params = new URLSearchParams();
+      if (typeFilter !== "TODOS") params.append("type", typeFilter);
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+
+      const response = await fetch(
+        `/api/admin/movimentacoes?${params.toString()}`
+      );
       const data = await response.json();
-      
-      if (Array.isArray(data)) {
-        setVendas(data);
-      } else {
-        setVendas([]);
-      }
+
+      if (!response.ok)
+        throw new Error(data.error || "Erro ao buscar movimentações");
+
+      setMovements(data);
     } catch (error) {
-      console.error('Erro ao buscar vendas:', error);
-      setVendas([]);
+      console.error("Erro:", error);
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Não foi possível carregar as vendas',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Não foi possível carregar as movimentações.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const getMetodoPagamentoLabel = (metodo: string) => {
-    const metodos: Record<string, string> = {
-      dinheiro: 'Dinheiro',
-      debito: 'Cartão de Débito',
-      credito: 'Cartão de Crédito',
-      pix: 'PIX',
-    };
-    return metodos[metodo] || metodo;
+  const filteredMovements = movements.filter((mov) => {
+    const searchLower = searchTerm.toLowerCase();
+    const matchesUser = mov.user.toLowerCase().includes(searchLower);
+    const matchesProduct =
+      mov.productName?.toLowerCase().includes(searchLower) ||
+      mov.items?.some((item) =>
+        item.productName.toLowerCase().includes(searchLower)
+      );
+
+    return matchesUser || matchesProduct;
+  });
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
-  const getMetodoPagamentoColor = (metodo: string) => {
-    const colors: Record<string, string> = {
-      dinheiro: 'bg-green-100 text-green-700',
-      debito: 'bg-blue-100 text-blue-700',
-      credito: 'bg-purple-100 text-purple-700',
-      pix: 'bg-teal-100 text-teal-700',
-    };
-    return colors[metodo] || 'bg-gray-100 text-gray-700';
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "VENDA":
+        return <ShoppingCart className="h-5 w-5 text-blue-500" />;
+      case "ENTRADA":
+        return <ArrowDownCircle className="h-5 w-5 text-green-500" />;
+      case "AJUSTE_QUEBRA":
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+      case "AJUSTE_INVENTARIO":
+        return <Wrench className="h-5 w-5 text-gray-500" />;
+      default:
+        return <Wrench className="h-5 w-5 text-gray-500" />;
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-600">Carregando vendas...</div>
-      </div>
-    );
-  }
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case "VENDA":
+        return "Venda";
+      case "ENTRADA":
+        return "Entrada de Estoque";
+      case "AJUSTE_QUEBRA":
+        return "Quebra/Perda";
+      case "AJUSTE_INVENTARIO":
+        return "Ajuste Manual";
+      case "DEVOLUCAO":
+        return "Devolução";
+      default:
+        return type;
+    }
+  };
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Histórico de Vendas</h1>
-        <p className="text-gray-600 mt-1">Visualize todas as vendas realizadas com detalhes dos itens</p>
-      </div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Central de Movimentações</CardTitle>
+          <CardDescription>
+            Visualize vendas, entradas e ajustes de estoque em uma linha do
+            tempo unificada.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por usuário ou produto..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-[200px]">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo de Movimentação" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TODOS">Todas</SelectItem>
+                  <SelectItem value="VENDA">Vendas</SelectItem>
+                  <SelectItem value="ENTRADA">Entradas</SelectItem>
+                  <SelectItem value="PERDA">Perdas/Quebras</SelectItem>
+                  <SelectItem value="AJUSTE">Ajustes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-[150px]"
+              />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-[150px]"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      {vendas.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <ShoppingCart className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhuma venda registrada
-            </h3>
-            <p className="text-gray-600 text-center mb-4">
-              As vendas realizadas aparecerão aqui
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Accordion type="single" collapsible className="space-y-4">
-          {vendas.map((venda) => (
-            <AccordionItem key={venda.id} value={venda.id} className="border rounded-lg bg-white shadow-sm">
-              <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50">
-                <div className="flex items-center justify-between w-full pr-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-blue-100 rounded-lg">
-                      <ShoppingCart className="h-5 w-5 text-blue-600" />
+      <div className="space-y-4">
+        {loading ? (
+          <div className="text-center py-8 text-gray-500">
+            Carregando movimentações...
+          </div>
+        ) : filteredMovements.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 border rounded-lg bg-gray-50">
+            Nenhuma movimentação encontrada no período.
+          </div>
+        ) : (
+          filteredMovements.map((mov) => (
+            <Card key={mov.id} className="overflow-hidden">
+              {mov.type === "VENDA" ? (
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1" className="border-none">
+                    <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-blue-100 rounded-full">
+                          {getIcon(mov.type)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-lg">Venda</h3>
+                            <Badge
+                              variant="outline"
+                              className="font-mono text-xs"
+                            >
+                              #{mov.id.slice(-6).toUpperCase()}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-500 flex items-center gap-2">
+                            <span>
+                              {format(new Date(mov.date), "dd/MM/yyyy HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </span>
+                            <span>•</span>
+                            <span>{mov.user}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Total</p>
+                          <p className="font-bold text-green-600 text-lg">
+                            {formatCurrency(mov.totalValue || 0)}
+                          </p>
+                        </div>
+                        <AccordionTrigger className="hover:no-underline py-0" />
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <div className="flex items-center space-x-3 mb-1">
-                        <span className="font-semibold text-lg text-gray-900">
-                          Venda #{venda.id.substring(0, 8)}
+                    <AccordionContent>
+                      <div className="bg-gray-50 p-4 border-t">
+                        <div className="grid gap-2">
+                          <div className="font-medium text-sm text-gray-500 mb-2">
+                            Itens da Venda
+                          </div>
+                          {mov.items?.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm"
+                            >
+                              <span>
+                                {item.quantity}x {item.productName}
+                              </span>
+                              <span className="font-mono">
+                                {formatCurrency(item.subtotal)}
+                              </span>
+                            </div>
+                          ))}
+                          <div className="mt-2 pt-2 border-t flex justify-between text-sm font-medium">
+                            <span>Forma de Pagamento</span>
+                            <span className="capitalize">
+                              {mov.paymentMethod}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ) : (
+                <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`p-2 rounded-full ${
+                        mov.type === "ENTRADA"
+                          ? "bg-green-100"
+                          : mov.type === "AJUSTE_QUEBRA"
+                          ? "bg-red-100"
+                          : "bg-gray-100"
+                      }`}
+                    >
+                      {getIcon(mov.type)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">
+                          {getTypeLabel(mov.type)}
+                        </h3>
+                      </div>
+                      <div className="text-sm text-gray-500 flex items-center gap-2">
+                        <span>
+                          {format(new Date(mov.date), "dd/MM/yyyy HH:mm", {
+                            locale: ptBR,
+                          })}
                         </span>
-                        <Badge className={getMetodoPagamentoColor(venda.metodoPagamento)}>
-                          {getMetodoPagamentoLabel(venda.metodoPagamento)}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(venda.dataHora).toLocaleString('pt-BR')}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <User className="h-4 w-4" />
-                          <span>{venda.vendedor}</span>
-                        </div>
+                        <span>•</span>
+                        <span>{mov.user}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">Valor Total</p>
-                      <p className="text-xl font-bold text-green-600">
-                        R$ {venda.valorTotal.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4">
-                <div className="mt-4 space-y-3">
-                  <h4 className="font-medium text-sm text-gray-700 mb-3">Itens da Venda:</h4>
-                  {venda.itens.map((item) => (
-                    <div key={item.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div className="md:col-span-2">
-                          <div className="flex items-start space-x-2">
-                            <Package className="h-4 w-4 text-gray-500 mt-1" />
-                            <div>
-                              <p className="font-medium text-gray-900">{item.produto}</p>
-                              <p className="text-xs text-gray-500">SKU: {item.sku}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Quantidade:</span>
-                            <span className="font-medium">{item.quantidade} un.</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">Preço Unit.:</span>
-                            <span className="font-medium">R$ {item.precoUnitario.toFixed(2)}</span>
-                          </div>
-                        </div>
 
-                        <div className="space-y-1">
-                          {item.descontoAplicado > 0 && (
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-600 flex items-center gap-1">
-                                <TrendingDown className="h-3 w-3 text-red-500" />
-                                Desconto:
-                              </span>
-                              <span className="font-medium text-red-600">
-                                - R$ {item.descontoAplicado.toFixed(2)}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between text-sm pt-1 border-t border-gray-300">
-                            <span className="text-gray-600">Subtotal:</span>
-                            <span className="font-bold text-green-600">R$ {item.subtotal.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{mov.productName}</span>
+                      <Badge
+                        variant={
+                          mov.type === "ENTRADA" ? "default" : "destructive"
+                        }
+                      >
+                        {mov.type === "ENTRADA" ? "+" : "-"}
+                        {Math.abs(mov.quantity || 0)}
+                      </Badge>
                     </div>
-                  ))}
-                  
-                  {/* Resumo do Total */}
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">
-                        Total de itens: <span className="font-medium">{venda.itens.length}</span>
-                      </span>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500">Valor Total da Venda</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          R$ {venda.valorTotal.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
+                    {mov.reason && (
+                      <p className="text-sm text-gray-500 italic max-w-md text-right">
+                        "{mov.reason}"
+                      </p>
+                    )}
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      )}
+              )}
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }

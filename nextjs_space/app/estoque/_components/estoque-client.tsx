@@ -64,8 +64,17 @@ interface Product {
   estoqueAtual: number;
   estoqueMinimo: number;
   imagemUrl?: string | null;
+  categoryId?: string | null;
+  category?: {
+    nome: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+interface Category {
+  id: string;
+  nome: string;
 }
 
 interface Lote {
@@ -82,15 +91,22 @@ interface EstoqueClientProps {
 
 export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // New Category Dialog State
+  const [newCategoryDialogOpen, setNewCategoryDialogOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "todos" | "baixo" | "normal"
   >("todos");
+  const [categoryFilter, setCategoryFilter] = useState("todos");
   const [ordenacao, setOrdenacao] = useState("nome-asc");
 
   // Lotes
@@ -99,6 +115,67 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     useState<Product | null>(null);
   const [productLots, setProductLots] = useState<Lote[]>([]);
   const [loadingLots, setLoadingLots] = useState(false);
+
+  // New Lot State
+  const [newLoteData, setNewLoteData] = useState({
+    numeroLote: "",
+    dataValidade: "",
+    quantidade: "",
+    precoCompra: "",
+  });
+  const [creatingLote, setCreatingLote] = useState(false);
+  const [showNewLoteForm, setShowNewLoteForm] = useState(false);
+
+  const handleCreateLote = async () => {
+    if (!selectedProductForLots || !newLoteData.quantidade) return;
+
+    setCreatingLote(true);
+    try {
+      const response = await fetch("/api/admin/lotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          produtoId: selectedProductForLots.id,
+          numeroLote: newLoteData.numeroLote,
+          dataValidade: newLoteData.dataValidade || null,
+          quantidade: parseInt(newLoteData.quantidade),
+          precoCompra: newLoteData.precoCompra
+            ? parseFloat(newLoteData.precoCompra)
+            : 0,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao criar lote");
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Lote criado com sucesso!",
+      });
+
+      fetchProductLots(selectedProductForLots.id);
+      fetchProducts(); // Atualizar estoque total
+      setNewLoteData({
+        numeroLote: "",
+        dataValidade: "",
+        quantidade: "",
+        precoCompra: "",
+      });
+      setShowNewLoteForm(false);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao criar lote",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingLote(false);
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -111,6 +188,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     imagemUrl: "",
     loteInicial: "",
     validadeInicial: "",
+    categoryId: "",
   });
   const [semValidadeInicial, setSemValidadeInicial] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -119,7 +197,20 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("/api/admin/categories");
+      const data = await response.json();
+      if (response.ok) {
+        setCategories(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar categorias:", error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -199,6 +290,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         imagemUrl: product.imagemUrl || "",
         loteInicial: "",
         validadeInicial: "",
+        categoryId: product.categoryId || "",
       });
       setImagePreview("");
       setSelectedFile(null);
@@ -215,6 +307,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         imagemUrl: "",
         loteInicial: "0",
         validadeInicial: "",
+        categoryId: "",
       });
       setImagePreview("");
       setSelectedFile(null);
@@ -236,10 +329,52 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       imagemUrl: "",
       loteInicial: "",
       validadeInicial: "",
+      categoryId: "",
     });
     setSelectedFile(null);
     setImagePreview("");
     setSemValidadeInicial(false);
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    setCreatingCategory(true);
+    try {
+      const response = await fetch("/api/admin/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: newCategoryName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao criar categoria");
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Categoria criada com sucesso!",
+      });
+
+      // Atualizar lista e selecionar a nova categoria
+      setCategories((prev) =>
+        [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome))
+      );
+      setFormData((prev) => ({ ...prev, categoryId: data.id }));
+      setNewCategoryName("");
+      setNewCategoryDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro ao criar categoria",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingCategory(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -335,6 +470,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
           validadeInicial: semValidadeInicial
             ? null
             : formData.validadeInicial || undefined,
+          categoryId: formData.categoryId || null,
         }),
       });
 
@@ -388,9 +524,19 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         matchesStatus = product.estoqueAtual > product.estoqueMinimo;
       }
 
-      return matchesSearch && matchesStatus;
+      let matchesCategory = true;
+      if (categoryFilter !== "todos") {
+        if (categoryFilter === "sem_categoria") {
+          matchesCategory = !product.categoryId;
+        } else {
+          matchesCategory = product.categoryId === categoryFilter;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesCategory;
     })
     .sort((a, b) => {
+      // ... (sorting logic)
       switch (ordenacao) {
         case "nome-asc":
           return a.nome.localeCompare(b.nome);
@@ -451,6 +597,23 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               </div>
             </div>
             <div className="w-full md:w-[200px]">
+              <Label>Categoria</Label>
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as categorias" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas</SelectItem>
+                  <SelectItem value="sem_categoria">Sem Categoria</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full md:w-[200px]">
               <Label>Status do Estoque</Label>
               <Select
                 value={statusFilter}
@@ -501,6 +664,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
             <TableHeader>
               <TableRow>
                 <TableHead>Produto</TableHead>
+                <TableHead>Categoria</TableHead>
                 <TableHead>Preços</TableHead>
                 <TableHead>Estoque Total</TableHead>
                 <TableHead>Lotes</TableHead>
@@ -510,7 +674,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
             <TableBody>
               {filteredAndSortedProducts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     <Package className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                     <p className="text-gray-500">Nenhum produto encontrado</p>
                   </TableCell>
@@ -525,6 +689,15 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                           {product.sku}
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {product.category ? (
+                        <Badge variant="secondary" className="font-normal">
+                          {product.category.nome}
+                        </Badge>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
@@ -660,6 +833,41 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                 />
               </div>
             </div>
+
+            {/* Categoria */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={formData.categoryId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, categoryId: value })
+                  }
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sem_categoria">Sem Categoria</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setNewCategoryDialogOpen(true)}
+                  title="Nova Categoria"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="precoCompra">Custo (R$)</Label>
@@ -831,6 +1039,46 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de Nova Categoria */}
+      <Dialog
+        open={newCategoryDialogOpen}
+        onOpenChange={setNewCategoryDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Nova Categoria</DialogTitle>
+            <DialogDescription>
+              Crie uma nova categoria para organizar seus produtos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="categoryName">Nome da Categoria</Label>
+              <Input
+                id="categoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Ex: Bebidas, Limpeza..."
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setNewCategoryDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateCategory}
+                disabled={creatingCategory}
+              >
+                {creatingCategory ? "Criando..." : "Criar Categoria"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog de Visualização de Lotes */}
       <Dialog open={lotsDialogOpen} onOpenChange={setLotsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
@@ -841,98 +1089,189 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
             </DialogDescription>
           </DialogHeader>
 
-          {loadingLots ? (
-            <div className="py-8 text-center text-gray-500">
-              Carregando lotes...
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="border rounded-md overflow-hidden max-h-[300px] overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead>Lote</TableHead>
-                      <TableHead>Validade</TableHead>
-                      <TableHead>Qtd.</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {productLots.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-center py-4 text-gray-500"
-                        >
-                          Nenhum lote encontrado.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      productLots.map((lote) => (
-                        <TableRow key={lote.id}>
-                          <TableCell className="font-mono text-xs">
-                            {lote.numeroLote}
-                          </TableCell>
-                          <TableCell>
-                            {lote.dataValidade ? (
-                              <div className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3 text-gray-400" />
-                                {new Date(lote.dataValidade).toLocaleDateString(
-                                  "pt-BR"
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-gray-500 italic">
-                                Indeterminado
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {lote.quantidade}
-                          </TableCell>
-                          <TableCell>
-                            {lote.status === "vencido" ? (
-                              <Badge
-                                variant="destructive"
-                                className="text-[10px] h-5"
-                              >
-                                Vencido
-                              </Badge>
-                            ) : lote.status === "proximo_vencimento" ? (
-                              <Badge className="bg-yellow-500 text-[10px] h-5">
-                                Vence Logo
-                              </Badge>
-                            ) : !lote.dataValidade ? (
-                              <Badge
-                                variant="secondary"
-                                className="text-[10px] h-5"
-                              >
-                                S/ Validade
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="text-green-600 border-green-200 text-[10px] h-5"
-                              >
-                                Normal
-                              </Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+          {showNewLoteForm ? (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="numeroLote">Número do Lote (Opcional)</Label>
+                  <Input
+                    id="numeroLote"
+                    value={newLoteData.numeroLote}
+                    onChange={(e) =>
+                      setNewLoteData({
+                        ...newLoteData,
+                        numeroLote: e.target.value,
+                      })
+                    }
+                    placeholder="Gerado automaticamente"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quantidadeLote">Quantidade</Label>
+                  <Input
+                    id="quantidadeLote"
+                    type="number"
+                    value={newLoteData.quantidade}
+                    onChange={(e) =>
+                      setNewLoteData({
+                        ...newLoteData,
+                        quantidade: e.target.value,
+                      })
+                    }
+                    placeholder="Qtd"
+                  />
+                </div>
               </div>
-              <div className="flex justify-end">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="validadeLote">Validade</Label>
+                  <Input
+                    id="validadeLote"
+                    type="date"
+                    value={newLoteData.dataValidade}
+                    onChange={(e) =>
+                      setNewLoteData({
+                        ...newLoteData,
+                        dataValidade: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custoLote">Custo Unit. (R$)</Label>
+                  <Input
+                    id="custoLote"
+                    type="number"
+                    step="0.01"
+                    value={newLoteData.precoCompra}
+                    onChange={(e) =>
+                      setNewLoteData({
+                        ...newLoteData,
+                        precoCompra: e.target.value,
+                      })
+                    }
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
-                  onClick={() => setLotsDialogOpen(false)}
+                  onClick={() => setShowNewLoteForm(false)}
                 >
-                  Fechar
+                  Cancelar
+                </Button>
+                <Button onClick={handleCreateLote} disabled={creatingLote}>
+                  {creatingLote ? "Salvando..." : "Salvar Lote"}
                 </Button>
               </div>
             </div>
+          ) : (
+            <>
+              {loadingLots ? (
+                <div className="py-8 text-center text-gray-500">
+                  Carregando lotes...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      onClick={() => setShowNewLoteForm(true)}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Novo Lote
+                    </Button>
+                  </div>
+                  <div className="border rounded-md overflow-hidden max-h-[300px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50">
+                          <TableHead>Lote</TableHead>
+                          <TableHead>Validade</TableHead>
+                          <TableHead>Qtd.</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {productLots.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="text-center py-4 text-gray-500"
+                            >
+                              Nenhum lote encontrado.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          productLots.map((lote) => (
+                            <TableRow key={lote.id}>
+                              <TableCell className="font-mono text-xs">
+                                {lote.numeroLote}
+                              </TableCell>
+                              <TableCell>
+                                {lote.dataValidade ? (
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3 text-gray-400" />
+                                    {new Date(
+                                      lote.dataValidade
+                                    ).toLocaleDateString("pt-BR")}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500 italic">
+                                    Indeterminado
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {lote.quantidade}
+                              </TableCell>
+                              <TableCell>
+                                {lote.status === "vencido" ? (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-[10px] h-5"
+                                  >
+                                    Vencido
+                                  </Badge>
+                                ) : lote.status === "proximo_vencimento" ? (
+                                  <Badge className="bg-yellow-500 text-[10px] h-5">
+                                    Vence Logo
+                                  </Badge>
+                                ) : !lote.dataValidade ? (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] h-5"
+                                  >
+                                    S/ Validade
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-green-600 border-green-200 text-[10px] h-5"
+                                  >
+                                    Normal
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setLotsDialogOpen(false)}
+                    >
+                      Fechar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>

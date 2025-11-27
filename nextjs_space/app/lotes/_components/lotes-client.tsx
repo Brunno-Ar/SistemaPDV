@@ -342,7 +342,10 @@ export default function LotesClient() {
                 Gerencie validades e estoque por lote
               </p>
             </div>
-            {/* ... (Dialog for Add Lote) */}
+            <Button onClick={handleOpenDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Lote
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -455,6 +458,111 @@ export default function LotesClient() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Novo Lote</DialogTitle>
+            <DialogDescription>
+              Adicione um novo lote ao estoque.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="produto">Produto</Label>
+              <Select
+                value={formData.produtoId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, produtoId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.nome} (SKU: {product.sku})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="numeroLote">Número do Lote</Label>
+                <Input
+                  id="numeroLote"
+                  value={formData.numeroLote}
+                  onChange={(e) =>
+                    setFormData({ ...formData, numeroLote: e.target.value })
+                  }
+                  placeholder="Opcional (Gerado auto)"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="quantidade">Quantidade</Label>
+                <Input
+                  id="quantidade"
+                  type="number"
+                  value={formData.quantidade}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quantidade: e.target.value })
+                  }
+                  placeholder="Qtd"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="dataValidade">Data de Validade</Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="semValidade"
+                    checked={semValidade}
+                    onCheckedChange={(checked) => {
+                      setSemValidade(checked as boolean);
+                      if (checked) {
+                        setFormData({ ...formData, dataValidade: "" });
+                      }
+                    }}
+                  />
+                  <Label
+                    htmlFor="semValidade"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Sem validade
+                  </Label>
+                </div>
+              </div>
+              <Input
+                id="dataValidade"
+                type="date"
+                value={formData.dataValidade}
+                onChange={(e) =>
+                  setFormData({ ...formData, dataValidade: e.target.value })
+                }
+                disabled={semValidade}
+                required={!semValidade}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseDialog}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit">Criar Lote</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

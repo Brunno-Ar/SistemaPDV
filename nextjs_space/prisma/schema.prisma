@@ -1,16 +1,15 @@
-
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // Enums
@@ -85,13 +84,13 @@ model User {
   role          Role      @default(caixa)
   empresaId     String?   @map("empresa_id")
   createdAt     DateTime  @default(now()) @map("created_at")
-  
+
   accounts      Account[]
   sessions      Session[]
   sales         Sale[]
   movimentacoes MovimentacaoEstoque[]
   caixas        Caixa[]
-  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
+  empresa       Empresa?              @relation(fields: [empresaId], references: [id])
 
   @@map("users")
 }
@@ -105,22 +104,36 @@ model VerificationToken {
 }
 
 model Empresa {
-  id              String         @id @default(cuid())
+  id              String        @id @default(cuid())
   nome            String
-  status          StatusEmpresa  @default(PENDENTE)
-  vencimentoPlano DateTime?      @map("vencimento_plano")
-  diaVencimento   Int            @default(1) @map("dia_vencimento")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  dataCriacao     DateTime       @default(now()) @map("data_criacao") // Redundante mas solicitado
-  
-  users           User[]
-  products        Product[]
-  sales           Sale[]
-  movimentacoes   MovimentacaoEstoque[]
-  avisos          Aviso[]
-  caixas          Caixa[]
+  status          StatusEmpresa @default(PENDENTE)
+  vencimentoPlano DateTime?     @map("vencimento_plano")
+  diaVencimento   Int           @default(1) @map("dia_vencimento")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  dataCriacao     DateTime      @default(now()) @map("data_criacao") // Redundante mas solicitado
+
+  users         User[]
+  products      Product[]
+  sales         Sale[]
+  movimentacoes MovimentacaoEstoque[]
+  avisos        Aviso[]
+  categories    Category[]
+  Caixa         Caixa[]
 
   @@map("empresas")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  nome      String
+  empresaId String   @map("empresa_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  empresa  Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@index([empresaId])
+  @@map("categories")
 }
 
 model Product {
@@ -133,10 +146,12 @@ model Product {
   estoqueMinimo Int      @default(5) @map("estoque_minimo")
   imagemUrl     String?  @map("imagem_url")
   empresaId     String?  @map("empresa_id")
+  categoryId    String?  @map("category_id")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
-  
-  empresa       Empresa?  @relation(fields: [empresaId], references: [id])
+
+  empresa       Empresa?              @relation(fields: [empresaId], references: [id])
+  category      Category?             @relation(fields: [categoryId], references: [id])
   saleItems     SaleItem[]
   movimentacoes MovimentacaoEstoque[]
   lotes         Lote[]
@@ -145,19 +160,19 @@ model Product {
 }
 
 model Lote {
-  id            String    @id @default(cuid())
-  numeroLote    String    @map("numero_lote")
-  dataValidade  DateTime? @map("data_validade")
-  precoCompra   Decimal   @default(0) @map("preco_compra") @db.Decimal(10, 2)
-  quantidade    Int       @default(0)
-  produtoId     String    @map("produto_id")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  
-  produto       Product  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  numeroLote   String    @map("numero_lote")
+  dataValidade DateTime? @map("data_validade")
+  precoCompra  Decimal   @default(0) @map("preco_compra") @db.Decimal(10, 2)
+  quantidade   Int       @default(0)
+  produtoId    String    @map("produto_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-  @@map("lotes")
+  produto Product @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
   @@index([produtoId])
   @@index([dataValidade])
+  @@map("lotes")
 }
 
 model Sale {
@@ -168,7 +183,7 @@ model Sale {
   valorTotal      Decimal         @map("valor_total") @db.Decimal(10, 2)
   metodoPagamento MetodoPagamento @map("metodo_pagamento")
   createdAt       DateTime        @default(now()) @map("created_at")
-  
+
   user      User       @relation(fields: [userId], references: [id])
   empresa   Empresa?   @relation(fields: [empresaId], references: [id])
   saleItems SaleItem[]
@@ -185,7 +200,7 @@ model SaleItem {
   custoUnitario    Decimal @default(0) @map("custo_unitario") @db.Decimal(10, 2)
   descontoAplicado Decimal @default(0) @map("desconto_aplicado") @db.Decimal(10, 2)
   subtotal         Decimal @db.Decimal(10, 2)
-  
+
   sale    Sale    @relation(fields: [saleId], references: [id])
   product Product @relation(fields: [productId], references: [id])
 
@@ -201,10 +216,10 @@ model MovimentacaoEstoque {
   quantidade       Int
   motivo           String?
   dataMovimentacao DateTime         @default(now()) @map("data_movimentacao")
-  
-  produto  Product @relation(fields: [produtoId], references: [id])
-  usuario  User    @relation(fields: [usuarioId], references: [id])
-  empresa  Empresa @relation(fields: [empresaId], references: [id])
+
+  produto Product @relation(fields: [produtoId], references: [id])
+  usuario User    @relation(fields: [usuarioId], references: [id])
+  empresa Empresa @relation(fields: [empresaId], references: [id])
 
   @@map("movimentacoes_estoque")
 }
@@ -215,29 +230,29 @@ model Aviso {
   importante Boolean  @default(false)
   empresaId  String   @map("empresa_id")
   criadoEm   DateTime @default(now()) @map("criado_em")
-  
-  empresa    Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
-  @@map("avisos")
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
   @@index([empresaId])
+  @@map("avisos")
 }
 
 model Caixa {
-  id              String       @id @default(cuid())
-  usuarioId       String       @map("usuario_id")
-  empresaId       String       @map("empresa_id")
-  saldoInicial    Decimal      @map("saldo_inicial") @db.Decimal(10, 2)
-  saldoFinal      Decimal?     @map("saldo_final") @db.Decimal(10, 2)
-  quebraDeCaixa   Decimal?     @map("quebra_de_caixa") @db.Decimal(10, 2)
-  status          StatusCaixa  @default(ABERTO)
-  dataAbertura    DateTime     @default(now()) @map("data_abertura")
-  dataFechamento  DateTime?    @map("data_fechamento")
-  
-  usuario         User         @relation(fields: [usuarioId], references: [id])
-  empresa         Empresa      @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  id             String      @id @default(cuid())
+  usuarioId      String      @map("usuario_id")
+  empresaId      String      @map("empresa_id")
+  saldoInicial   Decimal     @map("saldo_inicial") @db.Decimal(10, 2)
+  saldoFinal     Decimal?    @map("saldo_final") @db.Decimal(10, 2)
+  quebraDeCaixa  Decimal?    @map("quebra_de_caixa") @db.Decimal(10, 2)
+  status         StatusCaixa @default(ABERTO)
+  dataAbertura   DateTime    @default(now()) @map("data_abertura")
+  dataFechamento DateTime?   @map("data_fechamento")
 
-  @@map("caixas")
+  usuario User    @relation(fields: [usuarioId], references: [id])
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
   @@index([usuarioId])
   @@index([empresaId])
   @@index([status])
+  @@map("caixas")
 }

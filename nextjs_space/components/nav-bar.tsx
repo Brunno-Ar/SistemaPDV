@@ -80,7 +80,7 @@ export function NavBar() {
     },
     {
       href: "/movimentacoes",
-      label: "Vendas",
+      label: "Movimentações",
       icon: ArrowRightLeft,
     },
     {
