@@ -814,7 +814,10 @@ export default function EmpresasClient() {
                 <li>Todo o Histórico de Estoque</li>
                 <li>Todos os Caixas e Avisos</li>
                 <li>
-                  <strong>O Estoque de todos os produtos será ZERADO.</strong>
+                  <strong>
+                    O Estoque Físico (Lotes) será MANTIDO. Apenas o histórico
+                    financeiro será apagado.
+                  </strong>
                 </li>
               </ul>
               <p className="text-sm">

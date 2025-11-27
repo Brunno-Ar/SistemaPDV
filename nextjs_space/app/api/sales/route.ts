@@ -16,17 +16,25 @@ async function descontarLotesFEFO(
   produtoId: string,
   quantidadeNecessaria: number
 ): Promise<{ lotesUsados: string[]; quantidadeTotal: number }> {
-  // 1. Buscar todos os lotes do produto com estoque disponível, ordenados por validade
-  const lotes = await tx.lote.findMany({
+  // 1. Buscar todos os lotes do produto com estoque disponível
+  // Ordenação feita em memória para garantir que NULLs (sem validade) fiquem por último
+  let lotes = await tx.lote.findMany({
     where: {
       produtoId: produtoId,
       quantidade: {
         gt: 0,
       },
     },
-    orderBy: {
-      dataValidade: "asc", // FEFO: Os que vencem primeiro saem primeiro (Nulos ficam por último no Postgres ASC)
-    },
+  });
+
+  // Ordenar em memória: Datas mais antigas primeiro, NULLs por último
+  lotes.sort((a: any, b: any) => {
+    if (a.dataValidade === b.dataValidade) return 0;
+    if (a.dataValidade === null) return 1;
+    if (b.dataValidade === null) return -1;
+    return (
+      new Date(a.dataValidade).getTime() - new Date(b.dataValidade).getTime()
+    );
   });
 
   // 🔥 FIX: Se não há lotes, criar um lote genérico para produtos legados

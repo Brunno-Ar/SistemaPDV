@@ -198,9 +198,6 @@ export default function RelatoriosClient({
 
   const clearFilter = () => {
     setDateRange({ startDate: "", endDate: "" });
-    // Resetar estados para null/vazio antes de buscar
-    setAnalytics(null);
-    setRecentSales([]);
     setLoading(true);
 
     // Buscar dados sem filtros (padrão)
