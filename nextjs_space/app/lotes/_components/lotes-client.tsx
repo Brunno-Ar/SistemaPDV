@@ -38,6 +38,7 @@ import {
   Package,
   Search,
   Filter,
+  Edit,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -46,6 +47,7 @@ interface Product {
   nome: string;
   sku: string;
   estoqueAtual: number;
+  estoqueMinimo: number;
 }
 
 interface Lote {
@@ -58,6 +60,8 @@ interface Lote {
   produto: {
     nome: string;
     sku: string;
+    estoqueAtual: number;
+    estoqueMinimo: number;
   };
   status?: string;
   diasParaVencer?: number;
@@ -68,11 +72,17 @@ export default function LotesClient() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingLoteId, setEditingLoteId] = useState<string | null>(null);
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "todos" | "vencido" | "proximo_vencimento" | "normal" | "sem_validade"
+    | "todos"
+    | "vencido"
+    | "proximo_vencimento"
+    | "normal"
+    | "sem_validade"
+    | "estoque_baixo"
   >("todos");
   const [ordenacao, setOrdenacao] = useState("nome-asc");
 
@@ -146,6 +156,21 @@ export default function LotesClient() {
       quantidade: "",
     });
     setSemValidade(false);
+    setEditingLoteId(null);
+    setDialogOpen(true);
+  };
+
+  const handleEdit = (lote: Lote) => {
+    setFormData({
+      produtoId: lote.produtoId,
+      numeroLote: lote.numeroLote,
+      dataValidade: lote.dataValidade
+        ? new Date(lote.dataValidade).toISOString().split("T")[0]
+        : "",
+      quantidade: lote.quantidade.toString(),
+    });
+    setSemValidade(!lote.dataValidade);
+    setEditingLoteId(lote.id);
     setDialogOpen(true);
   };
 
@@ -158,6 +183,7 @@ export default function LotesClient() {
       quantidade: "",
     });
     setSemValidade(false);
+    setEditingLoteId(null);
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -196,28 +222,35 @@ export default function LotesClient() {
     }
 
     try {
-      const response = await fetch("/api/admin/lotes", {
-        method: "POST",
+      const url = "/api/admin/lotes";
+      const method = editingLoteId ? "PUT" : "POST";
+      const body = {
+        id: editingLoteId,
+        produtoId: formData.produtoId,
+        numeroLote: formData.numeroLote,
+        dataValidade: semValidade ? null : formData.dataValidade,
+        quantidade,
+      };
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          produtoId: formData.produtoId,
-          numeroLote: formData.numeroLote,
-          dataValidade: semValidade ? null : formData.dataValidade,
-          quantidade,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar lote");
+        throw new Error(data.error || "Erro ao salvar lote");
       }
 
       toast({
         title: "Sucesso",
-        description: "Lote criado com sucesso",
+        description: editingLoteId
+          ? "Lote atualizado com sucesso"
+          : "Lote criado com sucesso",
       });
 
       handleCloseDialog();
@@ -227,14 +260,27 @@ export default function LotesClient() {
       toast({
         title: "Erro",
         description:
-          error instanceof Error ? error.message : "Erro ao criar lote",
+          error instanceof Error ? error.message : "Erro ao salvar lote",
         variant: "destructive",
       });
     }
   };
 
   const getStatusBadge = (lote: Lote) => {
-    if (lote.status === "sem_validade") {
+    if (
+      lote.produto.estoqueAtual <= lote.produto.estoqueMinimo &&
+      lote.status !== "vencido"
+    ) {
+      return (
+        <Badge
+          variant="destructive"
+          className="bg-red-100 text-red-800 hover:bg-red-200 flex items-center gap-1"
+        >
+          <AlertTriangle className="h-3 w-3" />
+          Estoque Baixo
+        </Badge>
+      );
+    } else if (lote.status === "sem_validade") {
       return (
         <Badge
           variant="secondary"
@@ -284,7 +330,13 @@ export default function LotesClient() {
 
       let matchesStatus = true;
       if (statusFilter !== "todos") {
-        matchesStatus = lote.status === statusFilter;
+        if (statusFilter === "estoque_baixo") {
+          matchesStatus =
+            lote.produto.estoqueAtual <= lote.produto.estoqueMinimo &&
+            lote.status !== "vencido";
+        } else {
+          matchesStatus = lote.status === statusFilter;
+        }
       }
 
       return matchesSearch && matchesStatus;
@@ -375,6 +427,9 @@ export default function LotesClient() {
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="normal">✅ Normal</SelectItem>
+                  <SelectItem value="estoque_baixo">
+                    ⚠️ Estoque Baixo
+                  </SelectItem>
                   <SelectItem value="proximo_vencimento">
                     ⚠️ Próximo Vencimento
                   </SelectItem>
@@ -424,6 +479,7 @@ export default function LotesClient() {
                   <TableHead>Quantidade</TableHead>
                   <TableHead>Data de Validade</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -451,6 +507,15 @@ export default function LotesClient() {
                         : "Indeterminado"}
                     </TableCell>
                     <TableCell>{getStatusBadge(lote)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(lote)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -462,9 +527,13 @@ export default function LotesClient() {
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Novo Lote</DialogTitle>
+            <DialogTitle>
+              {editingLoteId ? "Editar Lote" : "Novo Lote"}
+            </DialogTitle>
             <DialogDescription>
-              Adicione um novo lote ao estoque.
+              {editingLoteId
+                ? "Atualize as informações do lote."
+                : "Adicione um novo lote ao estoque."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
@@ -558,7 +627,9 @@ export default function LotesClient() {
               >
                 Cancelar
               </Button>
-              <Button type="submit">Criar Lote</Button>
+              <Button type="submit">
+                {editingLoteId ? "Salvar Alterações" : "Criar Lote"}
+              </Button>
             </div>
           </form>
         </DialogContent>

@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
             select: {
               nome: true,
               sku: true,
+              estoqueMinimo: true,
+              estoqueAtual: true,
             },
           },
         },
@@ -67,6 +69,8 @@ export async function GET(request: NextRequest) {
             select: {
               nome: true,
               sku: true,
+              estoqueMinimo: true,
+              estoqueAtual: true,
             },
           },
         },
@@ -339,6 +343,130 @@ export async function DELETE(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro ao excluir lote:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT /api/admin/lotes
+ * Atualiza um lote existente
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user || session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Acesso negado. Apenas administradores" },
+        { status: 403 }
+      );
+    }
+
+    const empresaId = session.user.empresaId;
+    if (!empresaId) {
+      return NextResponse.json(
+        { error: "Empresa não identificada" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { id, numeroLote, dataValidade, quantidade } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "ID do lote é obrigatório" },
+        { status: 400 }
+      );
+    }
+
+    // Buscar o lote atual
+    const loteAtual = await prisma.lote.findFirst({
+      where: {
+        id,
+        produto: {
+          empresaId,
+        },
+      },
+      include: {
+        produto: true,
+      },
+    });
+
+    if (!loteAtual) {
+      return NextResponse.json(
+        { error: "Lote não encontrado" },
+        { status: 404 }
+      );
+    }
+
+    // Validar nova quantidade
+    const novaQuantidade = parseInt(quantidade);
+    if (isNaN(novaQuantidade) || novaQuantidade < 0) {
+      return NextResponse.json(
+        { error: "Quantidade inválida" },
+        { status: 400 }
+      );
+    }
+
+    // Validar nova data
+    let novaDataValidade: Date | null = null;
+    if (dataValidade) {
+      novaDataValidade = new Date(dataValidade);
+    }
+
+    // Calcular diferença de quantidade
+    const diferencaQuantidade = novaQuantidade - loteAtual.quantidade;
+
+    // Atualizar em transação
+    const result = await prisma.$transaction(async (tx: any) => {
+      // 1. Atualizar o lote
+      const loteAtualizado = await tx.lote.update({
+        where: { id },
+        data: {
+          numeroLote,
+          dataValidade: novaDataValidade,
+          quantidade: novaQuantidade,
+        },
+      });
+
+      // 2. Se houve mudança na quantidade, atualizar estoque do produto e registrar movimentação
+      if (diferencaQuantidade !== 0) {
+        await tx.product.update({
+          where: { id: loteAtual.produtoId },
+          data: {
+            estoqueAtual: {
+              increment: diferencaQuantidade,
+            },
+          },
+        });
+
+        await tx.movimentacaoEstoque.create({
+          data: {
+            produtoId: loteAtual.produtoId,
+            usuarioId: session.user.id,
+            empresaId,
+            tipo: "AJUSTE_INVENTARIO",
+            quantidade: diferencaQuantidade,
+            motivo: `Edição manual do lote ${numeroLote}. Ajuste: ${
+              diferencaQuantidade > 0 ? "+" : ""
+            }${diferencaQuantidade}`,
+          },
+        });
+      }
+
+      return loteAtualizado;
+    });
+
+    return NextResponse.json({
+      message: "Lote atualizado com sucesso",
+      lote: result,
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar lote:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
