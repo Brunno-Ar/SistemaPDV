@@ -32,7 +32,6 @@ import {
   Pause,
   RefreshCw,
   Trash2,
-  Eye,
   Key,
   MessageSquare,
   DollarSign,
@@ -63,13 +62,11 @@ export default function EmpresasClient() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [spyDialogOpen, setSpyDialogOpen] = useState(false);
   const [avisoDialogOpen, setAvisoDialogOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [empresaToDelete, setEmpresaToDelete] = useState<Empresa | null>(null);
-  const [spyData, setSpyData] = useState<any>(null);
   const [avisoData, setAvisoData] = useState({
     mensagem: "",
     importante: false,
@@ -191,38 +188,18 @@ export default function EmpresasClient() {
     }
   };
 
-  const handleSpy = async (empresa: Empresa) => {
-    setSelectedEmpresa(empresa);
-    setSpyDialogOpen(true);
-
-    try {
-      const response = await fetch("/api/master/empresas/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "spy", empresaId: empresa.id }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setSpyData(data.data);
-      }
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao buscar dados da empresa",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleResetSenha = async (empresaId: string) => {
     try {
       // Buscar primeiro admin da empresa
       const usersResponse = await fetch(
         `/api/master/empresas?empresaId=${empresaId}`
       );
-      const empresa = await usersResponse.json();
+      const data = await usersResponse.json();
+      const empresa = Array.isArray(data) ? data[0] : data;
+
+      if (!empresa) {
+        throw new Error("Empresa não encontrada");
+      }
 
       const adminUser = empresa.users?.find((u: any) => u.role === "admin");
 
@@ -596,19 +573,6 @@ export default function EmpresasClient() {
                     variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSpy(empresa);
-                    }}
-                    className="relative"
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Spy
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
                       handleResetSenha(empresa.id);
                     }}
                     className="relative"
@@ -661,43 +625,6 @@ export default function EmpresasClient() {
           </Card>
         ))}
       </div>
-
-      {/* Spy Mode Dialog */}
-      <Dialog open={spyDialogOpen} onOpenChange={setSpyDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Spy Mode: {selectedEmpresa?.nome}</DialogTitle>
-          </DialogHeader>
-          {spyData && (
-            <div className="space-y-3">
-              <div className="bg-green-50 p-4 rounded">
-                <p className="text-sm text-gray-600">Faturamento Total</p>
-                <p className="text-2xl font-bold text-green-600">
-                  R$ {spyData.faturamentoTotal.toFixed(2)}
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-gray-50 p-3 rounded text-center">
-                  <p className="text-sm text-gray-600">Vendas</p>
-                  <p className="text-xl font-semibold">{spyData.totalVendas}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded text-center">
-                  <p className="text-sm text-gray-600">Produtos</p>
-                  <p className="text-xl font-semibold">
-                    {spyData.totalProdutos}
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded text-center">
-                  <p className="text-sm text-gray-600">Usuários</p>
-                  <p className="text-xl font-semibold">
-                    {spyData.totalUsuarios}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Criar Aviso Dialog */}
       <Dialog open={avisoDialogOpen} onOpenChange={setAvisoDialogOpen}>
