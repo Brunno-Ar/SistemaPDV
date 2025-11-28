@@ -28,7 +28,12 @@ export function NavBar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  if (!session?.user || pathname?.startsWith("/master")) {
+  if (
+    !session?.user ||
+    pathname?.startsWith("/master") ||
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/dashboard")
+  ) {
     return null;
   }
 

@@ -6,10 +6,10 @@ import {
   SidebarLink,
   SidebarBrand,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Store, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, User, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 
-export default function MasterLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -17,18 +17,18 @@ export default function MasterLayout({
   const links = [
     {
       label: "Dashboard",
-      href: "/master",
+      href: "/dashboard",
       icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      label: "Empresas",
-      href: "/master/empresas",
-      icon: <Store className="h-5 w-5 flex-shrink-0" />,
+      label: "Vender",
+      href: "/vender",
+      icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      label: "Usuários",
-      href: "/master/usuarios",
-      icon: <Users className="h-5 w-5 flex-shrink-0" />,
+      label: "Minha Conta",
+      href: "/minha-conta",
+      icon: <User className="h-5 w-5 flex-shrink-0" />,
     },
   ];
 

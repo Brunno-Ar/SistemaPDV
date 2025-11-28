@@ -6,10 +6,20 @@ import {
   SidebarLink,
   SidebarBrand,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Store, Users, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  Calendar,
+  ArrowRightLeft,
+  Users,
+  BarChart3,
+  User,
+  LogOut,
+} from "lucide-react";
 import { signOut } from "next-auth/react";
 
-export default function MasterLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -17,18 +27,43 @@ export default function MasterLayout({
   const links = [
     {
       label: "Dashboard",
-      href: "/master",
+      href: "/admin",
       icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      label: "Empresas",
-      href: "/master/empresas",
-      icon: <Store className="h-5 w-5 flex-shrink-0" />,
+      label: "Vender",
+      href: "/vender",
+      icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
     },
     {
-      label: "Usuários",
-      href: "/master/usuarios",
+      label: "Estoque",
+      href: "/estoque",
+      icon: <Package className="h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: "Lotes",
+      href: "/lotes",
+      icon: <Calendar className="h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: "Movimentações",
+      href: "/movimentacoes",
+      icon: <ArrowRightLeft className="h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: "Equipe",
+      href: "/equipe",
       icon: <Users className="h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: "Relatórios",
+      href: "/relatorios",
+      icon: <BarChart3 className="h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: "Minha Conta",
+      href: "/minha-conta",
+      icon: <User className="h-5 w-5 flex-shrink-0" />,
     },
   ];
 
