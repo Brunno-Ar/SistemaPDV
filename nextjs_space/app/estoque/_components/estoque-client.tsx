@@ -84,6 +84,7 @@ interface Lote {
   numeroLote: string;
   dataValidade: string | null;
   quantidade: number;
+  precoCompra: number;
   status?: string;
 }
 
@@ -118,6 +119,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     useState<Product | null>(null);
   const [productLots, setProductLots] = useState<Lote[]>([]);
   const [loadingLots, setLoadingLots] = useState(false);
+  const [hideFinishedLots, setHideFinishedLots] = useState(true);
 
   // New Lot State
   const [newLoteData, setNewLoteData] = useState({
@@ -192,6 +194,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     loteInicial: "",
     validadeInicial: "",
     categoryId: "",
+    valorTotalLoteInicial: "",
   });
   const [semValidadeInicial, setSemValidadeInicial] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -208,6 +211,20 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       setStatusFilter("baixo");
     }
   }, [searchParams]);
+
+  // Cálculo automático do Custo Unitário (Estoque Inicial)
+  useEffect(() => {
+    const qtd = parseFloat(formData.loteInicial);
+    const total = parseFloat(formData.valorTotalLoteInicial);
+
+    if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
+      const unitario = total / qtd;
+      setFormData((prev) => ({
+        ...prev,
+        precoCompra: unitario.toFixed(2),
+      }));
+    }
+  }, [formData.loteInicial, formData.valorTotalLoteInicial]);
 
   const fetchCategories = async () => {
     try {
@@ -300,6 +317,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         loteInicial: "",
         validadeInicial: "",
         categoryId: product.categoryId || "",
+        valorTotalLoteInicial: "",
       });
       setImagePreview("");
       setSelectedFile(null);
@@ -317,6 +335,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         loteInicial: "0",
         validadeInicial: "",
         categoryId: "",
+        valorTotalLoteInicial: "",
       });
       setImagePreview("");
       setSelectedFile(null);
@@ -339,6 +358,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       loteInicial: "",
       validadeInicial: "",
       categoryId: "",
+      valorTotalLoteInicial: "",
     });
     setSelectedFile(null);
     setImagePreview("");
@@ -423,17 +443,18 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nome || !formData.precoVenda || !formData.precoCompra) {
+    // Validar campos obrigatórios (Custo pode ser 0/vazio no cadastro inicial se não houver estoque)
+    if (!formData.nome || !formData.precoVenda) {
       toast({
         title: "Erro",
-        description: "Preencha os campos obrigatórios",
+        description: "Preencha os campos obrigatórios (Nome e Valor de venda)",
         variant: "destructive",
       });
       return;
     }
 
     const precoVenda = parseFloat(formData.precoVenda);
-    const precoCompra = parseFloat(formData.precoCompra);
+    const precoCompra = parseFloat(formData.precoCompra) || 0;
     const estoqueAtual = formData.estoqueAtual
       ? parseInt(formData.estoqueAtual)
       : 0;
@@ -545,7 +566,6 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       return matchesSearch && matchesStatus && matchesCategory;
     })
     .sort((a, b) => {
-      // ... (sorting logic)
       switch (ordenacao) {
         case "nome-asc":
           return a.nome.localeCompare(b.nome);
@@ -876,22 +896,17 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {editingProduct && (
+                <div className="space-y-2">
+                  <Label className="text-gray-500">Custo (Auto)</Label>
+                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-gray-100 px-3 py-2 text-sm text-gray-500">
+                    R$ {formData.precoCompra}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="precoCompra">Custo (R$)</Label>
-                <Input
-                  id="precoCompra"
-                  type="number"
-                  step="0.01"
-                  value={formData.precoCompra}
-                  onChange={(e) =>
-                    setFormData({ ...formData, precoCompra: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="precoVenda">Venda (R$)</Label>
+                <Label htmlFor="precoVenda">Valor de venda</Label>
                 <Input
                   id="precoVenda"
                   type="number"
@@ -951,6 +966,34 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     💡 Se informar quantidade &gt; 0, o estoque inicial será
                     definido automaticamente
                   </p>
+                </div>
+
+                {/* 🆕 Campos de Custo do Lote */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="valorTotalLoteInicial">
+                      Valor de compra
+                    </Label>
+                    <Input
+                      id="valorTotalLoteInicial"
+                      type="number"
+                      step="0.01"
+                      value={formData.valorTotalLoteInicial}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          valorTotalLoteInicial: e.target.value,
+                        })
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-600">Custo Unit. (Auto)</Label>
+                    <div className="h-10 px-3 py-2 bg-blue-100 border border-blue-200 rounded-md text-blue-800 font-medium flex items-center">
+                      R$ {formData.precoCompra || "0.00"}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1094,7 +1137,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
 
       {/* Dialog de Visualização de Lotes */}
       <Dialog open={lotsDialogOpen} onOpenChange={setLotsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>Lotes: {selectedProductForLots?.nome}</DialogTitle>
             <DialogDescription>
@@ -1191,7 +1234,22 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="hideFinishedLots"
+                        checked={hideFinishedLots}
+                        onCheckedChange={(checked) =>
+                          setHideFinishedLots(checked as boolean)
+                        }
+                      />
+                      <Label
+                        htmlFor="hideFinishedLots"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Ocultar finalizados
+                      </Label>
+                    </div>
                     <InteractiveHoverButton
                       onClick={() => setShowNewLoteForm(true)}
                       className="gap-2 bg-[#137fec] text-white border-[#137fec]"
@@ -1208,73 +1266,100 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                         <TableRow className="bg-gray-50">
                           <TableHead>Lote</TableHead>
                           <TableHead>Validade</TableHead>
+                          <TableHead>Custo Total</TableHead>
                           <TableHead>Qtd.</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {productLots.length === 0 ? (
+                        {productLots.filter((lote) =>
+                          hideFinishedLots
+                            ? lote.status !== "esgotado" && lote.quantidade > 0
+                            : true
+                        ).length === 0 ? (
                           <TableRow>
                             <TableCell
-                              colSpan={4}
+                              colSpan={5}
                               className="text-center py-4 text-gray-500"
                             >
                               Nenhum lote encontrado.
                             </TableCell>
                           </TableRow>
                         ) : (
-                          productLots.map((lote) => (
-                            <TableRow key={lote.id}>
-                              <TableCell className="font-mono text-xs">
-                                {lote.numeroLote}
-                              </TableCell>
-                              <TableCell>
-                                {lote.dataValidade ? (
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3 text-gray-400" />
-                                    {new Date(
-                                      lote.dataValidade
-                                    ).toLocaleDateString("pt-BR")}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-500 italic">
-                                    Indeterminado
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {lote.quantidade}
-                              </TableCell>
-                              <TableCell>
-                                {lote.status === "vencido" ? (
-                                  <Badge
-                                    variant="destructive"
-                                    className="text-[10px] h-5"
-                                  >
-                                    Vencido
-                                  </Badge>
-                                ) : lote.status === "proximo_vencimento" ? (
-                                  <Badge className="bg-yellow-500 text-[10px] h-5">
-                                    Vence Logo
-                                  </Badge>
-                                ) : !lote.dataValidade ? (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-[10px] h-5"
-                                  >
-                                    S/ Validade
-                                  </Badge>
-                                ) : (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-green-600 border-green-200 text-[10px] h-5"
-                                  >
-                                    Normal
-                                  </Badge>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))
+                          productLots
+                            .filter((lote) =>
+                              hideFinishedLots
+                                ? lote.status !== "esgotado" &&
+                                  lote.quantidade > 0
+                                : true
+                            )
+                            .map((lote) => (
+                              <TableRow key={lote.id}>
+                                <TableCell className="font-mono text-xs">
+                                  {lote.numeroLote}
+                                </TableCell>
+                                <TableCell>
+                                  {lote.dataValidade ? (
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3 text-gray-400" />
+                                      {new Date(
+                                        lote.dataValidade
+                                      ).toLocaleDateString("pt-BR")}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-500 italic">
+                                      Indeterminado
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  R${" "}
+                                  {(
+                                    Number(lote.precoCompra || 0) *
+                                    lote.quantidade
+                                  ).toFixed(2)}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  {lote.quantidade}
+                                </TableCell>
+                                <TableCell>
+                                  {lote.status === "vencido" ? (
+                                    <Badge
+                                      variant="destructive"
+                                      className="text-[10px] h-5 whitespace-nowrap"
+                                    >
+                                      Vencido
+                                    </Badge>
+                                  ) : lote.status === "proximo_vencimento" ? (
+                                    <Badge className="bg-yellow-500 text-[10px] h-5 whitespace-nowrap">
+                                      Vence Logo
+                                    </Badge>
+                                  ) : !lote.dataValidade ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] h-5 whitespace-nowrap"
+                                    >
+                                      S/ Validade
+                                    </Badge>
+                                  ) : lote.quantidade === 0 ||
+                                    lote.status === "esgotado" ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-gray-200 text-gray-600 text-[10px] h-5 whitespace-nowrap"
+                                    >
+                                      Finalizado
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-green-600 border-green-200 text-[10px] h-5 whitespace-nowrap"
+                                    >
+                                      Normal
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
                         )}
                       </TableBody>
                     </Table>

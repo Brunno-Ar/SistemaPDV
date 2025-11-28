@@ -57,6 +57,7 @@ interface Lote {
   dataValidade: string | null;
   quantidade: number;
   produtoId: string;
+  precoCompra: number;
   createdAt: string;
   produto: {
     nome: string;
@@ -87,6 +88,7 @@ export default function LotesClient() {
     | "esgotado"
   >("todos");
   const [ordenacao, setOrdenacao] = useState("nome-asc");
+  const [hideFinished, setHideFinished] = useState(true);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -94,6 +96,8 @@ export default function LotesClient() {
     numeroLote: "",
     dataValidade: "",
     quantidade: "",
+    valorTotalLote: "",
+    precoCompra: "",
   });
   const [semValidade, setSemValidade] = useState(false);
 
@@ -101,6 +105,25 @@ export default function LotesClient() {
     fetchLotes();
     fetchProducts();
   }, []);
+
+  // Cálculo automático do Custo Unitário
+  useEffect(() => {
+    const qtd = parseFloat(formData.quantidade);
+    const total = parseFloat(formData.valorTotalLote);
+
+    if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
+      const unitario = total / qtd;
+      setFormData((prev) => ({
+        ...prev,
+        precoCompra: unitario.toFixed(2),
+      }));
+    } else if (!formData.valorTotalLote) {
+      // Se limpar o valor total, limpa o unitário (opcional, mas bom pra UX)
+      // Mas se estiver editando e só mudou a quantidade, talvez queira manter?
+      // A regra do usuário é: dividir valor do lote pela quantidade.
+      // Se não tem valor do lote, não calcula.
+    }
+  }, [formData.quantidade, formData.valorTotalLote]);
 
   const fetchLotes = async () => {
     try {
@@ -146,42 +169,47 @@ export default function LotesClient() {
     }
   };
 
-  const handleOpenDialog = () => {
-    setFormData({
-      produtoId: "",
-      numeroLote: "",
-      dataValidade: "",
-      quantidade: "",
-    });
-    setSemValidade(false);
-    setEditingLoteId(null);
-    setDialogOpen(true);
-  };
-
-  const handleEdit = (lote: Lote) => {
-    setFormData({
-      produtoId: lote.produtoId,
-      numeroLote: lote.numeroLote,
-      dataValidade: lote.dataValidade
-        ? new Date(lote.dataValidade).toISOString().split("T")[0]
-        : "",
-      quantidade: lote.quantidade.toString(),
-    });
-    setSemValidade(!lote.dataValidade);
-    setEditingLoteId(lote.id);
+  const handleOpenDialog = (lote?: Lote) => {
+    if (lote) {
+      setEditingLoteId(lote.id);
+      setFormData({
+        produtoId: lote.produtoId,
+        numeroLote: lote.numeroLote,
+        dataValidade: lote.dataValidade
+          ? new Date(lote.dataValidade).toISOString().split("T")[0]
+          : "",
+        quantidade: lote.quantidade.toString(),
+        valorTotalLote: (Number(lote.precoCompra) * lote.quantidade).toFixed(2),
+        precoCompra: Number(lote.precoCompra).toFixed(2),
+      });
+      setSemValidade(!lote.dataValidade);
+    } else {
+      setEditingLoteId(null);
+      setFormData({
+        produtoId: "",
+        numeroLote: "",
+        dataValidade: "",
+        quantidade: "",
+        valorTotalLote: "",
+        precoCompra: "",
+      });
+      setSemValidade(false);
+    }
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+    setEditingLoteId(null);
     setFormData({
       produtoId: "",
       numeroLote: "",
       dataValidade: "",
       quantidade: "",
+      valorTotalLote: "",
+      precoCompra: "",
     });
     setSemValidade(false);
-    setEditingLoteId(null);
   };
 
   const handleDialogChange = (open: boolean) => {
@@ -228,6 +256,7 @@ export default function LotesClient() {
         numeroLote: formData.numeroLote,
         dataValidade: semValidade ? null : formData.dataValidade,
         quantidade,
+        precoCompra: parseFloat(formData.precoCompra) || 0,
       };
 
       const response = await fetch(url, {
@@ -348,6 +377,11 @@ export default function LotesClient() {
         }
       }
 
+      // Filtro de ocultar finalizados
+      if (hideFinished && lote.status === "esgotado") {
+        return false;
+      }
+
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
@@ -400,7 +434,7 @@ export default function LotesClient() {
             </div>
 
             <InteractiveHoverButton
-              onClick={handleOpenDialog}
+              onClick={() => handleOpenDialog()}
               className="bg-[#137fec] text-white border-[#137fec]"
             >
               <span className="flex items-center gap-2">
@@ -475,6 +509,20 @@ export default function LotesClient() {
             </div>
           </div>
 
+          <div className="flex items-center space-x-2 mb-4">
+            <Checkbox
+              id="hideFinished"
+              checked={hideFinished}
+              onCheckedChange={(checked) => setHideFinished(checked as boolean)}
+            />
+            <Label
+              htmlFor="hideFinished"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Ocultar lotes finalizados/esgotados
+            </Label>
+          </div>
+
           {filteredAndSortedLotes.length === 0 ? (
             <div className="p-8 text-center text-gray-500 border rounded-md bg-gray-50">
               <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -488,6 +536,7 @@ export default function LotesClient() {
                   <TableHead>Produto</TableHead>
                   <TableHead>Número do Lote</TableHead>
                   <TableHead>Quantidade</TableHead>
+                  <TableHead>Custo Unit.</TableHead>
                   <TableHead>Data de Validade</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -511,6 +560,9 @@ export default function LotesClient() {
                       <Badge variant="outline">{lote.quantidade} un</Badge>
                     </TableCell>
                     <TableCell>
+                      R$ {Number(lote.precoCompra).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
                       {lote.dataValidade
                         ? new Date(lote.dataValidade).toLocaleDateString(
                             "pt-BR"
@@ -519,12 +571,14 @@ export default function LotesClient() {
                     </TableCell>
                     <TableCell>{getStatusBadge(lote)}</TableCell>
                     <TableCell className="text-right">
-                      <InteractiveHoverButton
-                        className="w-10 min-w-10 px-0 bg-transparent hover:bg-gray-100 text-gray-700 border-transparent hover:border-gray-200"
-                        onClick={() => handleEdit(lote)}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenDialog(lote)}
+                        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
                         <Edit className="h-4 w-4" />
-                      </InteractiveHoverButton>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -534,7 +588,7 @@ export default function LotesClient() {
         </CardContent>
       </Card>
 
-      {/* Dialog Novo/Editar Lote */}
+      {/* Dialog Novo Lote */}
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -543,7 +597,7 @@ export default function LotesClient() {
             </DialogTitle>
             <DialogDescription>
               {editingLoteId
-                ? "Atualize as informações do lote."
+                ? "Edite as informações do lote."
                 : "Adicione um novo lote ao estoque."}
             </DialogDescription>
           </DialogHeader>
@@ -555,6 +609,7 @@ export default function LotesClient() {
                 onValueChange={(value) =>
                   setFormData({ ...formData, produtoId: value })
                 }
+                disabled={!!editingLoteId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um produto" />
@@ -592,6 +647,35 @@ export default function LotesClient() {
                   }
                   placeholder="Qtd"
                   required
+                  disabled={!!editingLoteId}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="valorTotalLote">Valor Total do Lote (R$)</Label>
+                <Input
+                  id="valorTotalLote"
+                  type="number"
+                  step="0.01"
+                  value={formData.valorTotalLote}
+                  onChange={(e) =>
+                    setFormData({ ...formData, valorTotalLote: e.target.value })
+                  }
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="precoCompra">Custo Unitário (R$)</Label>
+                <Input
+                  id="precoCompra"
+                  type="number"
+                  step="0.01"
+                  value={formData.precoCompra}
+                  readOnly
+                  className="bg-gray-100"
+                  placeholder="Calculado auto"
                 />
               </div>
             </div>

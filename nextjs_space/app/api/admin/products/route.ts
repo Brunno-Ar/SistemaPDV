@@ -92,15 +92,43 @@ export async function GET(request: NextRequest) {
             nome: true,
           },
         },
+        lotes: {
+          where: {
+            quantidade: { gt: 0 },
+          },
+        },
       },
     });
 
-    // Converter Decimal para number para serialização JSON
-    const serializedProducts = products.map((product: any) => ({
-      ...product,
-      precoVenda: Number(product.precoVenda),
-      precoCompra: Number(product.precoCompra),
-    }));
+    // Converter Decimal para number para serialização JSON e calcular custo médio
+    const serializedProducts = products.map((product: any) => {
+      // Calcular custo médio ponderado baseado nos lotes ativos
+      let custoMedioCalculado = Number(product.precoCompra);
+
+      if (product.lotes && product.lotes.length > 0) {
+        const totalValor = product.lotes.reduce((acc: number, lote: any) => {
+          return acc + Number(lote.precoCompra) * lote.quantidade;
+        }, 0);
+
+        const totalQuantidade = product.lotes.reduce(
+          (acc: number, lote: any) => {
+            return acc + lote.quantidade;
+          },
+          0
+        );
+
+        if (totalQuantidade > 0) {
+          custoMedioCalculado = totalValor / totalQuantidade;
+        }
+      }
+
+      return {
+        ...product,
+        precoCompra: custoMedioCalculado, // Substitui pelo valor calculado
+        precoVenda: Number(product.precoVenda),
+        lotes: undefined, // Não precisa enviar os lotes na lista de produtos
+      };
+    });
 
     return NextResponse.json(serializedProducts);
   } catch (error) {
@@ -287,6 +315,7 @@ export async function POST(request: NextRequest) {
             dataValidade: new Date(validadeInicial),
             quantidade: quantidadeLote,
             produtoId: product.id,
+            precoCompra: precoCompra || 0,
           },
         });
 

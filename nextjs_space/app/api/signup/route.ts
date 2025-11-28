@@ -29,11 +29,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o usuário já existe
+    console.log("Verificando se usuário existe:", email);
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
+      console.log("Usuário já existe");
       return NextResponse.json(
         { error: "Já existe uma conta com este email" },
         { status: 400 }
@@ -41,11 +43,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash da senha
+    console.log("Gerando hash da senha");
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Criar empresa PENDENTE + Admin em transação
+    console.log("Iniciando transação de criação");
     const result = await prisma.$transaction(async (tx: any) => {
       // 1. Criar empresa com status PENDENTE (aguardando aprovação do master)
+      console.log("Criando empresa:", nomeEmpresa);
       const empresa = await tx.empresa.create({
         data: {
           nome: nomeEmpresa,
@@ -53,8 +58,10 @@ export async function POST(request: NextRequest) {
           // vencimentoPlano será definido quando aprovado
         },
       });
+      console.log("Empresa criada:", empresa.id);
 
       // 2. Criar usuário admin da empresa
+      console.log("Criando usuário admin:", email);
       const admin = await tx.user.create({
         data: {
           email,
@@ -65,9 +72,12 @@ export async function POST(request: NextRequest) {
           empresaId: empresa.id,
         },
       });
+      console.log("Usuário admin criado:", admin.id);
 
       return { empresa, admin };
     });
+
+    console.log("Transação concluída com sucesso");
 
     return NextResponse.json({
       success: true,
@@ -87,6 +97,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("Erro detalhado ao criar cadastro:", error);
+    if (error instanceof Error) {
+      console.error(error.stack);
+    }
 
     // Retornar mensagem de erro mais específica
     let errorMessage = "Erro ao criar conta e empresa";

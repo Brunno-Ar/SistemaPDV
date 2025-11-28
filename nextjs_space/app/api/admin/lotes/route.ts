@@ -376,7 +376,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, numeroLote, dataValidade, quantidade } = body;
+    const { id, numeroLote, dataValidade, quantidade, precoCompra } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -432,10 +432,45 @@ export async function PUT(request: NextRequest) {
           numeroLote,
           dataValidade: novaDataValidade,
           quantidade: novaQuantidade,
+          precoCompra:
+            precoCompra !== undefined ? Number(precoCompra) : undefined,
         },
       });
 
-      // 2. Se houve mudança na quantidade, atualizar estoque do produto e registrar movimentação
+      // 2. Detectar mudanças para registrar no histórico
+      const changes = [];
+      if (diferencaQuantidade !== 0) {
+        changes.push(
+          `Qtd: ${diferencaQuantidade > 0 ? "+" : ""}${diferencaQuantidade}`
+        );
+      }
+      if (numeroLote !== loteAtual.numeroLote) {
+        changes.push(`Lote: ${loteAtual.numeroLote} -> ${numeroLote}`);
+      }
+      if (
+        (novaDataValidade?.getTime() || 0) !==
+        (loteAtual.dataValidade?.getTime() || 0)
+      ) {
+        const oldDate = loteAtual.dataValidade
+          ? new Date(loteAtual.dataValidade).toLocaleDateString("pt-BR")
+          : "S/ Validade";
+        const newDate = novaDataValidade
+          ? new Date(novaDataValidade).toLocaleDateString("pt-BR")
+          : "S/ Validade";
+        changes.push(`Validade: ${oldDate} -> ${newDate}`);
+      }
+      if (
+        precoCompra !== undefined &&
+        Number(precoCompra) !== Number(loteAtual.precoCompra)
+      ) {
+        changes.push(
+          `Custo: R$${Number(loteAtual.precoCompra).toFixed(2)} -> R$${Number(
+            precoCompra
+          ).toFixed(2)}`
+        );
+      }
+
+      // 3. Atualizar estoque do produto se houve mudança na quantidade
       if (diferencaQuantidade !== 0) {
         await tx.product.update({
           where: { id: loteAtual.produtoId },
@@ -445,17 +480,18 @@ export async function PUT(request: NextRequest) {
             },
           },
         });
+      }
 
+      // 4. Registrar movimentação se houve QUALQUER alteração
+      if (changes.length > 0) {
         await tx.movimentacaoEstoque.create({
           data: {
             produtoId: loteAtual.produtoId,
             usuarioId: session.user.id,
             empresaId,
             tipo: "AJUSTE_INVENTARIO",
-            quantidade: diferencaQuantidade,
-            motivo: `Edição manual do lote ${numeroLote}. Ajuste: ${
-              diferencaQuantidade > 0 ? "+" : ""
-            }${diferencaQuantidade}`,
+            quantidade: diferencaQuantidade, // Pode ser 0 se for apenas edição de dados
+            motivo: `Edição de Lote: ${changes.join(", ")}`,
           },
         });
       }

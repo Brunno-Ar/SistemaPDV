@@ -133,7 +133,7 @@ export default function ConfiguracoesLayout({
             </div>
           </div>
           {/* Footer: Perfil e Sair */}
-          <div onClick={() => signOut()}>
+          <div onClick={() => signOut({ callbackUrl: "/login" })}>
             <SidebarLink
               link={{
                 label: "Sair",

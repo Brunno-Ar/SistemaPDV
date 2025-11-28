@@ -143,31 +143,85 @@ export async function PUT(
         );
       }
     }
-    // Update product
-    const product = await prisma.product.update({
-      where: { id: params.id },
-      data: {
-        nome,
-        sku: finalSku,
-        precoVenda,
-        precoCompra:
-          precoCompra !== undefined ? precoCompra : existingProduct.precoCompra,
-        estoqueAtual,
-        estoqueMinimo:
-          estoqueMinimo !== undefined
-            ? estoqueMinimo
-            : existingProduct.estoqueMinimo,
-        imagemUrl:
-          imagemUrl !== undefined ? imagemUrl : existingProduct.imagemUrl,
-        categoryId: categoryId ?? null,
-      },
+    // Update product and record movement in transaction
+    const result = await prisma.$transaction(async (tx: any) => {
+      // 1. Update product
+      const product = await tx.product.update({
+        where: { id: params.id },
+        data: {
+          nome,
+          sku: finalSku,
+          precoVenda,
+          precoCompra:
+            precoCompra !== undefined
+              ? precoCompra
+              : existingProduct.precoCompra,
+          estoqueAtual,
+          estoqueMinimo:
+            estoqueMinimo !== undefined
+              ? estoqueMinimo
+              : existingProduct.estoqueMinimo,
+          imagemUrl:
+            imagemUrl !== undefined ? imagemUrl : existingProduct.imagemUrl,
+          categoryId: categoryId ?? null,
+        },
+      });
+
+      // 2. Detect changes
+      const changes = [];
+      if (nome !== existingProduct.nome) {
+        changes.push(`Nome: ${existingProduct.nome} -> ${nome}`);
+      }
+      if (finalSku !== existingProduct.sku) {
+        changes.push(`SKU: ${existingProduct.sku} -> ${finalSku}`);
+      }
+      if (Number(precoVenda) !== Number(existingProduct.precoVenda)) {
+        changes.push(
+          `Venda: R$${Number(existingProduct.precoVenda).toFixed(
+            2
+          )} -> R$${Number(precoVenda).toFixed(2)}`
+        );
+      }
+      if (estoqueAtual !== existingProduct.estoqueAtual) {
+        const diff = estoqueAtual - existingProduct.estoqueAtual;
+        changes.push(
+          `Estoque: ${existingProduct.estoqueAtual} -> ${estoqueAtual} (${
+            diff > 0 ? "+" : ""
+          }${diff})`
+        );
+      }
+      if (
+        estoqueMinimo !== undefined &&
+        estoqueMinimo !== existingProduct.estoqueMinimo
+      ) {
+        changes.push(
+          `Estoque Mín: ${existingProduct.estoqueMinimo} -> ${estoqueMinimo}`
+        );
+      }
+
+      // 3. Create movement record if there are changes
+      if (changes.length > 0) {
+        await tx.movimentacaoEstoque.create({
+          data: {
+            produtoId: product.id,
+            usuarioId: session.user.id,
+            empresaId,
+            tipo: "AJUSTE_INVENTARIO",
+            quantidade: estoqueAtual - existingProduct.estoqueAtual,
+            motivo: `Edição de Produto: ${changes.join(", ")}`,
+          },
+        });
+      }
+
+      return product;
     });
+
     return NextResponse.json({
       message: "Produto atualizado com sucesso",
       product: {
-        ...product,
-        precoVenda: Number(product.precoVenda),
-        precoCompra: Number(product.precoCompra),
+        ...result,
+        precoVenda: Number(result.precoVenda),
+        precoCompra: Number(result.precoCompra),
       },
     });
   } catch (error) {
