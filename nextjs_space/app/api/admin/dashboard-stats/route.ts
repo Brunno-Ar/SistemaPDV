@@ -51,123 +51,73 @@ export async function GET() {
       },
     });
 
-    // Vendas hoje
-    const vendasHoje = await prisma.sale.count({
+    // Agregação otimizada para Hoje
+    const statsHoje = await prisma.sale.aggregate({
       where: {
         empresaId,
-        dataHora: {
-          gte: hoje,
-        },
+        dataHora: { gte: hoje },
       },
+      _count: { id: true },
+      _sum: { valorTotal: true },
     });
 
-    // Vendas esta semana
-    const vendasSemana = await prisma.sale.count({
+    const vendasHoje = statsHoje._count.id;
+    const receitaHoje = Number(statsHoje._sum.valorTotal || 0);
+
+    // Agregação otimizada para Semana
+    const statsSemana = await prisma.sale.aggregate({
       where: {
         empresaId,
-        dataHora: {
-          gte: inicioSemana,
-        },
+        dataHora: { gte: inicioSemana },
       },
+      _count: { id: true },
+      _sum: { valorTotal: true },
     });
 
-    // Receita hoje (total de vendas)
-    const vendasHojeData = await prisma.sale.findMany({
+    const vendasSemana = statsSemana._count.id;
+    const receitaSemana = Number(statsSemana._sum.valorTotal || 0);
+
+    // Otimização do cálculo de Lucro (usando SaleItem diretamente)
+    // Busca apenas campos numéricos necessários, sem joins pesados
+    const itemsHoje = await prisma.saleItem.findMany({
       where: {
-        empresaId,
-        dataHora: {
-          gte: hoje,
+        sale: {
+          empresaId,
+          dataHora: { gte: hoje },
         },
       },
       select: {
-        valorTotal: true,
+        subtotal: true,
+        quantidade: true,
+        custoUnitario: true,
       },
     });
 
-    const receitaHoje = vendasHojeData.reduce(
-      (acc: number, venda: any) => acc + Number(venda.valorTotal),
-      0
-    );
+    const lucroHoje = itemsHoje.reduce((acc, item) => {
+      const receitaItem = Number(item.subtotal);
+      const custoItem = Number(item.custoUnitario) * item.quantidade;
+      return acc + (receitaItem - custoItem);
+    }, 0);
 
-    // Receita esta semana
-    const vendasSemanaData = await prisma.sale.findMany({
+    const itemsSemana = await prisma.saleItem.findMany({
       where: {
-        empresaId,
-        dataHora: {
-          gte: inicioSemana,
+        sale: {
+          empresaId,
+          dataHora: { gte: inicioSemana },
         },
       },
       select: {
-        valorTotal: true,
+        subtotal: true,
+        quantidade: true,
+        custoUnitario: true,
       },
     });
 
-    const receitaSemana = vendasSemanaData.reduce(
-      (acc: number, venda: any) => acc + Number(venda.valorTotal),
-      0
-    );
-
-    // Calcular lucro hoje (valor de venda - custo de compra)
-    const vendasHojeComItens = await prisma.sale.findMany({
-      where: {
-        empresaId,
-        dataHora: {
-          gte: hoje,
-        },
-      },
-      include: {
-        saleItems: {
-          include: {
-            product: {
-              select: {
-                precoCompra: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    let lucroHoje = 0;
-    for (const venda of vendasHojeComItens) {
-      for (const item of venda.saleItems) {
-        const custoItem =
-          Number(item.product?.precoCompra || 0) * item.quantidade;
-        const valorItem = Number(item.subtotal);
-        lucroHoje += valorItem - custoItem;
-      }
-    }
-
-    // Calcular lucro esta semana
-    const vendasSemanaComItens = await prisma.sale.findMany({
-      where: {
-        empresaId,
-        dataHora: {
-          gte: inicioSemana,
-        },
-      },
-      include: {
-        saleItems: {
-          include: {
-            product: {
-              select: {
-                precoCompra: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    let lucroSemana = 0;
-    for (const venda of vendasSemanaComItens) {
-      for (const item of venda.saleItems) {
-        const custoItem =
-          Number(item.product?.precoCompra || 0) * item.quantidade;
-        const valorItem = Number(item.subtotal);
-        lucroSemana += valorItem - custoItem;
-      }
-    }
+    const lucroSemana = itemsSemana.reduce((acc, item) => {
+      const receitaItem = Number(item.subtotal);
+      const custoItem = Number(item.custoUnitario) * item.quantidade;
+      return acc + (receitaItem - custoItem);
+    }, 0);
 
     return NextResponse.json({
       totalProdutos,

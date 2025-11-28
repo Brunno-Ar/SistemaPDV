@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-// Generate a unique SKU (3 letters + 6 digits)
+// Função para gerar SKU único
 async function generateUniqueSKU(prisma: PrismaClient): Promise<string> {
   let sku = "";
   let exists = true;
