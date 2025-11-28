@@ -1,3 +1,4 @@
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import Link from "next/link";
 import {
   Store,
@@ -44,14 +45,14 @@ export default function LandingPage() {
             </nav>
             <div className="flex items-center gap-2">
               <Link href="/login">
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-transparent text-gray-800 dark:text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-[#3b66ff]/10 transition-colors">
-                  <span className="truncate">Login</span>
-                </button>
+                <InteractiveHoverButton className="w-32">
+                  Login
+                </InteractiveHoverButton>
               </Link>
               <Link href="/signup">
-                <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#3b66ff] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
-                  <span className="truncate">Cadastrar</span>
-                </button>
+                <InteractiveHoverButton className="w-32 bg-[#3b66ff] text-white hover:bg-[#3b66ff]/90 border-[#3b66ff]">
+                  Cadastrar
+                </InteractiveHoverButton>
               </Link>
             </div>
           </div>
@@ -73,11 +74,9 @@ export default function LandingPage() {
                   de usar.
                 </h2>
                 <Link href="/signup">
-                  <button className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-[#3b66ff] text-white text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
-                    <span className="truncate">
-                      Experimente Grátis por 14 dias
-                    </span>
-                  </button>
+                  <InteractiveHoverButton className="w-64 bg-[#3b66ff] text-white hover:bg-[#3b66ff]/90 border-[#3b66ff]">
+                    Experimente Grátis por 14 dias
+                  </InteractiveHoverButton>
                 </Link>
               </div>
               <div className="w-full">
@@ -228,9 +227,9 @@ export default function LandingPage() {
               </p>
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link href="/signup">
-                  <button className="flex w-fit cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-[#3b66ff] text-white text-base font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity">
-                    <span className="truncate">Comece Agora</span>
-                  </button>
+                  <InteractiveHoverButton className="w-48 bg-[#3b66ff] text-white hover:bg-[#3b66ff]/90 border-[#3b66ff]">
+                    Comece Agora
+                  </InteractiveHoverButton>
                 </Link>
               </div>
             </div>

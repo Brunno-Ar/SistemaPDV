@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -67,14 +68,15 @@ export default function EmpresaDetalheClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="sm"
+          <InteractiveHoverButton
             onClick={() => router.push("/master/empresas")}
+            className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
-          </Button>
+            <span className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </span>
+          </InteractiveHoverButton>
           <div className="flex items-center space-x-3">
             <Building2 className="h-8 w-8 text-blue-600" />
             <div>

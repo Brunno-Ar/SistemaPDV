@@ -6,7 +6,13 @@ import {
   SidebarLink,
   SidebarBrand,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, ShoppingCart, User, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  User,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { signOut } from "next-auth/react";
 
 export default function DashboardLayout({
@@ -29,6 +35,11 @@ export default function DashboardLayout({
       label: "Minha Conta",
       href: "/minha-conta",
       icon: <User className="h-5 w-5 flex-shrink-0" />,
+    },
+    {
+      label: "Configurações",
+      href: "/configuracoes",
+      icon: <Settings className="h-5 w-5 flex-shrink-0" />,
     },
   ];
 

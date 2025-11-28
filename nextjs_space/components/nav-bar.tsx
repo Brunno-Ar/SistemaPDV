@@ -32,7 +32,10 @@ export function NavBar() {
     !session?.user ||
     pathname?.startsWith("/master") ||
     pathname?.startsWith("/admin") ||
-    pathname?.startsWith("/dashboard")
+    pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/vender") ||
+    pathname?.startsWith("/minha-conta") ||
+    pathname?.startsWith("/configuracoes")
   ) {
     return null;
   }

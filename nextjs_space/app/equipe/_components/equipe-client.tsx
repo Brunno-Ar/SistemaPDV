@@ -1,14 +1,27 @@
+"use client";
 
-'use client';
-
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Users, Mail, Calendar } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Plus, Users, Mail, Calendar } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface Usuario {
   id: string;
@@ -28,9 +41,9 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    senha: '',
-    nome: '',
+    email: "",
+    senha: "",
+    nome: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,14 +54,14 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
   const fetchUsuarios = async () => {
     try {
       // 🔥 Incluir companyId se fornecido
-      const url = companyId 
-        ? `/api/admin/equipe?companyId=${companyId}` 
-        : '/api/admin/equipe'
-      
+      const url = companyId
+        ? `/api/admin/equipe?companyId=${companyId}`
+        : "/api/admin/equipe";
+
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Erro ao buscar usuários');
+      if (!response.ok) throw new Error("Erro ao buscar usuários");
       const data = await response.json();
-      
+
       // Ensure data is an array
       if (Array.isArray(data)) {
         setUsuarios(data);
@@ -56,12 +69,15 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
         setUsuarios([]);
       }
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
+      console.error("Erro ao buscar usuários:", error);
       setUsuarios([]);
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Não foi possível carregar a equipe',
-        variant: 'destructive',
+        title: "Erro",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar a equipe",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -74,38 +90,38 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
 
     try {
       // 🔥 Incluir companyId se fornecido
-      let url = '/api/admin/equipe'
+      let url = "/api/admin/equipe";
       if (companyId) {
-        url += `?companyId=${companyId}`
+        url += `?companyId=${companyId}`;
       }
-      
+
       const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar usuário');
+        throw new Error(data.error || "Erro ao criar usuário");
       }
 
       toast({
-        title: 'Sucesso!',
-        description: 'Usuário caixa criado com sucesso',
+        title: "Sucesso!",
+        description: "Usuário caixa criado com sucesso",
       });
 
       // ✅ Fecha o dialog usando o handler que reseta o form
       handleDialogChange(false);
-      
+
       // ✅ Re-fetch após fechar
       fetchUsuarios();
     } catch (error: any) {
       toast({
-        title: 'Erro',
+        title: "Erro",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setSubmitting(false);
@@ -121,30 +137,34 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
   }
 
   const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open)
+    setDialogOpen(open);
     // Reset form quando o dialog é fechado
     if (!open) {
       setFormData({
-        email: '',
-        senha: '',
-        nome: '',
-      })
+        email: "",
+        senha: "",
+        nome: "",
+      });
     }
-  }
+  };
 
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Gerenciar Equipe</h1>
-          <p className="text-gray-600 mt-1">Adicione e gerencie os usuários da sua empresa</p>
+          <p className="text-gray-600 mt-1">
+            Adicione e gerencie os usuários da sua empresa
+          </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Usuário Caixa
-            </Button>
+            <InteractiveHoverButton className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600">
+              <span className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Usuário Caixa
+              </span>
+            </InteractiveHoverButton>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[450px]">
             <DialogHeader>
@@ -193,17 +213,21 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">
-                <Button
+                <InteractiveHoverButton
                   type="button"
-                  variant="outline"
+                  className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
                   onClick={() => handleDialogChange(false)}
                   disabled={submitting}
                 >
                   Cancelar
-                </Button>
-                <Button type="submit" disabled={submitting} className="bg-blue-600 hover:bg-blue-700">
-                  {submitting ? 'Criando...' : 'Criar Usuário'}
-                </Button>
+                </InteractiveHoverButton>
+                <InteractiveHoverButton
+                  type="submit"
+                  disabled={submitting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                >
+                  {submitting ? "Criando..." : "Criar Usuário"}
+                </InteractiveHoverButton>
               </div>
             </form>
           </DialogContent>
@@ -217,13 +241,19 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-lg">
-                    {usuario.nome || usuario.name || usuario.email.split('@')[0]}
+                    {usuario.nome ||
+                      usuario.name ||
+                      usuario.email.split("@")[0]}
                   </CardTitle>
                   <CardDescription className="flex items-center space-x-1 mt-1">
-                    <span className={`inline-block px-2 py-1 text-xs rounded ${
-                      usuario.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                    }`}>
-                      {usuario.role === 'admin' ? 'Admin' : 'Caixa'}
+                    <span
+                      className={`inline-block px-2 py-1 text-xs rounded ${
+                        usuario.role === "admin"
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {usuario.role === "admin" ? "Admin" : "Caixa"}
                     </span>
                   </CardDescription>
                 </div>
@@ -241,7 +271,8 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    Desde {new Date(usuario.createdAt).toLocaleDateString('pt-BR')}
+                    Desde{" "}
+                    {new Date(usuario.createdAt).toLocaleDateString("pt-BR")}
                   </span>
                 </div>
               </div>

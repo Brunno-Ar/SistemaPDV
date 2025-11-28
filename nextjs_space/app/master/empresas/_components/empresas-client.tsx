@@ -1,5 +1,6 @@
 "use client";
 
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -399,10 +400,12 @@ export default function EmpresasClient() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
-            <button className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-[#137fec] text-white text-sm font-bold leading-normal tracking-[0.015em] shadow-sm hover:bg-[#137fec]/90 transition-colors">
-              <Plus className="h-5 w-5" />
-              <span className="truncate">Cadastrar Nova Empresa</span>
-            </button>
+            <InteractiveHoverButton className="bg-[#137fec] text-white border-[#137fec]">
+              <span className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                <span className="truncate">Cadastrar Nova Empresa</span>
+              </span>
+            </InteractiveHoverButton>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -455,9 +458,13 @@ export default function EmpresasClient() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <InteractiveHoverButton
+                type="submit"
+                className="w-full bg-[#137fec] text-white border-[#137fec]"
+                disabled={submitting}
+              >
                 {submitting ? "Criando..." : "Criar Empresa"}
-              </Button>
+              </InteractiveHoverButton>
             </form>
           </DialogContent>
         </Dialog>
@@ -601,63 +608,63 @@ export default function EmpresasClient() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        className="p-2 rounded-lg hover:bg-[#137fec]/10 text-[#137fec]"
+                      <InteractiveHoverButton
+                        className="w-10 min-w-10 px-0 border-[#137fec]/20 text-[#137fec] hover:bg-[#137fec]/10"
                         title="Detalhes"
                         onClick={() =>
                           router.push(`/master/empresas/${empresa.id}`)
                         }
                       >
                         <Eye className="h-5 w-5" />
-                      </button>
+                      </InteractiveHoverButton>
 
                       {empresa.status === "PENDENTE" && (
-                        <button
-                          className="p-2 rounded-lg bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800"
+                        <InteractiveHoverButton
+                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200"
                           title="Aprovar Cadastro"
                           onClick={() => handleAction("aprovar", empresa.id)}
                         >
                           <CheckCircle className="h-5 w-5" />
-                        </button>
+                        </InteractiveHoverButton>
                       )}
 
                       {empresa.status === "ATIVO" && (
                         <>
-                          <button
-                            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+                          <InteractiveHoverButton
+                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200"
                             title="Renovar Plano"
                             onClick={() => handleAction("renovar", empresa.id)}
                           >
                             <RotateCw className="h-5 w-5" />
-                          </button>
-                          <button
-                            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-yellow-600"
+                          </InteractiveHoverButton>
+                          <InteractiveHoverButton
+                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-yellow-600 border-yellow-200"
                             title="Pausar"
                             onClick={() => handleAction("pausar", empresa.id)}
                           >
                             <PauseCircle className="h-5 w-5" />
-                          </button>
+                          </InteractiveHoverButton>
                         </>
                       )}
 
                       {empresa.status === "PAUSADO" && (
-                        <button
-                          className="p-2 rounded-lg bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800"
+                        <InteractiveHoverButton
+                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200"
                           title="Reativar"
                           onClick={() => handleAction("reativar", empresa.id)}
                         >
                           <CheckCircle className="h-5 w-5" />
-                        </button>
+                        </InteractiveHoverButton>
                       )}
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button
-                            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+                          <InteractiveHoverButton
+                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200"
                             title="Mais Opções"
                           >
                             <MoreVertical className="h-5 w-5" />
-                          </button>
+                          </InteractiveHoverButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
@@ -733,9 +740,12 @@ export default function EmpresasClient() {
               />
               <Label htmlFor="importante">Marcar como importante</Label>
             </div>
-            <Button onClick={handleCriarAviso} className="w-full">
+            <InteractiveHoverButton
+              onClick={handleCriarAviso}
+              className="w-full bg-[#137fec] text-white border-[#137fec]"
+            >
               Criar Aviso
-            </Button>
+            </InteractiveHoverButton>
           </div>
         </DialogContent>
       </Dialog>
@@ -770,21 +780,23 @@ export default function EmpresasClient() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
+            <InteractiveHoverButton
+              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
               onClick={() => {
                 setDeleteConfirmText("");
                 setEmpresaToDelete(null);
+                setDeleteDialogOpen(false);
               }}
             >
               Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </InteractiveHoverButton>
+            <InteractiveHoverButton
               onClick={handleConfirmDelete}
               disabled={deleteConfirmText !== empresaToDelete?.nome}
-              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-red-600 hover:bg-red-700 text-white border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Excluir Permanentemente
-            </AlertDialogAction>
+            </InteractiveHoverButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -824,22 +836,24 @@ export default function EmpresasClient() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
+            <InteractiveHoverButton
+              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
               onClick={() => {
                 setClearDataConfirmText("");
                 setEmpresaToClear(null);
+                setClearDataDialogOpen(false);
               }}
             >
               Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </InteractiveHoverButton>
+            <InteractiveHoverButton
               onClick={handleConfirmClearData}
               disabled={clearDataConfirmText !== "LIMPAR DADOS"}
-              className="bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Limpar Tudo
-            </AlertDialogAction>
+            </InteractiveHoverButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -860,20 +874,21 @@ export default function EmpresasClient() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
+            <InteractiveHoverButton
+              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
               onClick={() => {
                 setResetPasswordDialogOpen(false);
                 setEmpresaToReset(null);
               }}
             >
               Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
+            </InteractiveHoverButton>
+            <InteractiveHoverButton
               onClick={confirmResetSenha}
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
             >
               Confirmar Reset
-            </AlertDialogAction>
+            </InteractiveHoverButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -903,12 +918,12 @@ export default function EmpresasClient() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction
+            <InteractiveHoverButton
               onClick={() => setSuccessPasswordDialogOpen(false)}
-              className="w-full bg-green-600 hover:bg-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600"
             >
               Entendido
-            </AlertDialogAction>
+            </InteractiveHoverButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

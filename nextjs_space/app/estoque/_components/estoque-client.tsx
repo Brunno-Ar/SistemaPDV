@@ -1,5 +1,6 @@
 "use client";
 
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -583,10 +584,15 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                 {products.length} produtos cadastrados
               </p>
             </div>
-            <Button onClick={() => handleOpenDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Produto
-            </Button>
+            <InteractiveHoverButton
+              onClick={() => handleOpenDialog()}
+              className="bg-[#137fec] text-white border-[#137fec]"
+            >
+              <span className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Produto
+              </span>
+            </InteractiveHoverButton>
           </div>
         </CardHeader>
         <CardContent>
@@ -741,34 +747,29 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      <InteractiveHoverButton
+                        className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 min-w-[120px]"
                         onClick={() => handleOpenLotsDialog(product)}
                       >
-                        <Layers className="h-4 w-4 mr-1" />
-                        Ver Lotes
-                      </Button>
+                        <span className="flex items-center gap-2">
+                          <Layers className="h-4 w-4" />
+                          Ver Lotes
+                        </span>
+                      </InteractiveHoverButton>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
+                        <InteractiveHoverButton
+                          className="w-10 min-w-10 px-0 border-gray-200"
                           onClick={() => handleOpenDialog(product)}
                         >
                           <Edit className="h-4 w-4" />
-                        </Button>
+                        </InteractiveHoverButton>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                            >
+                            <InteractiveHoverButton className="w-10 min-w-10 px-0 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </InteractiveHoverButton>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
@@ -864,15 +865,14 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
+                <InteractiveHoverButton
                   type="button"
-                  variant="outline"
-                  size="icon"
+                  className="w-10 min-w-10 px-0 border-gray-200"
                   onClick={() => setNewCategoryDialogOpen(true)}
                   title="Nova Categoria"
                 >
                   <Plus className="h-4 w-4" />
-                </Button>
+                </InteractiveHoverButton>
               </div>
             </div>
 
@@ -1032,16 +1032,20 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button
+              <InteractiveHoverButton
                 type="button"
-                variant="outline"
+                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
                 onClick={handleCloseDialog}
               >
                 Cancelar
-              </Button>
-              <Button type="submit" disabled={uploadingImage}>
+              </InteractiveHoverButton>
+              <InteractiveHoverButton
+                type="submit"
+                disabled={uploadingImage}
+                className="bg-[#137fec] text-white border-[#137fec]"
+              >
                 {uploadingImage ? "Salvando..." : "Salvar"}
-              </Button>
+              </InteractiveHoverButton>
             </div>
           </form>
         </DialogContent>
@@ -1070,18 +1074,19 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
+              <InteractiveHoverButton
+                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
                 onClick={() => setNewCategoryDialogOpen(false)}
               >
                 Cancelar
-              </Button>
-              <Button
+              </InteractiveHoverButton>
+              <InteractiveHoverButton
                 onClick={handleCreateCategory}
                 disabled={creatingCategory}
+                className="bg-[#137fec] text-white border-[#137fec]"
               >
                 {creatingCategory ? "Criando..." : "Criar Categoria"}
-              </Button>
+              </InteractiveHoverButton>
             </div>
           </div>
         </DialogContent>
@@ -1163,15 +1168,19 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  variant="outline"
+                <InteractiveHoverButton
+                  className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
                   onClick={() => setShowNewLoteForm(false)}
                 >
                   Cancelar
-                </Button>
-                <Button onClick={handleCreateLote} disabled={creatingLote}>
+                </InteractiveHoverButton>
+                <InteractiveHoverButton
+                  onClick={handleCreateLote}
+                  disabled={creatingLote}
+                  className="bg-[#137fec] text-white border-[#137fec]"
+                >
                   {creatingLote ? "Salvando..." : "Salvar Lote"}
-                </Button>
+                </InteractiveHoverButton>
               </div>
             </div>
           ) : (
@@ -1183,14 +1192,15 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               ) : (
                 <div className="space-y-4">
                   <div className="flex justify-end">
-                    <Button
-                      size="sm"
+                    <InteractiveHoverButton
                       onClick={() => setShowNewLoteForm(true)}
-                      className="gap-2"
+                      className="gap-2 bg-[#137fec] text-white border-[#137fec]"
                     >
-                      <Plus className="h-4 w-4" />
-                      Novo Lote
-                    </Button>
+                      <span className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Novo Lote
+                      </span>
+                    </InteractiveHoverButton>
                   </div>
                   <div className="border rounded-md overflow-hidden max-h-[300px] overflow-y-auto">
                     <Table>
@@ -1270,12 +1280,12 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     </Table>
                   </div>
                   <div className="flex justify-end">
-                    <Button
-                      variant="outline"
+                    <InteractiveHoverButton
+                      className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
                       onClick={() => setLotsDialogOpen(false)}
                     >
                       Fechar
-                    </Button>
+                    </InteractiveHoverButton>
                   </div>
                 </div>
               )}

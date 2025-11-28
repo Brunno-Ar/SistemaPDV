@@ -1,5 +1,6 @@
 "use client";
 
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -131,7 +132,6 @@ export default function SignupPage() {
                     </label>
                   </div>
                 </div>
-
                 <div className="border-t border-[#cfdbe7] dark:border-[#344558] pt-6">
                   <h3 className="text-[#0d141b] dark:text-[#e1e7ec] text-lg font-bold leading-tight tracking-[-0.015em] pb-2">
                     Usuário Administrador
@@ -218,7 +218,6 @@ export default function SignupPage() {
                     </label>
                   </div>
                 </div>
-
                 <div className="flex items-start pt-4">
                   <input
                     className="form-checkbox h-5 w-5 rounded border-[#cfdbe7] dark:border-[#344558] text-[#137fec] focus:ring-[#137fec]/50 bg-[#f6f7f8] dark:bg-[#101922] mt-0.5"
@@ -249,13 +248,11 @@ export default function SignupPage() {
                     .
                   </label>
                 </div>
-
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm text-center">
                     {error}
                   </div>
                 )}
-
                 {success && (
                   <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm text-center">
                     {success}
@@ -265,13 +262,13 @@ export default function SignupPage() {
                   </div>
                 )}
 
-                <button
-                  className="flex items-center justify-center whitespace-nowrap h-12 px-6 rounded-lg w-full bg-[#137fec] text-white text-base font-bold leading-normal tracking-wide mt-4 hover:bg-[#137fec]/90 transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                <InteractiveHoverButton
+                  className="w-full bg-[#137fec] text-white hover:bg-[#137fec]/90 border-[#137fec] h-12 text-base font-bold mt-4"
                   type="submit"
                   disabled={loading}
                 >
                   {loading ? "Criando..." : "Finalizar Cadastro"}
-                </button>
+                </InteractiveHoverButton>
               </form>
               <p className="text-center text-[#4c739a] dark:text-[#a0b3c6] text-sm mt-8">
                 Já tem uma conta?{" "}

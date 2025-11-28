@@ -1,180 +1,139 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { Clock, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
-import { NavBar } from "@/components/nav-bar";
-import { Key, CheckCircle } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Sale {
+  id: string;
+  valorTotal: number;
+  createdAt: string;
+}
 
 export default function MinhaContaPage() {
-  const [formData, setFormData] = useState({
-    senhaAtual: "",
-    novaSenha: "",
-    confirmarNovaSenha: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const { data: session } = useSession();
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (formData.novaSenha !== formData.confirmarNovaSenha) {
-      toast({
-        title: "Erro",
-        description: "A nova senha e a confirmação não coincidem",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    if (formData.novaSenha.length < 6) {
-      toast({
-        title: "Erro",
-        description: "A nova senha deve ter pelo menos 6 caracteres",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/auth/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          senhaAtual: formData.senhaAtual,
-          novaSenha: formData.novaSenha,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao alterar senha");
+  useEffect(() => {
+    async function fetchSales() {
+      try {
+        // Reusing the analytics API but we only need the lastSales part
+        // In a real app, we might want a dedicated endpoint for sales history with pagination
+        const res = await fetch("/api/employee/analytics");
+        if (res.ok) {
+          const json = await res.json();
+          setSales(json.lastSales || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch sales", error);
+      } finally {
+        setLoading(false);
       }
-
-      toast({
-        title: "Sucesso",
-        description: "Senha alterada com sucesso!",
-      });
-
-      setFormData({
-        senhaAtual: "",
-        novaSenha: "",
-        confirmarNovaSenha: "",
-      });
-
-      setSuccessDialogOpen(true);
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error ? error.message : "Erro ao alterar senha",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
+    fetchSales();
+  }, []);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-4 space-y-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar />
-      <div className="max-w-md mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Key className="h-5 w-5 text-blue-600" />
-              <CardTitle>Alterar Senha</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="senhaAtual">Senha Atual</Label>
-                <Input
-                  id="senhaAtual"
-                  type="password"
-                  value={formData.senhaAtual}
-                  onChange={(e) =>
-                    setFormData({ ...formData, senhaAtual: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="novaSenha">Nova Senha</Label>
-                <Input
-                  id="novaSenha"
-                  type="password"
-                  value={formData.novaSenha}
-                  onChange={(e) =>
-                    setFormData({ ...formData, novaSenha: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmarNovaSenha">Confirmar Nova Senha</Label>
-                <Input
-                  id="confirmarNovaSenha"
-                  type="password"
-                  value={formData.confirmarNovaSenha}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmarNovaSenha: e.target.value,
-                    })
-                  }
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Alterando..." : "Alterar Senha"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Minhas Vendas
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400">
+          Histórico recente de vendas realizadas por você.
+        </p>
       </div>
 
-      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-green-600 flex items-center gap-2">
-              <CheckCircle className="h-6 w-6" />
-              Senha Alterada!
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Sua senha foi atualizada com sucesso. Use a nova senha no próximo
-              login.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction
-              onClick={() => setSuccessDialogOpen(false)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              OK
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Card className="bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+            Últimas Vendas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <tr>
+                  <th className="px-4 py-3 rounded-l-lg">Data/Hora</th>
+                  <th className="px-4 py-3">ID da Venda</th>
+                  <th className="px-4 py-3">Valor</th>
+                  <th className="px-4 py-3 rounded-r-lg text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sales.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-8 text-center text-gray-500"
+                    >
+                      Nenhuma venda registrada recentemente.
+                    </td>
+                  </tr>
+                ) : (
+                  sales.map((sale) => (
+                    <tr
+                      key={sale.id}
+                      className="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      <td className="px-4 py-4 font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        <div className="flex flex-col">
+                          <span>
+                            {new Date(sale.createdAt).toLocaleDateString(
+                              "pt-BR"
+                            )}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(sale.createdAt).toLocaleTimeString(
+                              "pt-BR",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-gray-500 font-mono text-xs">
+                        {sale.id.substring(0, 8)}...
+                      </td>
+                      <td className="px-4 py-4 font-bold text-gray-900 dark:text-white">
+                        {formatCurrency(sale.valorTotal)}
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                          Concluída
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

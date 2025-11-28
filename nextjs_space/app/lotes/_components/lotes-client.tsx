@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -394,10 +395,15 @@ export default function LotesClient() {
                 Gerencie validades e estoque por lote
               </p>
             </div>
-            <Button onClick={handleOpenDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Lote
-            </Button>
+            <InteractiveHoverButton
+              onClick={handleOpenDialog}
+              className="bg-[#137fec] text-white border-[#137fec]"
+            >
+              <span className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Lote
+              </span>
+            </InteractiveHoverButton>
           </div>
         </CardHeader>
         <CardContent>
@@ -508,13 +514,12 @@ export default function LotesClient() {
                     </TableCell>
                     <TableCell>{getStatusBadge(lote)}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <InteractiveHoverButton
+                        className="w-10 min-w-10 px-0 bg-transparent hover:bg-gray-100 text-gray-700 border-transparent hover:border-gray-200"
                         onClick={() => handleEdit(lote)}
                       >
                         <Edit className="h-4 w-4" />
-                      </Button>
+                      </InteractiveHoverButton>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -620,16 +625,19 @@ export default function LotesClient() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button
+              <InteractiveHoverButton
                 type="button"
-                variant="outline"
+                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
                 onClick={handleCloseDialog}
               >
                 Cancelar
-              </Button>
-              <Button type="submit">
+              </InteractiveHoverButton>
+              <InteractiveHoverButton
+                type="submit"
+                className="bg-[#137fec] text-white border-[#137fec]"
+              >
                 {editingLoteId ? "Salvar Alterações" : "Criar Lote"}
-              </Button>
+              </InteractiveHoverButton>
             </div>
           </form>
         </DialogContent>

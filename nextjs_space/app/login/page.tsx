@@ -1,5 +1,6 @@
 "use client";
 
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -184,13 +185,13 @@ export default function LoginPage() {
                   )}
 
                   <div className="pt-4 space-y-4">
-                    <button
-                      className="flex w-full items-center justify-center rounded-lg bg-[#137fec] hover:bg-opacity-80 h-14 text-lg font-sans font-medium leading-normal text-white transition-colors shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
+                    <InteractiveHoverButton
+                      className="w-full bg-[#137fec] text-white hover:bg-[#137fec]/90 border-[#137fec] h-14 text-lg"
                       type="submit"
                       disabled={loading}
                     >
                       {loading ? "Entrando..." : "Entrar"}
-                    </button>
+                    </InteractiveHoverButton>
                     <div className="text-center">
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Não tem uma conta?{" "}

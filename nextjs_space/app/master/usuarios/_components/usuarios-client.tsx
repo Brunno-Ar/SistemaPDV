@@ -1,18 +1,50 @@
+"use client";
 
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { UserCog, Plus, Trash2, Mail, Calendar, Shield, Users, ArrowLeft } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { useSession } from 'next-auth/react';
-import { cn } from '@/lib/utils';
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  UserCog,
+  Plus,
+  Trash2,
+  Mail,
+  Calendar,
+  Shield,
+  Users,
+  ArrowLeft,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useSession } from "next-auth/react";
+import { cn } from "@/lib/utils";
 
 interface Master {
   id: string;
@@ -29,9 +61,9 @@ export default function UsuariosClient() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    senha: '',
-    nome: '',
+    email: "",
+    senha: "",
+    nome: "",
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,10 +73,10 @@ export default function UsuariosClient() {
 
   const fetchMasters = async () => {
     try {
-      const response = await fetch('/api/master/usuarios');
-      if (!response.ok) throw new Error('Erro ao buscar usuários master');
+      const response = await fetch("/api/master/usuarios");
+      if (!response.ok) throw new Error("Erro ao buscar usuários master");
       const data = await response.json();
-      
+
       // Ensure data is an array
       if (Array.isArray(data)) {
         setMasters(data);
@@ -52,12 +84,15 @@ export default function UsuariosClient() {
         setMasters([]);
       }
     } catch (error) {
-      console.error('Erro ao buscar usuários master:', error);
+      console.error("Erro ao buscar usuários master:", error);
       setMasters([]);
       toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Não foi possível carregar os usuários master',
-        variant: 'destructive',
+        title: "Erro",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os usuários master",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -69,33 +104,33 @@ export default function UsuariosClient() {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/master/usuarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/master/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar usuário master');
+        throw new Error(data.error || "Erro ao criar usuário master");
       }
 
       toast({
-        title: 'Sucesso!',
-        description: 'Usuário master criado com sucesso',
+        title: "Sucesso!",
+        description: "Usuário master criado com sucesso",
       });
 
       // ✅ Fecha o dialog usando o handler que reseta o form
       handleDialogChange(false);
-      
+
       // ✅ Re-fetch após fechar
       fetchMasters();
     } catch (error: any) {
       toast({
-        title: 'Erro',
+        title: "Erro",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setSubmitting(false);
@@ -105,26 +140,26 @@ export default function UsuariosClient() {
   const handleDelete = async (masterId: string, masterEmail: string) => {
     try {
       const response = await fetch(`/api/master/usuarios?id=${masterId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao excluir usuário master');
+        throw new Error(data.error || "Erro ao excluir usuário master");
       }
 
       toast({
-        title: 'Sucesso!',
+        title: "Sucesso!",
         description: `Usuário master "${masterEmail}" excluído com sucesso`,
       });
 
       fetchMasters();
     } catch (error: any) {
       toast({
-        title: 'Erro',
+        title: "Erro",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     }
   };
@@ -140,16 +175,16 @@ export default function UsuariosClient() {
   const currentUserId = session?.user?.id;
 
   const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open)
+    setDialogOpen(open);
     // Reset form quando o dialog é fechado
     if (!open) {
       setFormData({
-        email: '',
-        senha: '',
-        nome: '',
-      })
+        email: "",
+        senha: "",
+        nome: "",
+      });
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -157,14 +192,13 @@ export default function UsuariosClient() {
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-4 mb-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/master')}
-              className="flex items-center gap-2 border-2 hover:bg-purple-50 hover:border-purple-300"
+            <InteractiveHoverButton
+              onClick={() => router.push("/master")}
+              className="flex items-center gap-2 border-2 hover:bg-purple-50 hover:border-purple-300 bg-white text-gray-900"
             >
               <ArrowLeft className="h-4 w-4" />
               Voltar ao Início
-            </Button>
+            </InteractiveHoverButton>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Shield className="h-8 w-8 text-purple-600" />
@@ -176,10 +210,12 @@ export default function UsuariosClient() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Novo Master
-            </Button>
+            <InteractiveHoverButton className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600">
+              <span className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Criar Novo Master
+              </span>
+            </InteractiveHoverButton>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[450px]">
             <DialogHeader>
@@ -230,17 +266,21 @@ export default function UsuariosClient() {
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">
-                <Button
+                <InteractiveHoverButton
                   type="button"
-                  variant="outline"
+                  className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
                   onClick={() => handleDialogChange(false)}
                   disabled={submitting}
                 >
                   Cancelar
-                </Button>
-                <Button type="submit" disabled={submitting} className="bg-purple-600 hover:bg-purple-700">
-                  {submitting ? 'Criando...' : 'Criar Master'}
-                </Button>
+                </InteractiveHoverButton>
+                <InteractiveHoverButton
+                  type="submit"
+                  disabled={submitting}
+                  className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
+                >
+                  {submitting ? "Criando..." : "Criar Master"}
+                </InteractiveHoverButton>
               </div>
             </form>
           </DialogContent>
@@ -257,7 +297,9 @@ export default function UsuariosClient() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-900">{masters.length}</div>
+            <div className="text-3xl font-bold text-purple-900">
+              {masters.length}
+            </div>
             <p className="text-xs text-purple-600 mt-1">Usuários cadastrados</p>
           </CardContent>
         </Card>
@@ -286,10 +328,11 @@ export default function UsuariosClient() {
           </CardHeader>
           <CardContent>
             <div className="text-sm font-semibold text-green-900">
-              {masters.length > 0 
-                ? new Date(masters[masters.length - 1].createdAt).toLocaleDateString('pt-BR')
-                : 'N/A'
-              }
+              {masters.length > 0
+                ? new Date(
+                    masters[masters.length - 1].createdAt
+                  ).toLocaleDateString("pt-BR")
+                : "N/A"}
             </div>
             <p className="text-xs text-green-600 mt-1">Data do último master</p>
           </CardContent>
@@ -302,103 +345,122 @@ export default function UsuariosClient() {
           Lista de Usuários Master
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {masters.map((master) => (
-          <Card 
-            key={master.id} 
-            className={cn(
-              "hover:shadow-xl transition-all duration-200 border-2",
-              currentUserId === master.id 
-                ? "border-purple-300 bg-gradient-to-br from-purple-50 to-white" 
-                : "border-gray-200 hover:border-purple-200"
-            )}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={cn(
-                    "p-3 rounded-xl",
-                    currentUserId === master.id 
-                      ? "bg-purple-200" 
-                      : "bg-purple-100"
-                  )}>
-                    <Shield className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-bold text-gray-900">
-                      {master.nome || master.name}
-                    </CardTitle>
-                    {currentUserId === master.id && (
-                      <span className="inline-block px-2 py-0.5 text-xs font-semibold bg-purple-600 text-white rounded-full mt-1">
-                        Você
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                  <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <span className="truncate">{master.email}</span>
-                </div>
-                
-                <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                  <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <span>Desde {new Date(master.createdAt).toLocaleDateString('pt-BR')}</span>
-                </div>
-                
-                {currentUserId !== master.id ? (
-                  <div className="pt-2">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm" className="w-full hover:bg-red-600">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir Master
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2">
-                            <Trash2 className="h-5 w-5 text-red-600" />
-                            Confirmar Exclusão
-                          </AlertDialogTitle>
-                          <AlertDialogDescription className="space-y-3">
-                            <p>
-                              Tem certeza que deseja excluir o usuário master:
-                            </p>
-                            <div className="bg-gray-100 p-3 rounded border-l-4 border-red-500">
-                              <p className="font-semibold text-gray-900">{master.nome || master.name}</p>
-                              <p className="text-sm text-gray-600">{master.email}</p>
-                            </div>
-                            <p className="text-red-600 font-semibold">
-                              ⚠️ Esta ação não pode ser desfeita!
-                            </p>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(master.id, master.email)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Sim, Excluir Permanentemente
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                ) : (
-                  <div className="pt-2">
-                    <div className="text-sm text-center py-2.5 bg-purple-100 text-purple-800 rounded font-medium">
-                      🔒 Sua conta atual
+          {masters.map((master) => (
+            <Card
+              key={master.id}
+              className={cn(
+                "hover:shadow-xl transition-all duration-200 border-2",
+                currentUserId === master.id
+                  ? "border-purple-300 bg-gradient-to-br from-purple-50 to-white"
+                  : "border-gray-200 hover:border-purple-200"
+              )}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={cn(
+                        "p-3 rounded-xl",
+                        currentUserId === master.id
+                          ? "bg-purple-200"
+                          : "bg-purple-100"
+                      )}
+                    >
+                      <Shield className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg font-bold text-gray-900">
+                        {master.nome || master.name}
+                      </CardTitle>
+                      {currentUserId === master.id && (
+                        <span className="inline-block px-2 py-0.5 text-xs font-semibold bg-purple-600 text-white rounded-full mt-1">
+                          Você
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                    <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span className="truncate">{master.email}</span>
+                  </div>
+
+                  <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <span>
+                      Desde{" "}
+                      {new Date(master.createdAt).toLocaleDateString("pt-BR")}
+                    </span>
+                  </div>
+
+                  {currentUserId !== master.id ? (
+                    <div className="pt-2">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <InteractiveHoverButton className="w-full bg-red-600 hover:bg-red-700 text-white border-red-600">
+                            <span className="flex items-center gap-2">
+                              <Trash2 className="h-4 w-4" />
+                              Excluir Master
+                            </span>
+                          </InteractiveHoverButton>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2">
+                              <Trash2 className="h-5 w-5 text-red-600" />
+                              Confirmar Exclusão
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="space-y-3">
+                              <p>
+                                Tem certeza que deseja excluir o usuário master:
+                              </p>
+                              <div className="bg-gray-100 p-3 rounded border-l-4 border-red-500">
+                                <p className="font-semibold text-gray-900">
+                                  {master.nome || master.name}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  {master.email}
+                                </p>
+                              </div>
+                              <p className="text-red-600 font-semibold">
+                                ⚠️ Esta ação não pode ser desfeita!
+                              </p>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel asChild>
+                              <InteractiveHoverButton className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200">
+                                Cancelar
+                              </InteractiveHoverButton>
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() =>
+                                handleDelete(master.id, master.email)
+                              }
+                              asChild
+                            >
+                              <InteractiveHoverButton className="bg-red-600 hover:bg-red-700 text-white border-red-600">
+                                Sim, Excluir Permanentemente
+                              </InteractiveHoverButton>
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  ) : (
+                    <div className="pt-2">
+                      <div className="text-sm text-center py-2.5 bg-purple-100 text-purple-800 rounded font-medium">
+                        🔒 Sua conta atual
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {masters.length === 0 && (
@@ -411,15 +473,18 @@ export default function UsuariosClient() {
                 Nenhum usuário master encontrado
               </h3>
               <p className="text-gray-600 text-center mb-6 max-w-md">
-                Comece criando seu primeiro usuário master clicando no botão "Criar Novo Master" acima
+                Comece criando seu primeiro usuário master clicando no botão
+                "Criar Novo Master" acima
               </p>
-              <Button 
+              <InteractiveHoverButton
                 onClick={() => setDialogOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Master
-              </Button>
+                <span className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Criar Primeiro Master
+                </span>
+              </InteractiveHoverButton>
             </CardContent>
           </Card>
         )}

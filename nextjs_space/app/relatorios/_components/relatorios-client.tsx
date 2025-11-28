@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -253,10 +254,18 @@ export default function RelatoriosClient({
                 }
               />
             </div>
-            <Button onClick={fetchFilteredData}>Aplicar Filtro</Button>
-            <Button variant="outline" onClick={clearFilter}>
+            <InteractiveHoverButton
+              onClick={fetchFilteredData}
+              className="bg-[#137fec] text-white border-[#137fec]"
+            >
+              Aplicar Filtro
+            </InteractiveHoverButton>
+            <InteractiveHoverButton
+              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+              onClick={clearFilter}
+            >
               Limpar
-            </Button>
+            </InteractiveHoverButton>
           </div>
         </CardContent>
       </Card>

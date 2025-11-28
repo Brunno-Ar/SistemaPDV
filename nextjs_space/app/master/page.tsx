@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Bell, Plus, UserCog, DollarSign, ShoppingBag } from "lucide-react";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 
 export default async function MasterDashboard() {
   const session = await getServerSession(authOptions);
@@ -85,9 +86,9 @@ export default async function MasterDashboard() {
           </h2>
         </div>
         <div className="flex flex-1 justify-end gap-4">
-          <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg size-10 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors">
+          <InteractiveHoverButton className="w-10 min-w-10 px-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800">
             <Bell className="h-5 w-5" />
-          </button>
+          </InteractiveHoverButton>
           <div
             className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
             style={{
@@ -156,16 +157,20 @@ export default async function MasterDashboard() {
         </h3>
         <div className="flex flex-wrap gap-4 py-3 justify-start">
           <Link href="/master/empresas">
-            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#137fec] text-white text-sm font-bold leading-normal tracking-[0.015em] gap-2 hover:bg-[#137fec]/90 transition-colors">
-              <Plus className="h-5 w-5" />
-              <span className="truncate">Adicionar Empresa</span>
-            </button>
+            <InteractiveHoverButton className="bg-[#137fec] text-white border-[#137fec]">
+              <span className="flex items-center gap-2">
+                <Plus className="h-5 w-5" />
+                <span className="truncate">Adicionar Empresa</span>
+              </span>
+            </InteractiveHoverButton>
           </Link>
           <Link href="/master/usuarios">
-            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-300 dark:hover:bg-slate-700 gap-2 transition-colors">
-              <UserCog className="h-5 w-5" />
-              <span className="truncate">Gerenciar Usuários Master</span>
-            </button>
+            <InteractiveHoverButton className="bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700">
+              <span className="flex items-center gap-2">
+                <UserCog className="h-5 w-5" />
+                <span className="truncate">Gerenciar Usuários Master</span>
+              </span>
+            </InteractiveHoverButton>
           </Link>
         </div>
       </section>

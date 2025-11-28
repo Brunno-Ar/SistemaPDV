@@ -1,5 +1,6 @@
 "use client";
 
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -139,13 +140,9 @@ export default function DashboardClient() {
               ))}
               {produtosEstoqueBaixo.length > 3 && (
                 <Link href="/estoque?filter=low_stock">
-                  <Button
-                    variant="outline"
-                    className="w-full mt-2 bg-white hover:bg-red-50 text-red-700 border-red-200"
-                  >
+                  <InteractiveHoverButton className="w-full mt-2 bg-white hover:bg-red-50 text-red-700 border-red-200">
                     Ver todos
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                  </InteractiveHoverButton>
                 </Link>
               )}
             </div>
@@ -193,13 +190,9 @@ export default function DashboardClient() {
               })}
               {lotesVencimentoProximo.length > 3 && (
                 <Link href="/lotes">
-                  <Button
-                    variant="outline"
-                    className="w-full mt-2 bg-white hover:bg-yellow-50 text-yellow-700 border-yellow-200"
-                  >
+                  <InteractiveHoverButton className="w-full mt-2 bg-white hover:bg-yellow-50 text-yellow-700 border-yellow-200">
                     Ver todos
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                  </InteractiveHoverButton>
                 </Link>
               )}
             </div>
@@ -288,31 +281,28 @@ export default function DashboardClient() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link href="/vender">
-              <Button
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <ShoppingCart className="h-8 w-8" />
-                <span>Nova Venda</span>
-              </Button>
+              <InteractiveHoverButton className="w-full h-24 text-lg border-gray-200">
+                <span className="flex flex-col items-center justify-center gap-2">
+                  <ShoppingCart className="h-8 w-8" />
+                  <span>Nova Venda</span>
+                </span>
+              </InteractiveHoverButton>
             </Link>
             <Link href="/estoque">
-              <Button
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <Package className="h-8 w-8" />
-                <span>Gerenciar Estoque</span>
-              </Button>
+              <InteractiveHoverButton className="w-full h-24 text-lg border-gray-200">
+                <span className="flex flex-col items-center justify-center gap-2">
+                  <Package className="h-8 w-8" />
+                  <span>Gerenciar Estoque</span>
+                </span>
+              </InteractiveHoverButton>
             </Link>
             <Link href="/relatorios">
-              <Button
-                variant="outline"
-                className="w-full h-24 flex flex-col items-center justify-center gap-2"
-              >
-                <Calendar className="h-8 w-8" />
-                <span>Relatórios</span>
-              </Button>
+              <InteractiveHoverButton className="w-full h-24 text-lg border-gray-200">
+                <span className="flex flex-col items-center justify-center gap-2">
+                  <Calendar className="h-8 w-8" />
+                  <span>Relatórios</span>
+                </span>
+              </InteractiveHoverButton>
             </Link>
           </div>
         </CardContent>
