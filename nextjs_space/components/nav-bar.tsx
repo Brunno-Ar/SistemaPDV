@@ -28,7 +28,7 @@ export function NavBar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  if (!session?.user) {
+  if (!session?.user || pathname?.startsWith("/master")) {
     return null;
   }
 

@@ -25,13 +25,54 @@ export async function GET(request: NextRequest) {
             sales: true,
           },
         },
+        sales: {
+          select: {
+            valorTotal: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return NextResponse.json(empresas);
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Calcular faturamento total, mensal e formatar resposta
+    const empresasFormatadas = empresas.map((empresa) => {
+      const faturamentoTotal = empresa.sales.reduce(
+        (acc, sale) => acc + Number(sale.valorTotal),
+        0
+      );
+
+      const faturamentoMensal = empresa.sales.reduce((acc, sale) => {
+        const saleDate = new Date(sale.createdAt);
+        if (
+          saleDate.getMonth() === currentMonth &&
+          saleDate.getFullYear() === currentYear
+        ) {
+          return acc + Number(sale.valorTotal);
+        }
+        return acc;
+      }, 0);
+
+      // Remover o array de sales para não pesar o JSON
+      const { sales, _count, ...rest } = empresa;
+
+      return {
+        ...rest,
+        faturamentoTotal,
+        faturamentoMensal,
+        totalProdutos: _count.products,
+        totalVendas: _count.sales,
+        _count, // Mantendo _count caso o frontend ainda use para users
+      };
+    });
+
+    return NextResponse.json(empresasFormatadas);
   } catch (error) {
     console.error("Erro ao buscar empresas:", error);
     return NextResponse.json(

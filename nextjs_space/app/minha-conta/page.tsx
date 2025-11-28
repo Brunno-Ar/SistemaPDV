@@ -7,7 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { NavBar } from "@/components/nav-bar";
-import { Key } from "lucide-react";
+import { Key, CheckCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function MinhaContaPage() {
   const [formData, setFormData] = useState({
@@ -16,6 +25,7 @@ export default function MinhaContaPage() {
     confirmarNovaSenha: "",
   });
   const [loading, setLoading] = useState(false);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +79,8 @@ export default function MinhaContaPage() {
         novaSenha: "",
         confirmarNovaSenha: "",
       });
+
+      setSuccessDialogOpen(true);
     } catch (error) {
       toast({
         title: "Erro",
@@ -140,6 +152,29 @@ export default function MinhaContaPage() {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-green-600 flex items-center gap-2">
+              <CheckCircle className="h-6 w-6" />
+              Senha Alterada!
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Sua senha foi atualizada com sucesso. Use a nova senha no próximo
+              login.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => setSuccessDialogOpen(false)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

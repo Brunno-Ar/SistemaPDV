@@ -1,18 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { NavBar } from "@/components/nav-bar";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Building2, Users, Package, DollarSign } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { Bell, Plus, UserCog, DollarSign, ShoppingBag } from "lucide-react";
 
 export default async function MasterDashboard() {
   const session = await getServerSession(authOptions);
@@ -21,178 +12,257 @@ export default async function MasterDashboard() {
     redirect("/vender");
   }
 
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
   // Buscar estatísticas gerais
   const totalEmpresas = await prisma.empresa.count();
   const empresasAtivas = await prisma.empresa.count({
     where: { status: "ATIVO" },
   });
-  const empresasPendentes = await prisma.empresa.count({
-    where: { status: "PENDENTE" },
-  });
+  const totalUsuarios = await prisma.user.count();
+  const totalProdutos = await prisma.product.count();
 
-  // Volume Transacionado Total
-  const todasVendas = await prisma.sale.findMany({
-    select: { valorTotal: true },
-  });
-  const volumeTransacionado = todasVendas.reduce(
-    (acc, sale) => acc + Number(sale.valorTotal),
-    0
-  );
+  // Novas Métricas
+  const totalVendas = await prisma.sale.count();
 
-  // Vendas Hoje
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const vendasHoje = await prisma.sale.count({
-    where: {
-      dataHora: {
-        gte: hoje,
+  // Faturamento Total (Desde sempre)
+  const faturamentoData = await prisma.sale.aggregate({
+    _sum: { valorTotal: true },
+  });
+  const faturamentoTotal = Number(faturamentoData._sum.valorTotal || 0);
+
+  // Buscar empresas recentes com métricas
+  const empresasRecentesRaw = await prisma.empresa.findMany({
+    take: 5,
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: {
+          products: true,
+          sales: true,
+        },
+      },
+      sales: {
+        where: {
+          createdAt: {
+            gte: firstDayOfMonth,
+            lte: lastDayOfMonth,
+          },
+        },
+        select: {
+          valorTotal: true,
+        },
       },
     },
   });
 
+  const empresasRecentes = empresasRecentesRaw.map((empresa) => ({
+    ...empresa,
+    faturamentoMensal: empresa.sales.reduce(
+      (acc, curr) => acc + Number(curr.valorTotal),
+      0
+    ),
+    totalProdutos: empresa._count.products,
+    totalVendas: empresa._count.sales,
+  }));
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavBar />
-      <div className="max-w-7xl mx-auto px-4 py-4 sm:py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-              Dashboard Master
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">
-              Visão geral do sistema
+    <div className="space-y-6">
+      {/* TopNavBar / Header */}
+      <header className="flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#101922] px-4 sm:px-10 py-3 rounded-xl shadow-sm">
+        <div className="flex items-center gap-4">
+          <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
+            Dashboard Master
+          </h2>
+        </div>
+        <div className="flex flex-1 justify-end gap-4">
+          <button className="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg size-10 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors">
+            <Bell className="h-5 w-5" />
+          </button>
+          <div
+            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+            style={{
+              backgroundImage:
+                'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCKPbs7VLri7A91VBbdXHg4FMYnQh4XF85fRxEAe2pNGAHlBlSwGG_K65sa6L_1sKWhXuOKk0SF5AMf42MN7T35KSbHBjIjpqz_rf_FCTOIidGRuIqDftAzfGLlUemm7vCqvqljzG-3VjFABoyVZidCE4D7tqGNpiQtYzCapGccKjCcayarLl_p7h_hazQB-aJhaeioBXSFtzxlFqwYHxU8x1vZ3eoKnihMVAYX86tr-NAS6osczpOP1X6BlsHlBz3wZBUufar2YN7t")',
+            }}
+          ></div>
+        </div>
+      </header>
+
+      {/* Stats Section */}
+      <section>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Faturamento Total */}
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm relative overflow-hidden">
+            <div className="absolute top-4 right-4 text-green-500 opacity-20">
+              <DollarSign className="h-12 w-12" />
+            </div>
+            <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal z-10">
+              Faturamento Total
+            </p>
+            <p className="text-green-600 dark:text-green-400 tracking-light text-3xl font-bold leading-tight z-10">
+              {formatCurrency(faturamentoTotal)}
             </p>
           </div>
-          <Link href="/master/empresas" className="w-full sm:w-auto">
-            <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
-              <Building2 className="h-4 w-4 mr-2" />
-              Gerenciar Empresas
-            </Button>
+
+          {/* Total Vendas */}
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal">
+                Total de Vendas
+              </p>
+              <ShoppingBag className="h-5 w-5 text-blue-500" />
+            </div>
+            <p className="text-slate-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+              {totalVendas}
+            </p>
+          </div>
+
+          {/* Empresas Ativas */}
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal">
+              Empresas Ativas
+            </p>
+            <p className="text-slate-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+              {empresasAtivas}
+            </p>
+          </div>
+
+          {/* Produtos Cadastrados */}
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal">
+              Produtos Cadastrados
+            </p>
+            <p className="text-slate-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+              {totalProdutos}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Actions Section */}
+      <section>
+        <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">
+          Ações Rápidas
+        </h3>
+        <div className="flex flex-wrap gap-4 py-3 justify-start">
+          <Link href="/master/empresas">
+            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#137fec] text-white text-sm font-bold leading-normal tracking-[0.015em] gap-2 hover:bg-[#137fec]/90 transition-colors">
+              <Plus className="h-5 w-5" />
+              <span className="truncate">Adicionar Empresa</span>
+            </button>
+          </Link>
+          <Link href="/master/usuarios">
+            <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-300 dark:hover:bg-slate-700 gap-2 transition-colors">
+              <UserCog className="h-5 w-5" />
+              <span className="truncate">Gerenciar Usuários Master</span>
+            </button>
           </Link>
         </div>
+      </section>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Empresas Ativas
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{empresasAtivas}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                De um total de {totalEmpresas} empresas
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Empresas Pendentes
-              </CardTitle>
-              <Building2 className="h-4 w-4 text-yellow-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{empresasPendentes}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Aguardando aprovação
-              </p>
-              {empresasPendentes > 0 && (
-                <Link href="/master/empresas">
-                  <Button
-                    variant="link"
-                    className="p-0 h-auto text-xs text-blue-600 mt-1"
+      {/* Recent Activity Section */}
+      <section>
+        <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">
+          Empresas Recentes
+        </h3>
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <tr>
+                  <th
+                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    scope="col"
                   >
-                    Ver pendentes
-                  </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Volume Transacionado
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(volumeTransacionado)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total acumulado no sistema
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vendas Hoje</CardTitle>
-              <Package className="h-4 w-4 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{vendasHoje}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Vendas realizadas hoje (00:00+)
-              </p>
-            </CardContent>
-          </Card>
+                    Empresa
+                  </th>
+                  <th
+                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    scope="col"
+                  >
+                    Fat. Mês
+                  </th>
+                  <th
+                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    scope="col"
+                  >
+                    Produtos
+                  </th>
+                  <th
+                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    scope="col"
+                  >
+                    Vendas
+                  </th>
+                  <th
+                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    scope="col"
+                  >
+                    Vencimento
+                  </th>
+                  <th
+                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    scope="col"
+                  >
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {empresasRecentes.map((empresa) => (
+                  <tr
+                    key={empresa.id}
+                    className="border-b border-slate-200 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                      {empresa.nome}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-green-600 dark:text-green-400">
+                      {formatCurrency(empresa.faturamentoMensal)}
+                    </td>
+                    <td className="px-6 py-4">{empresa.totalProdutos}</td>
+                    <td className="px-6 py-4">{empresa.totalVendas}</td>
+                    <td className="px-6 py-4">
+                      {empresa.vencimentoPlano
+                        ? new Date(empresa.vencimentoPlano).toLocaleDateString(
+                            "pt-BR"
+                          )
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                          empresa.status === "ATIVO"
+                            ? "bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300"
+                            : empresa.status === "PENDENTE"
+                            ? "bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300"
+                            : "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300"
+                        }`}
+                      >
+                        {empresa.status === "ATIVO"
+                          ? "Ativo"
+                          : empresa.status === "PENDENTE"
+                          ? "Pendente"
+                          : "Inativo"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg sm:text-xl">Ações Rápidas</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Acesso rápido às principais funcionalidades
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <Link href="/master/empresas">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start h-auto py-3 sm:py-4"
-                >
-                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
-                  <div className="text-left">
-                    <div className="font-medium text-sm sm:text-base">
-                      Gerenciar Empresas
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Ver, criar e editar empresas
-                    </div>
-                  </div>
-                </Button>
-              </Link>
-              <Link href="/master/usuarios">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start h-auto py-3 sm:py-4"
-                >
-                  <Users className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 flex-shrink-0" />
-                  <div className="text-left">
-                    <div className="font-medium text-sm sm:text-base">
-                      Gerenciar Masters
-                    </div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Ver e criar usuários master
-                    </div>
-                  </div>
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      </section>
     </div>
   );
 }

@@ -171,18 +171,33 @@ export async function POST(request: NextRequest) {
         });
 
       case "resetSenha":
-        // Reset de senha de qualquer usuário para "Mudar123"
-        if (!userId) {
+        // Reset de senha do admin da empresa para "Mudar123"
+        if (!empresaId) {
           return NextResponse.json(
-            { error: "userId obrigatório" },
+            { error: "empresaId obrigatório" },
             { status: 400 }
+          );
+        }
+
+        // Buscar o usuário admin dessa empresa
+        const adminUser = await prisma.user.findFirst({
+          where: {
+            empresaId: empresaId,
+            role: "admin",
+          },
+        });
+
+        if (!adminUser) {
+          return NextResponse.json(
+            { error: "Admin não encontrado para esta empresa" },
+            { status: 404 }
           );
         }
 
         const novaSenhaHash = await bcrypt.hash("Mudar123", 10);
 
         const userAtualizado = await prisma.user.update({
-          where: { id: userId },
+          where: { id: adminUser.id },
           data: { password: novaSenhaHash },
         });
 

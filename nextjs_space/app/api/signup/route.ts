@@ -7,7 +7,11 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, nome, nomeEmpresa } = body;
+    let { email, password, nome, nomeEmpresa } = body;
+
+    if (email) {
+      email = email.toLowerCase();
+    }
 
     // Validações
     if (!email || !password || !nome || !nomeEmpresa) {
