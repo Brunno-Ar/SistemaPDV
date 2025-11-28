@@ -12,6 +12,7 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   ChevronUp,
+  ArrowRightLeft,
 } from "lucide-react";
 import {
   Card,
@@ -21,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -29,6 +31,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 
 import {
   Accordion,
@@ -166,15 +177,167 @@ export default function MovimentacoesClient({
     }
   };
 
+  // Movement Dialog State
+  const [movementDialogOpen, setMovementDialogOpen] = useState(false);
+  const [movementFormData, setMovementFormData] = useState({
+    produtoId: "",
+    loteId: "sem_lote", // "sem_lote" ou ID do lote
+    tipo: "ENTRADA", // ENTRADA, SAIDA, PERDA, AJUSTE
+    quantidade: "",
+    motivo: "",
+  });
+  const [products, setProducts] = useState<any[]>([]);
+  const [lotes, setLotes] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchLotes();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch("/api/admin/products");
+      const data = await response.json();
+      if (Array.isArray(data)) setProducts(data);
+    } catch (error) {
+      console.error("Erro ao carregar produtos:", error);
+    }
+  };
+
+  const fetchLotes = async () => {
+    try {
+      const response = await fetch("/api/admin/lotes");
+      const data = await response.json();
+      if (Array.isArray(data)) setLotes(data);
+    } catch (error) {
+      console.error("Erro ao carregar lotes:", error);
+    }
+  };
+
+  const handleOpenMovementDialog = () => {
+    setMovementFormData({
+      produtoId: "",
+      loteId: "sem_lote",
+      tipo: "ENTRADA",
+      quantidade: "",
+      motivo: "",
+    });
+    setMovementDialogOpen(true);
+  };
+
+  const handleMovementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (
+      !movementFormData.produtoId ||
+      !movementFormData.tipo ||
+      !movementFormData.quantidade
+    ) {
+      toast({
+        title: "Erro",
+        description: "Preencha os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const qtd = Number(movementFormData.quantidade);
+    if (qtd <= 0) {
+      toast({
+        title: "Erro",
+        description: "Quantidade deve ser maior que zero",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      let apiTipo = "ENTRADA";
+      let operacao = "ADICIONAR";
+
+      if (movementFormData.tipo === "ENTRADA") {
+        apiTipo = "ENTRADA";
+        operacao = "ADICIONAR";
+      } else if (movementFormData.tipo === "SAIDA") {
+        apiTipo = "AJUSTE_INVENTARIO";
+        operacao = "REMOVER";
+      } else if (movementFormData.tipo === "PERDA") {
+        apiTipo = "AJUSTE_QUEBRA";
+        operacao = "REMOVER";
+      } else if (movementFormData.tipo === "AJUSTE") {
+        apiTipo = "AJUSTE_INVENTARIO";
+        operacao = "ADICIONAR";
+      }
+
+      const body = {
+        produtoId: movementFormData.produtoId,
+        loteId:
+          movementFormData.loteId === "sem_lote"
+            ? undefined
+            : movementFormData.loteId,
+        tipo: apiTipo,
+        operacao,
+        quantidade: qtd,
+        motivo: movementFormData.motivo,
+      };
+
+      const response = await fetch("/api/admin/movimentacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao criar movimentação");
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Movimentação registrada com sucesso",
+      });
+
+      setMovementDialogOpen(false);
+      fetchMovements(); // Atualizar lista
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Erro ao registrar movimentação",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const availableLotes = lotes.filter(
+    (l) => l.produtoId === movementFormData.produtoId
+  );
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Central de Movimentações</CardTitle>
-          <CardDescription>
-            Visualize vendas, entradas e ajustes de estoque em uma linha do
-            tempo unificada.
-          </CardDescription>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <CardTitle>Central de Movimentações</CardTitle>
+              <CardDescription>
+                Visualize vendas, entradas e ajustes de estoque em uma linha do
+                tempo unificada.
+              </CardDescription>
+            </div>
+            <InteractiveHoverButton
+              onClick={handleOpenMovementDialog}
+              className="bg-[#137fec] text-white border-[#137fec]"
+            >
+              <span className="flex items-center gap-2">
+                <ArrowRightLeft className="h-4 w-4" />
+                Nova Movimentação
+              </span>
+            </InteractiveHoverButton>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4">
@@ -366,6 +529,138 @@ export default function MovimentacoesClient({
           ))
         )}
       </div>
+
+      <Dialog open={movementDialogOpen} onOpenChange={setMovementDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Nova Movimentação</DialogTitle>
+            <DialogDescription>
+              Registre entradas, saídas ou ajustes manuais no estoque.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleMovementSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="movProduto">Produto</Label>
+              <Select
+                value={movementFormData.produtoId}
+                onValueChange={(value) =>
+                  setMovementFormData({
+                    ...movementFormData,
+                    produtoId: value,
+                    loteId: "sem_lote",
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((product) => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.nome} (SKU: {product.sku})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {movementFormData.produtoId && (
+              <div className="space-y-2">
+                <Label htmlFor="movLote">Lote (Opcional)</Label>
+                <Select
+                  value={movementFormData.loteId}
+                  onValueChange={(value) =>
+                    setMovementFormData({ ...movementFormData, loteId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um lote (ou sem lote)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sem_lote">
+                      Sem Lote (Ajuste Geral)
+                    </SelectItem>
+                    {availableLotes.map((lote) => (
+                      <SelectItem key={lote.id} value={lote.id}>
+                        {lote.numeroLote} (Qtd: {lote.quantidade})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="movTipo">Tipo</Label>
+                <Select
+                  value={movementFormData.tipo}
+                  onValueChange={(value) =>
+                    setMovementFormData({ ...movementFormData, tipo: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ENTRADA">Entrada (+)</SelectItem>
+                    <SelectItem value="SAIDA">Saída (-)</SelectItem>
+                    <SelectItem value="PERDA">Perda/Quebra (-)</SelectItem>
+                    <SelectItem value="AJUSTE">Ajuste (+)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="movQuantidade">Quantidade</Label>
+                <Input
+                  id="movQuantidade"
+                  type="number"
+                  value={movementFormData.quantidade}
+                  onChange={(e) =>
+                    setMovementFormData({
+                      ...movementFormData,
+                      quantidade: e.target.value,
+                    })
+                  }
+                  placeholder="Qtd"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="movMotivo">Motivo (Opcional)</Label>
+              <Input
+                id="movMotivo"
+                value={movementFormData.motivo}
+                onChange={(e) =>
+                  setMovementFormData({
+                    ...movementFormData,
+                    motivo: e.target.value,
+                  })
+                }
+                placeholder="Ex: Contagem de estoque, doação, etc."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <InteractiveHoverButton
+                type="button"
+                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                onClick={() => setMovementDialogOpen(false)}
+              >
+                Cancelar
+              </InteractiveHoverButton>
+              <InteractiveHoverButton
+                type="submit"
+                className="bg-[#137fec] text-white border-[#137fec]"
+              >
+                Confirmar
+              </InteractiveHoverButton>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

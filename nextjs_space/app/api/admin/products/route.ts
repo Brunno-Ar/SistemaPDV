@@ -289,6 +289,18 @@ export async function POST(request: NextRequest) {
             produtoId: product.id,
           },
         });
+
+        // 3. Registrar movimentação de entrada
+        await tx.movimentacaoEstoque.create({
+          data: {
+            produtoId: product.id,
+            usuarioId: session.user.id,
+            empresaId: empresaId,
+            tipo: "ENTRADA",
+            quantidade: quantidadeLote,
+            motivo: "Estoque Inicial (Cadastro de Produto)",
+          },
+        });
       }
 
       return { product, lote };

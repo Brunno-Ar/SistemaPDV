@@ -87,7 +87,9 @@ export async function GET(request: NextRequest) {
       let status = "sem_validade";
       let diasParaVencer = null;
 
-      if (lote.dataValidade) {
+      if (lote.quantidade === 0) {
+        status = "esgotado";
+      } else if (lote.dataValidade) {
         const dataValidade = new Date(lote.dataValidade);
         status = "normal";
 

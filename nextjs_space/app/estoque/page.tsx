@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { NavBar } from "@/components/nav-bar";
+
 import EstoqueClient from "./_components/estoque-client";
 
 export default async function EstoquePage() {
@@ -20,7 +20,6 @@ export default async function EstoquePage() {
 
   return (
     <>
-      <NavBar />
       <div className="max-w-7xl mx-auto p-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">

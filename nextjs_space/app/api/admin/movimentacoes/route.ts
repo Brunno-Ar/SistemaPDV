@@ -138,3 +138,148 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+/**
+ * POST /api/admin/movimentacoes
+ * Cria uma nova movimentação manual (Ajuste, Entrada, Perda)
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user || session.user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Acesso negado. Apenas administradores" },
+        { status: 403 }
+      );
+    }
+
+    const empresaId = session.user.empresaId;
+    if (!empresaId) {
+      return NextResponse.json(
+        { error: "Empresa não identificada" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { produtoId, loteId, tipo, quantidade, motivo } = body;
+
+    // Validações básicas
+    if (!produtoId || !tipo || !quantidade) {
+      return NextResponse.json(
+        { error: "Produto, Tipo e Quantidade são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    const qtd = Number(quantidade);
+    if (isNaN(qtd) || qtd <= 0) {
+      return NextResponse.json(
+        { error: "Quantidade deve ser um número positivo" },
+        { status: 400 }
+      );
+    }
+
+    // Determinar sinal da operação
+    let multiplier = 1;
+    if (tipo === "AJUSTE_QUEBRA" || tipo === "SAIDA") {
+      multiplier = -1;
+    }
+    // Se for AJUSTE_INVENTARIO, depende do contexto, mas geralmente aqui vamos assumir que o usuário manda o valor absoluto e o tipo define se entra ou sai.
+    // Mas para simplificar, vamos assumir:
+    // ENTRADA: +
+    // AJUSTE_QUEBRA (Perda): -
+    // AJUSTE_INVENTARIO (Correção): Pode ser + ou -.
+    // Vamos simplificar: O frontend manda o tipo.
+    // Se for ENTRADA -> +
+    // Se for SAIDA (Custom type, mapeado para AJUSTE_INVENTARIO ou similar) -> -
+    // Se for PERDA (AJUSTE_QUEBRA) -> -
+
+    // Vamos usar os tipos do Prisma: ENTRADA, AJUSTE_QUEBRA, AJUSTE_INVENTARIO, DEVOLUCAO, VENDA
+    // Mapeamento lógico:
+    // ENTRADA -> +
+    // AJUSTE_QUEBRA -> -
+    // DEVOLUCAO -> +
+    // AJUSTE_INVENTARIO -> Pode ser + ou -. O usuário deve especificar se é entrada ou saída no frontend, ou mandamos o sinal na quantidade?
+    // Vamos assumir que o frontend manda a quantidade POSITIVA e o tipo define o sinal.
+    // Para AJUSTE_INVENTARIO, vamos precisar de um subtipo ou sinal explícito.
+    // Vamos assumir que AJUSTE_INVENTARIO recebido aqui será tratado como "Correção Manual".
+    // Se o usuário quiser tirar, ele usa "SAIDA" (que não existe no enum, então usaremos AJUSTE_INVENTARIO com valor negativo).
+
+    // Melhor: O frontend manda "operacao": "ADICIONAR" | "REMOVER"
+    const operacao = body.operacao || "ADICIONAR";
+    if (operacao === "REMOVER") multiplier = -1;
+
+    const delta = qtd * multiplier;
+
+    // Transação
+    const result = await prisma.$transaction(async (tx: any) => {
+      // 1. Verificar Produto
+      const produto = await tx.product.findFirst({
+        where: { id: produtoId, empresaId },
+      });
+
+      if (!produto) throw new Error("Produto não encontrado");
+
+      // 2. Se tiver Lote, atualizar Lote
+      let loteInfo = "";
+      if (loteId) {
+        const lote = await tx.lote.findFirst({
+          where: { id: loteId, produtoId },
+        });
+
+        if (!lote) throw new Error("Lote não encontrado");
+
+        // Verificar estoque negativo no lote
+        if (lote.quantidade + delta < 0) {
+          throw new Error(
+            `Estoque insuficiente no lote. Disponível: ${lote.quantidade}`
+          );
+        }
+
+        await tx.lote.update({
+          where: { id: loteId },
+          data: { quantidade: { increment: delta } },
+        });
+        loteInfo = ` (Lote: ${lote.numeroLote})`;
+      } else {
+        // Se não tem lote, verificar estoque negativo no produto geral (opcional, mas recomendado)
+        if (produto.estoqueAtual + delta < 0) {
+          // Permitir negativo? Geralmente não.
+          throw new Error(
+            `Estoque insuficiente. Disponível: ${produto.estoqueAtual}`
+          );
+        }
+      }
+
+      // 3. Atualizar Produto
+      await tx.product.update({
+        where: { id: produtoId },
+        data: { estoqueAtual: { increment: delta } },
+      });
+
+      // 4. Criar Movimentação
+      const mov = await tx.movimentacaoEstoque.create({
+        data: {
+          produtoId,
+          usuarioId: session.user.id,
+          empresaId,
+          tipo: tipo, // ENTRADA, AJUSTE_QUEBRA, AJUSTE_INVENTARIO
+          quantidade: delta,
+          motivo: `${motivo || "Ajuste manual"}${loteInfo}`,
+        },
+      });
+
+      return mov;
+    });
+
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error("Erro ao criar movimentação:", error);
+    return NextResponse.json(
+      { error: error.message || "Erro interno do servidor" },
+      { status: 400 }
+    );
+  }
+}

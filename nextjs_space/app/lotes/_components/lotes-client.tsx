@@ -84,6 +84,7 @@ export default function LotesClient() {
     | "normal"
     | "sem_validade"
     | "estoque_baixo"
+    | "esgotado"
   >("todos");
   const [ordenacao, setOrdenacao] = useState("nome-asc");
 
@@ -133,10 +134,6 @@ export default function LotesClient() {
     try {
       const response = await fetch("/api/admin/products");
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao carregar produtos");
-      }
 
       if (Array.isArray(data)) {
         setProducts(data);
@@ -268,7 +265,17 @@ export default function LotesClient() {
   };
 
   const getStatusBadge = (lote: Lote) => {
-    if (
+    if (lote.status === "esgotado") {
+      return (
+        <Badge
+          variant="secondary"
+          className="bg-gray-200 text-gray-600 hover:bg-gray-300 flex items-center gap-1"
+        >
+          <Package className="h-3 w-3" />
+          Finalizado
+        </Badge>
+      );
+    } else if (
       lote.produto.estoqueAtual <= lote.produto.estoqueMinimo &&
       lote.status !== "vencido"
     ) {
@@ -334,7 +341,8 @@ export default function LotesClient() {
         if (statusFilter === "estoque_baixo") {
           matchesStatus =
             lote.produto.estoqueAtual <= lote.produto.estoqueMinimo &&
-            lote.status !== "vencido";
+            lote.status !== "vencido" &&
+            lote.status !== "esgotado";
         } else {
           matchesStatus = lote.status === statusFilter;
         }
@@ -379,13 +387,8 @@ export default function LotesClient() {
     );
   }
 
-  // ... (rest of the code)
-
   return (
     <div className="space-y-6">
-      {/* ... (header and summary cards) */}
-
-      {/* Filtros e Ações */}
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -395,6 +398,7 @@ export default function LotesClient() {
                 Gerencie validades e estoque por lote
               </p>
             </div>
+
             <InteractiveHoverButton
               onClick={handleOpenDialog}
               className="bg-[#137fec] text-white border-[#137fec]"
@@ -440,6 +444,7 @@ export default function LotesClient() {
                     ⚠️ Próximo Vencimento
                   </SelectItem>
                   <SelectItem value="vencido">❌ Vencido</SelectItem>
+                  <SelectItem value="esgotado">📦 Finalizado</SelectItem>
                   <SelectItem value="sem_validade">♾️ Sem Validade</SelectItem>
                 </SelectContent>
               </Select>
@@ -529,6 +534,7 @@ export default function LotesClient() {
         </CardContent>
       </Card>
 
+      {/* Dialog Novo/Editar Lote */}
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>

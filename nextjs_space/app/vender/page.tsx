@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { NavBar } from "@/components/nav-bar";
+
 import VenderClient from "./_components/vender-client";
 
 export default async function VenderPage() {
