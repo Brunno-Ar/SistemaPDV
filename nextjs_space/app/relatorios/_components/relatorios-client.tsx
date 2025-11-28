@@ -1,41 +1,24 @@
-"use client";
+
+'use client';
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { toast } from "@/hooks/use-toast";
+import PageHeading from "@/components/page-heading";
+
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  Legend,
   PieChart,
   Pie,
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import {
-  DollarSign,
-  ShoppingBag,
-  TrendingUp,
-  Package,
-  Calendar,
-  Users,
-} from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 
 interface Analytics {
   totalVendasHoje: number;
@@ -65,101 +48,34 @@ interface Analytics {
   }>;
 }
 
-interface RecentSale {
-  id: string;
-  dataHora: string;
-  user: { nome: string };
-  valorTotal: number;
-  custoTotal: number;
-  lucro: number;
-  margem: number;
-  metodoPagamento: string;
-}
-
 interface RelatoriosClientProps {
-  companyId?: string; // Opcional: usado pelo Master
+  companyId?: string;
 }
 
-export default function RelatoriosClient({
-  companyId,
-}: RelatoriosClientProps = {}) {
+const KPICard = ({ title, value, isCurrency = true, isPositive = true }) => (
+    <div className="bg-white dark:bg-background-dark dark:border dark:border-slate-800 rounded-xl p-6 shadow-sm">
+        <h3 className="text-base font-medium text-[#4c739a] dark:text-slate-400 mb-2">{title}</h3>
+        <p className={`text-4xl font-bold ${isPositive ? 'text-green-500' : 'text-[#0d141b] dark:text-slate-50'}`}>
+            {isCurrency ? `R$ ${value.toFixed(2)}` : value}
+        </p>
+    </div>
+);
+
+
+export default function RelatoriosClient({ companyId }: RelatoriosClientProps = {}) {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [recentSales, setRecentSales] = useState<RecentSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
-    startDate: "",
-    endDate: "",
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
-    fetchAnalytics();
-    fetchRecentSales();
-  }, [companyId]); // Re-fetch quando companyId mudar
+    fetchFilteredData();
+  }, [companyId]);
 
-  const fetchAnalytics = async () => {
-    try {
-      // 🔥 Incluir companyId se fornecido
-      const url = companyId
-        ? `/api/admin/analytics?companyId=${companyId}`
-        : "/api/admin/analytics";
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao carregar analytics");
-      }
-
-      setAnalytics(data);
-    } catch (error) {
-      console.error("Erro ao carregar analytics:", error);
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error ? error.message : "Erro ao carregar analytics",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchRecentSales = async () => {
-    try {
-      // 🔥 Incluir companyId se fornecido
-      const url = companyId
-        ? `/api/admin/sales?companyId=${companyId}`
-        : "/api/admin/sales";
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao carregar vendas");
-      }
-
-      // Ensure data is an array
-      if (Array.isArray(data)) {
-        setRecentSales(data);
-      } else {
-        setRecentSales([]);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar vendas recentes:", error);
-      setRecentSales([]);
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Erro ao carregar vendas recentes",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchFilteredData = async () => {
-    if (!dateRange.startDate || !dateRange.endDate) {
+  const fetchFilteredData = async (start = dateRange.startDate, end = dateRange.endDate) => {
+    if (!start || !end) {
       toast({
         title: "Erro",
         description: "Selecione as datas de início e fim",
@@ -168,27 +84,20 @@ export default function RelatoriosClient({
       return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate,
-      });
+      const params = new URLSearchParams({ startDate: start, endDate: end });
+      if(companyId) params.append('companyId', companyId);
 
-      const [analyticsRes, salesRes] = await Promise.all([
-        fetch(`/api/admin/analytics?${params}`),
-        fetch(`/api/admin/sales?${params}`),
-      ]);
+      const response = await fetch(`/api/admin/analytics?${params}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Erro ao carregar dados');
 
-      const analyticsData = await analyticsRes.json();
-      const salesData = await salesRes.json();
-
-      setAnalytics(analyticsData);
-      setRecentSales(salesData);
+      setAnalytics(data);
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados filtrados",
+        description: error instanceof Error ? error.message : "Erro ao carregar dados filtrados",
         variant: "destructive",
       });
     } finally {
@@ -196,330 +105,114 @@ export default function RelatoriosClient({
     }
   };
 
-  const clearFilter = () => {
-    setDateRange({ startDate: "", endDate: "" });
-    setLoading(true);
+  const setDatePreset = (preset: 'today' | 'yesterday' | 'this_month' | 'last_month') => {
+    const today = new Date();
+    let start = new Date();
+    let end = new Date();
 
-    // Buscar dados sem filtros (padrão)
-    fetchAnalytics();
-    fetchRecentSales();
-  };
+    switch (preset) {
+        case 'today':
+            break;
+        case 'yesterday':
+            start.setDate(today.getDate() - 1);
+            end.setDate(today.getDate() - 1);
+            break;
+        case 'this_month':
+            start = new Date(today.getFullYear(), today.getMonth(), 1);
+            end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+        case 'last_month':
+            start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            end = new Date(today.getFullYear(), today.getMonth(), 0);
+            break;
+    }
 
-  if (loading && !analytics) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        Carregando relatórios...
-      </div>
-    );
-  }
+    const startDate = start.toISOString().split('T')[0];
+    const endDate = end.toISOString().split('T')[0];
+
+    setDateRange({ startDate, endDate });
+    fetchFilteredData(startDate, endDate);
+};
+
 
   const methodColors = {
-    dinheiro: "#60B5FF",
-    debito: "#FF9149",
-    credito: "#FF9898",
-    pix: "#80D8C3",
+    dinheiro: "#4CAF50",
+    debito: "#FFC107",
+    credito: "#F44336",
+    pix: "#2196F3",
   };
 
-  const formatCurrency = (value: number) => `R$ ${value.toFixed(2)}`;
-
   return (
-    <div className="space-y-6">
-      {/* Filtros de Data */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros de Período</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[200px]">
-              <Label htmlFor="startDate">Data Inicial</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={dateRange.startDate}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, startDate: e.target.value })
-                }
-              />
+    <>
+      <PageHeading title="Relatório de Vendas">
+        <button className="flex items-center justify-center gap-2 min-w-[84px] cursor-pointer overflow-hidden rounded-lg h-10 px-4 bg-white dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 text-[#0d141b] text-sm font-bold leading-normal tracking-[0.015em] border border-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+            <span className="material-symbols-outlined text-xl">download</span>
+            <span className="truncate">Exportar</span>
+        </button>
+      </PageHeading>
+
+      <div className="bg-white dark:bg-background-dark dark:border dark:border-slate-800 p-4 rounded-xl shadow-sm mb-8">
+        <div className="flex flex-wrap items-end gap-4">
+            <div className="flex items-center gap-2">
+                <Button onClick={() => setDatePreset('today')}>Hoje</Button>
+                <Button onClick={() => setDatePreset('yesterday')} variant="outline">Ontem</Button>
+                <Button onClick={() => setDatePreset('this_month')} variant="outline">Este Mês</Button>
+                <Button onClick={() => setDatePreset('last_month')} variant="outline">Mês Passado</Button>
             </div>
-            <div className="flex-1 min-w-[200px]">
-              <Label htmlFor="endDate">Data Final</Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={dateRange.endDate}
-                onChange={(e) =>
-                  setDateRange({ ...dateRange, endDate: e.target.value })
-                }
-              />
+            <div className="flex flex-wrap items-end gap-4 flex-1 min-w-[320px]">
+                <Label className="flex flex-col min-w-40 flex-1">
+                    <p className="text-[#0d141b] dark:text-slate-300 text-sm font-medium leading-normal pb-2">Data de Início</p>
+                    <Input type="date" value={dateRange.startDate} onChange={e => setDateRange({...dateRange, startDate: e.target.value})} />
+                </Label>
+                <Label className="flex flex-col min-w-40 flex-1">
+                    <p className="text-[#0d141b] dark:text-slate-300 text-sm font-medium leading-normal pb-2">Data de Fim</p>
+                    <Input type="date" value={dateRange.endDate} onChange={e => setDateRange({...dateRange, endDate: e.target.value})} />
+                </Label>
             </div>
-            <Button onClick={fetchFilteredData}>Aplicar Filtro</Button>
-            <Button variant="outline" onClick={clearFilter}>
-              Limpar
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cards de Resumo - Vendas */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">📊 Faturamento</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vendas Hoje</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(analytics?.totalVendasHoje || 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {analytics?.transacoesHoje || 0} transações
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Vendas Semana
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(analytics?.totalVendasSemana || 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {analytics?.transacoesSemana || 0} transações
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vendas Mês</CardTitle>
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(analytics?.totalVendasMes || 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {analytics?.transacoesMes || 0} transações
-              </p>
-            </CardContent>
-          </Card>
+            <Button onClick={() => fetchFilteredData()}>Aplicar Filtros</Button>
         </div>
       </div>
 
-      {/* Cards de Lucro */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3">💰 Lucro Líquido</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="bg-green-50 border-green-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
-                Lucro Hoje
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-700">
-                {formatCurrency(analytics?.lucroHoje || 0)}
-              </div>
-              <p className="text-xs text-green-600">
-                Margem: {(analytics?.margemHoje || 0).toFixed(1)}%
-              </p>
-            </CardContent>
-          </Card>
+      {loading ? (
+        <div className="text-center py-10">Carregando dados...</div>
+      ) : analytics ? (
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <KPICard title="Custo da Mercadoria Vendida (CMV)" value={analytics.custoTotalMes} isPositive={false} />
+                <KPICard title="Lucro Líquido" value={analytics.lucroMes} />
+            </div>
 
-          <Card className="bg-green-50 border-green-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
-                Lucro Semana
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-700">
-                {formatCurrency(analytics?.lucroSemana || 0)}
-              </div>
-              <p className="text-xs text-green-600">
-                Margem: {(analytics?.margemSemana || 0).toFixed(1)}%
-              </p>
-            </CardContent>
-          </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <div className="lg:col-span-3 bg-white dark:bg-background-dark dark:border dark:border-slate-800 rounded-xl p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-[#0d141b] dark:text-slate-50 mb-4">Top 5 Produtos Mais Vendidos</h3>
+                    <ResponsiveContainer width="100%" height={320}>
+                        <BarChart data={analytics.produtosMaisVendidos.slice(0, 5)}>
+                            <XAxis dataKey="nome" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`}/>
+                            <Tooltip />
+                            <Bar dataKey="totalVendido" fill="#137fec" radius={[4, 4, 0, 0]} name="Quantidade Vendida"/>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
 
-          <Card className="bg-green-50 border-green-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
-                Lucro Mês
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-700">
-                {formatCurrency(analytics?.lucroMes || 0)}
-              </div>
-              <p className="text-xs text-green-600">
-                Margem: {(analytics?.margemMes || 0).toFixed(1)}%
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Produtos Mais Vendidos */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Produtos Mais Vendidos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics?.produtosMaisVendidos || []}>
-                <XAxis
-                  dataKey="nome"
-                  tickLine={false}
-                  tick={{ fontSize: 10 }}
-                  interval="preserveStartEnd"
-                />
-                <YAxis tickLine={false} tick={{ fontSize: 10 }} />
-                <Tooltip
-                  formatter={(value: any) => [value, "Quantidade"]}
-                  wrapperStyle={{ fontSize: 11 }}
-                />
-                <Bar dataKey="totalVendido" fill="#60B5FF" name="Quantidade" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Vendas por Método */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vendas por Método de Pagamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={analytics?.vendasPorMetodo || []}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  dataKey="valor"
-                  nameKey="metodo"
-                  label={(entry: any) =>
-                    `${entry.metodo}: ${formatCurrency(entry.valor)}`
-                  }
-                >
-                  {analytics?.vendasPorMetodo?.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        methodColors[
-                          entry.metodo as keyof typeof methodColors
-                        ] || "#8884d8"
-                      }
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: any) => formatCurrency(value)}
-                  wrapperStyle={{ fontSize: 11 }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Histórico de Vendas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Vendas Recentes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data/Hora</TableHead>
-                <TableHead>Vendedor</TableHead>
-                <TableHead>Valor Total</TableHead>
-                <TableHead>Custo</TableHead>
-                <TableHead>Lucro</TableHead>
-                <TableHead>Margem</TableHead>
-                <TableHead>Método</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentSales?.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p className="text-gray-500">Nenhuma venda encontrada</p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                recentSales?.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell>
-                      {new Date(sale.dataHora).toLocaleString("pt-BR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </TableCell>
-                    <TableCell>{sale.user?.nome || "N/A"}</TableCell>
-                    <TableCell className="font-semibold">
-                      {formatCurrency(sale.valorTotal)}
-                    </TableCell>
-                    <TableCell className="text-red-600">
-                      {formatCurrency(sale.custoTotal || 0)}
-                    </TableCell>
-                    <TableCell className="font-semibold text-green-600">
-                      {formatCurrency(sale.lucro || 0)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          sale.margem > 30
-                            ? "default"
-                            : sale.margem > 15
-                            ? "secondary"
-                            : "destructive"
-                        }
-                      >
-                        {(sale.margem || 0).toFixed(1)}%
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        style={{
-                          backgroundColor:
-                            methodColors[
-                              sale.metodoPagamento as keyof typeof methodColors
-                            ] || "#gray",
-                          color: "white",
-                        }}
-                      >
-                        {sale.metodoPagamento.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+                <div className="lg:col-span-2 bg-white dark:bg-background-dark dark:border dark:border-slate-800 rounded-xl p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-[#0d141b] dark:text-slate-50 mb-4">Distribuição por Forma de Pagamento</h3>
+                    <ResponsiveContainer width="100%" height={320}>
+                        <PieChart>
+                            <Pie data={analytics.vendasPorMetodo} dataKey="valor" nameKey="metodo" cx="50%" cy="50%" outerRadius={100} label>
+                                {analytics.vendasPorMetodo.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={methodColors[entry.metodo.toLowerCase() as keyof typeof methodColors] || '#8884d8'} />
+                                ))}
+                            </Pie>
+                            <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        </>
+      ) : (
+        <div className="text-center py-10">Nenhum dado para exibir.</div>
+      )}
+    </>
   );
 }

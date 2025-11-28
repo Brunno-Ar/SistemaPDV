@@ -11,15 +11,15 @@ export const dynamic = "force-dynamic"
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || 'http://localhost:3000'),
-  title: 'Sistema PDV - Ponto de Venda',
-  description: 'Sistema de Ponto de Venda com controle de estoque',
+  title: 'Sistema de Gestão de Varejo',
+  description: 'A Gestão do Seu Varejo, Simplificada e Inteligente',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
   },
   openGraph: {
-    title: 'Sistema PDV - Ponto de Venda',
-    description: 'Sistema de Ponto de Venda com controle de estoque',
+    title: 'Sistema de Gestão de Varejo',
+    description: 'A Gestão do Seu Varejo, Simplificada e Inteligente',
     images: ['/og-image.png'],
   },
 }

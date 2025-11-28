@@ -15,23 +15,32 @@ const config: Config = {
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
       borderRadius: {
-        lg: 'var(--radius)',
+        DEFAULT: "0.5rem",
+        lg: "0.75rem",
+        xl: "1rem",
+        '2xl': '1.5rem',
+        full: "9999px",
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        'background-light': '#f6f7f8',
+        'background-dark': '#101922',
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+          light: '#FFFFFF',
+          dark: '#182431',
         },
         popover: {
           DEFAULT: 'hsl(var(--popover))',
           foreground: 'hsl(var(--popover-foreground))',
         },
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
+          DEFAULT: '#137fec',
+          darker: '#7f13ec',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -50,7 +59,26 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
-        border: 'hsl(var(--border))',
+        success: '#28A745',
+        warning: '#FFC107',
+        danger: '#DC3545',
+        error: '#DC3545',
+        info: '#42A5F5',
+        special: '#7E57C2',
+        brand: '#87d3a0',
+        text: {
+          light: '#101922',
+          dark: '#f6f7f8',
+          'muted-light': '#4c739a',
+          'muted-dark': '#9ab0c9',
+          'subtle-light': '#4c739a',
+          'subtle-dark': '#a0b3c6',
+        },
+        border: {
+          DEFAULT: 'hsl(var(--border))',
+          light: '#e5e7eb',
+          dark: '#374151',
+        },
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         chart: {
@@ -60,6 +88,23 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        surface: {
+          light: '#FFFFFF',
+          dark: '#182431',
+        },
+        alert: {
+          'warning-bg': '#fffbeb',
+          'warning-border': '#fde68a',
+          'warning-text': '#b45309',
+          'dark-warning-bg': '#2d1a03',
+          'dark-warning-border': '#78350f',
+          'dark-warning-text': '#fde68a',
+        },
+      },
+      fontFamily: {
+        display: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        brand: ['Fredoka', 'sans-serif'],
       },
       keyframes: {
         'accordion-down': {

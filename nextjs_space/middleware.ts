@@ -7,6 +7,11 @@ export default withAuth(
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
 
+    // Allow access to the landing page for everyone
+    if (path === '/') {
+      return NextResponse.next();
+    }
+
     // Rotas exclusivas do MASTER
     if (path.startsWith('/master')) {
       if (token?.role !== 'master') {
@@ -49,25 +54,22 @@ export default withAuth(
       }
     }
   },
-  {
+   {
+    // O `withAuth` já lida com a lógica de redirecionamento para login
+    // se o usuário não estiver autenticado nas rotas protegidas.
+    // O callback `authorized` é usado para lógicas mais complexas de autorização.
+    // Aqui, estamos simplesmente garantindo que haja um token.
     callbacks: {
-      authorized: ({ token, req }) => {
-        // Permitir acesso às rotas de auth
-        if (req.nextUrl.pathname.startsWith('/api/auth') || 
-            req.nextUrl.pathname.startsWith('/login') ||
-            req.nextUrl.pathname.startsWith('/signup')) {
-          return true
-        }
-
-        // Verificar se tem token válido para outras rotas protegidas
-        return !!token
-      },
+      authorized: ({ token }) => !!token,
     },
   }
 )
 
 export const config = {
+  // O matcher agora protege todas as rotas, EXCETO a página inicial,
+  // as rotas de API (exceto as de admin/master que são protegidas acima),
+  // a pasta `public`, e os arquivos estáticos do Next.js.
   matcher: [
-    '/((?!api/auth|api/profile|login|signup|_next/static|_next/image|favicon.ico|public).*)',
+    '/((?!api/auth|login|signup|public|_next/static|_next/image|favicon.ico|$).*)',
   ],
 }

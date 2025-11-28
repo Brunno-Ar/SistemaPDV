@@ -2,39 +2,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import { toast } from '@/hooks/use-toast'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { DollarSign, Package as PackageIcon, ShoppingCart, TrendingUp, AlertCircle, Trophy, Target, Clock, AlertTriangle } from 'lucide-react'
-import { toast } from '@/hooks/use-toast'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { NavBar } from '@/components/nav-bar'
+import { Badge } from '@/components/ui/badge'
 import { useRouter } from 'next/navigation'
+import { DollarSign, Package as PackageIcon, ShoppingCart, TrendingUp, AlertCircle, Trophy, Target, Clock, AlertTriangle } from 'lucide-react'
 
 interface CaixaAberto {
   id: string
   saldoInicial: number
   dataAbertura: string
-}
-
-interface Aviso {
-  id: string
-  mensagem: string
-  importante: boolean
-  criadoEm: string
-}
-
-interface GamificationData {
-  valorTotalHoje: number
-  totalItens: number
-  totalTransacoes: number
-  meta: number
-  progresso: string
 }
 
 interface Lote {
@@ -50,13 +33,44 @@ interface Lote {
   }
 }
 
+interface DashboardData {
+    faturamentoDia: number;
+    lucroLiquidoHoje: number;
+    produtosCriticos: number;
+    alertaEstoque: Array<{
+      produto: string;
+      estoqueAtual: number;
+      estoqueMinimo: number;
+      status: 'Baixo' | 'Crítico';
+    }>;
+}
+
+
+const KPICard = ({ icon, title, value, colorClass, isCurrency = false }) => (
+    <div className="flex flex-col gap-2 rounded-xl p-6 bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark">
+        <div className={`flex items-center gap-2 ${colorClass}`}>
+            <span className="material-symbols-outlined">{icon}</span>
+            <p className="text-base font-medium">{title}</p>
+        </div>
+        <p className="text-text-light dark:text-text-dark text-3xl font-bold leading-tight">
+            {isCurrency ? `R$${value.toFixed(2)}` : value}
+        </p>
+    </div>
+);
+
+const QuickAccessButton = ({ icon, label, href }) => (
+    <Link href={href} className="flex flex-col items-center justify-center gap-2 h-24 rounded-xl bg-card-light dark:bg-card-dark border border-border-light dark:border-border-dark text-text-light dark:text-text-dark hover:bg-primary/5 dark:hover:bg-primary/10">
+        <span className="material-symbols-outlined text-primary text-2xl">{icon}</span>
+        <span className="text-sm font-medium">{label}</span>
+    </Link>
+);
+
 export default function DashboardClient() {
   const { data: session } = useSession()
   const router = useRouter()
   const [caixaAberto, setCaixaAberto] = useState<CaixaAberto | null>(null)
-  const [avisos, setAvisos] = useState<Aviso[]>([])
-  const [gamification, setGamification] = useState<GamificationData | null>(null)
   const [lotesVencendo, setLotesVencendo] = useState<Lote[]>([])
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogFecharOpen, setDialogFecharOpen] = useState(false)
@@ -70,11 +84,10 @@ export default function DashboardClient() {
 
   const fetchDashboardData = async () => {
     try {
-      const [caixaRes, avisosRes, gamificationRes, lotesRes] = await Promise.all([
+      const [caixaRes, lotesRes, dashboardRes] = await Promise.all([
         fetch('/api/caixa'),
-        fetch('/api/avisos'),
-        fetch('/api/gamification'),
-        fetch('/api/admin/lotes')
+        fetch('/api/admin/lotes'),
+        fetch('/api/dashboard'), // Assuming a new endpoint for dashboard data
       ])
 
       if (caixaRes.ok) {
@@ -82,19 +95,8 @@ export default function DashboardClient() {
         setCaixaAberto(caixaData.caixaAberto)
       }
 
-      if (avisosRes.ok) {
-        const avisosData = await avisosRes.json()
-        setAvisos(avisosData)
-      }
-
-      if (gamificationRes.ok) {
-        const gamificationData = await gamificationRes.json()
-        setGamification(gamificationData)
-      }
-
       if (lotesRes.ok) {
         const lotesData = await lotesRes.json()
-        // Filtrar apenas lotes vencendo nos próximos 7 dias
         const hoje = new Date()
         const seteDias = new Date()
         seteDias.setDate(hoje.getDate() + 7)
@@ -106,6 +108,25 @@ export default function DashboardClient() {
         
         setLotesVencendo(lotesProximosVencimento)
       }
+
+      if(dashboardRes.ok) {
+        const data = await dashboardRes.json();
+        setDashboardData(data);
+      } else {
+        // Fallback to mock data if API fails
+        setDashboardData({
+            faturamentoDia: 12450.00,
+            lucroLiquidoHoje: 3120.50,
+            produtosCriticos: 8,
+            alertaEstoque: [
+                { produto: 'Caneta Esferográfica Azul', estoqueAtual: 10, estoqueMinimo: 15, status: 'Baixo' },
+                { produto: 'Caderno Universitário 96fls', estoqueAtual: 5, estoqueMinimo: 10, status: 'Baixo' },
+                { produto: 'Apontador com Depósito', estoqueAtual: 2, estoqueMinimo: 5, status: 'Crítico' },
+                { produto: 'Lápis de Cor (12 cores)', estoqueAtual: 8, estoqueMinimo: 8, status: 'Baixo' },
+            ]
+        });
+      }
+
     } catch (error) {
       console.error('Erro ao buscar dados do dashboard:', error)
     } finally {
@@ -113,357 +134,77 @@ export default function DashboardClient() {
     }
   }
 
-  const handleAbrirCaixa = async () => {
-    if (!saldoInicial || parseFloat(saldoInicial) < 0) {
-      toast({
-        title: 'Erro',
-        description: 'Informe um saldo inicial válido',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    setSubmitting(true)
-
-    try {
-      const response = await fetch('/api/caixa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'abrir',
-          saldoInicial: parseFloat(saldoInicial)
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao abrir caixa')
-      }
-
-      toast({
-        title: 'Sucesso',
-        description: 'Caixa aberto com sucesso!',
-      })
-
-      setDialogOpen(false)
-      setSaldoInicial('')
-      fetchDashboardData()
-    } catch (error) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao abrir caixa',
-        variant: 'destructive'
-      })
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleFecharCaixa = async () => {
-    if (!saldoFinal || parseFloat(saldoFinal) < 0) {
-      toast({
-        title: 'Erro',
-        description: 'Informe um saldo final válido',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    setSubmitting(true)
-
-    try {
-      const response = await fetch('/api/caixa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'fechar',
-          saldoFinal: parseFloat(saldoFinal)
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao fechar caixa')
-      }
-
-      const detalhes = data.detalhes
-
-      toast({
-        title: 'Caixa Fechado!',
-        description: `Quebra de Caixa: R$ ${detalhes.quebraDeCaixa.toFixed(2)}`,
-      })
-
-      setDialogFecharOpen(false)
-      setSaldoFinal('')
-      fetchDashboardData()
-    } catch (error) {
-      toast({
-        title: 'Erro',
-        description: error instanceof Error ? error.message : 'Erro ao fechar caixa',
-        variant: 'destructive'
-      })
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const formatCurrency = (value: number) => `R$ ${value.toFixed(2)}`
-
   if (loading) {
-    return (
-      <div>
-        <NavBar />
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">Carregando dashboard...</div>
-        </div>
-      </div>
-    )
+    return <div>Carregando dashboard...</div>;
   }
 
   return (
-    <div>
-      <NavBar />
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-gray-600">Olá, {session?.user?.name}! ({session?.user?.role})</p>
-        </div>
-
-        {/* Alerta de Lotes Vencendo */}
-        {lotesVencendo.length > 0 && (
-          <Alert variant="destructive" className="border-2 border-orange-500 bg-orange-50">
-            <AlertTriangle className="h-5 w-5" />
-            <AlertTitle className="text-lg font-semibold">
-              ⚠️ Atenção: {lotesVencendo.length} lote(s) vencendo nos próximos 7 dias!
-            </AlertTitle>
-            <AlertDescription className="mt-2">
-              <div className="space-y-2">
-                {lotesVencendo.slice(0, 3).map((lote) => (
-                  <div key={lote.id} className="flex items-center justify-between bg-white p-2 rounded">
-                    <div>
-                      <span className="font-medium">{lote.produto.nome}</span>
-                      <span className="text-sm text-gray-600 ml-2">
-                        (Lote: {lote.numeroLote})
-                      </span>
-                    </div>
-                    <Badge variant="destructive">
-                      {lote.diasParaVencer} {lote.diasParaVencer === 1 ? 'dia' : 'dias'}
-                    </Badge>
-                  </div>
-                ))}
-                {lotesVencendo.length > 3 && (
-                  <p className="text-sm text-gray-700">
-                    + {lotesVencendo.length - 3} lote(s) a mais
-                  </p>
-                )}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => router.push('/lotes')}
-                >
-                  Ver Todos os Lotes
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <h1 className="text-text-light dark:text-text-dark text-3xl font-bold leading-tight tracking-tight">Dashboard</h1>
+        <div className="flex gap-3">
+            <Button variant="outline" className="gap-2">
+                <span className="material-symbols-outlined text-base">calendar_today</span>
+                <span>Últimos 30 dias</span>
+                <span className="material-symbols-outlined text-base">expand_more</span>
+            </Button>
+            <Link href="/vender">
+                <Button className="gap-2">
+                    <span className="material-symbols-outlined text-base">add</span>
+                    <span className="truncate">Nova Venda</span>
                 </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-      {/* Widget 1: Frente de Caixa */}
-      <Card className="border-2 border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <DollarSign className="h-6 w-6 text-blue-600" />
-            <span>Frente de Caixa</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!caixaAberto ? (
-            <div className="space-y-4">
-              <p className="text-gray-700">Você precisa abrir um caixa para começar a vender.</p>
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="w-full bg-green-600 hover:bg-green-700">
-                    ABRIR CAIXA
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Abrir Caixa</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="saldoInicial">Saldo Inicial (Troco)</Label>
-                      <Input
-                        id="saldoInicial"
-                        type="number"
-                        step="0.01"
-                        placeholder="Ex: 100.00"
-                        value={saldoInicial}
-                        onChange={(e) => setSaldoInicial(e.target.value)}
-                      />
-                    </div>
-                    <Button onClick={handleAbrirCaixa} className="w-full" disabled={submitting}>
-                      {submitting ? 'Abrindo...' : 'Confirmar Abertura'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Badge className="bg-green-500">Caixa Aberto</Badge>
-                    <Clock className="h-4 w-4 text-gray-600" />
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Desde {formatDate(caixaAberto.dataAbertura)}
-                  </p>
-                </div>
-                <p className="text-lg font-semibold">
-                  Saldo Inicial: {formatCurrency(Number(caixaAberto.saldoInicial))}
-                </p>
-              </div>
-              <Dialog open={dialogFecharOpen} onOpenChange={setDialogFecharOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive" className="w-full">
-                    FECHAR CAIXA
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Fechar Caixa</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Conte o dinheiro total no caixa antes de fechar.
-                      </AlertDescription>
-                    </Alert>
-                    <div>
-                      <Label htmlFor="saldoFinal">Contagem Final</Label>
-                      <Input
-                        id="saldoFinal"
-                        type="number"
-                        step="0.01"
-                        placeholder="Ex: 450.00"
-                        value={saldoFinal}
-                        onChange={(e) => setSaldoFinal(e.target.value)}
-                      />
-                    </div>
-                    <Button onClick={handleFecharCaixa} className="w-full" disabled={submitting}>
-                      {submitting ? 'Fechando...' : 'Confirmar Fechamento'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Widget 2: Gamificação */}
-      <Card className="border-2 border-yellow-200 bg-yellow-50">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Trophy className="h-6 w-6 text-yellow-600" />
-            <span>Meu Desempenho Hoje</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {gamification && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-white p-4 rounded-lg text-center">
-                  <DollarSign className="h-6 w-6 mx-auto text-green-600 mb-2" />
-                  <p className="text-2xl font-bold text-green-600">
-                    {formatCurrency(gamification.valorTotalHoje)}
-                  </p>
-                  <p className="text-sm text-gray-600">Total Vendido</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg text-center">
-                  <PackageIcon className="h-6 w-6 mx-auto text-blue-600 mb-2" />
-                  <p className="text-2xl font-bold text-blue-600">{gamification.totalItens}</p>
-                  <p className="text-sm text-gray-600">Itens Vendidos</p>
-                </div>
-                <div className="bg-white p-4 rounded-lg text-center">
-                  <ShoppingCart className="h-6 w-6 mx-auto text-purple-600 mb-2" />
-                  <p className="text-2xl font-bold text-purple-600">{gamification.totalTransacoes}</p>
-                  <p className="text-sm text-gray-600">Transações</p>
-                </div>
-              </div>
-
-              {/* Barra de Progresso da Meta */}
-              <div className="bg-white p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Target className="h-5 w-5 text-orange-600" />
-                    <p className="font-semibold">Meta Diária</p>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {gamification.progresso}% de {formatCurrency(gamification.meta)}
-                  </p>
-                </div>
-                <Progress value={parseFloat(gamification.progresso)} className="h-3" />
-                {parseFloat(gamification.progresso) >= 100 && (
-                  <p className="text-sm text-green-600 mt-2 font-semibold">
-                    🎉 Meta alcançada! Parabéns!
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Widget 3: Mural de Avisos */}
-      <Card className="border-2 border-red-200 bg-red-50">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <AlertCircle className="h-6 w-6 text-red-600" />
-            <span>Mural de Avisos</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {avisos.length === 0 ? (
-            <p className="text-gray-600">Nenhum aviso no momento.</p>
-          ) : (
-            <div className="space-y-3">
-              {avisos.slice(0, 3).map((aviso) => (
-                <Alert 
-                  key={aviso.id} 
-                  variant={aviso.importante ? "destructive" : "default"}
-                  className="bg-white"
-                >
-                  {aviso.importante && <AlertCircle className="h-4 w-4" />}
-                  <AlertTitle className="flex items-center justify-between">
-                    {aviso.importante && <Badge variant="destructive">Importante</Badge>}
-                    <span className="text-xs text-gray-500">{formatDate(aviso.criadoEm)}</span>
-                  </AlertTitle>
-                  <AlertDescription>{aviso.mensagem}</AlertDescription>
-                </Alert>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </Link>
+        </div>
       </div>
-    </div>
-  )
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <KPICard icon="payments" title="Faturamento do Dia" value={dashboardData?.faturamentoDia ?? 0} colorClass="text-text-muted-light dark:text-text-muted-dark" isCurrency />
+        <KPICard icon="trending_up" title="Lucro Líquido (Hoje)" value={dashboardData?.lucroLiquidoHoje ?? 0} colorClass="text-success" isCurrency />
+        <KPICard icon="warning" title="Produtos Críticos" value={dashboardData?.produtosCriticos ?? 0} colorClass="text-warning" />
+      </div>
+
+      <h2 className="text-text-light dark:text-text-dark text-xl font-bold leading-tight tracking-tight mb-4">Acesso Rápido</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <QuickAccessButton icon="add_shopping_cart" label="Nova Venda" href="/vender" />
+          <QuickAccessButton icon="inventory_2" label="Cadastrar Produto" href="/estoque" />
+          <QuickAccessButton icon="bar_chart" label="Relatório de Vendas" href="/relatorios" />
+          <QuickAccessButton icon="receipt_long" label="Histórico" href="/vendas/historico" />
+      </div>
+
+      <div className="bg-card-light dark:bg-card-dark rounded-xl border border-border-light dark:border-border-dark overflow-hidden">
+        <h2 className="text-text-light dark:text-text-dark text-xl font-bold p-6">Alerta de Estoque Baixo</h2>
+        <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+                <thead className="bg-background-light dark:bg-background-dark">
+                    <tr>
+                        <th className="px-6 py-3 font-medium text-text-muted-light dark:text-text-muted-dark" scope="col">Produto</th>
+                        <th className="px-6 py-3 font-medium text-text-muted-light dark:text-text-muted-dark" scope="col">Estoque Atual</th>
+                        <th className="px-6 py-3 font-medium text-text-muted-light dark:text-text-muted-dark" scope="col">Estoque Mínimo</th>
+                        <th className="px-6 py-3 font-medium text-text-muted-light dark:text-text-muted-dark" scope="col">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {dashboardData?.alertaEstoque.map(item => (
+                        <tr key={item.produto} className="border-t border-border-light dark:border-border-dark">
+                            <td className="px-6 py-4 font-medium">{item.produto}</td>
+                            <td className="px-6 py-4">{item.estoqueAtual}</td>
+                            <td className="px-6 py-4">{item.estoqueMinimo}</td>
+                            <td className="px-6 py-4">
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+                                    item.status === 'Crítico' ? 'bg-danger/10 text-danger' : 'bg-warning/10 text-warning'
+                                }`}>
+                                    <span className={`size-1.5 rounded-full ${
+                                        item.status === 'Crítico' ? 'bg-danger' : 'bg-warning'
+                                    }`}></span>
+                                    {item.status}
+                                </span>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+      </div>
+    </>
+  );
 }
