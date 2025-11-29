@@ -18,6 +18,7 @@ import {
   User,
   LogOut,
   Store,
+  Settings,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -91,6 +92,11 @@ export default function RoleBasedLayout({
         href: "/minha-conta",
         icon: <User className="h-5 w-5 flex-shrink-0" />,
       },
+      {
+        label: "Configurações",
+        href: "/configuracoes",
+        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
+      },
     ];
   } else {
     // Caixa / Funcionário
@@ -109,6 +115,11 @@ export default function RoleBasedLayout({
         label: "Minha Conta",
         href: "/minha-conta",
         icon: <User className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Configurações",
+        href: "/configuracoes",
+        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
       },
     ];
   }

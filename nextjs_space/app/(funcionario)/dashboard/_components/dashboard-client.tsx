@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { MuralAvisos } from "@/components/mural-avisos";
 
 interface DashboardData {
   salesToday: number;
@@ -248,64 +249,9 @@ export default function DashboardClient() {
       </div>
 
       {/* Mural de Avisos (Bottom - Expanded) */}
-      <Card className="bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl min-h-[300px]">
-        <CardHeader className="flex flex-row items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-4">
-          <div className="h-8 w-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-            <Bell className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-          </div>
-          <div>
-            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-              Mural de Avisos
-            </CardTitle>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Fique por dentro das novidades e comunicados importantes.
-            </p>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            {data?.avisos && data.avisos.length > 0 ? (
-              data.avisos.map((aviso) => (
-                <div
-                  key={aviso.id}
-                  className={`p-4 rounded-lg border-l-4 ${
-                    aviso.importante
-                      ? "bg-red-50 border-red-500 dark:bg-red-900/10"
-                      : "bg-gray-50 border-blue-500 dark:bg-gray-800/50"
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      {aviso.importante && (
-                        <span className="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                          Importante
-                        </span>
-                      )}
-                      <span className="text-xs text-gray-500 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(aviso.criadoEm).toLocaleDateString("pt-BR")}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
-                    {aviso.mensagem}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <div className="bg-gray-100 dark:bg-gray-800 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Bell className="h-8 w-8 text-gray-400" />
-                </div>
-                <p className="font-medium">Nenhum aviso no momento</p>
-                <p className="text-sm mt-1">
-                  Você está atualizado com todas as informações.
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="min-h-[300px]">
+        <MuralAvisos />
+      </div>
     </div>
   );
 }

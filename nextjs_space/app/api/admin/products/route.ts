@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
       loteInicial,
       validadeInicial,
       categoryId,
+      dataCompraInicial,
     } = body;
 
     if (
@@ -190,8 +191,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // ... (validations remain the same)
 
     if (precoVenda <= 0 || precoCompra < 0) {
       return NextResponse.json(
@@ -245,13 +244,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (quantidadeLote > 0 && !validadeInicial) {
-        return NextResponse.json(
-          {
-            error:
-              "Data de validade é obrigatória quando há quantidade no lote",
-          },
-          { status: 400 }
-        );
+        // Opcional: validar validade se necessário
       }
     }
 
@@ -295,7 +288,7 @@ export async function POST(request: NextRequest) {
 
       // 2. Se houver lote inicial, criar o lote
       let lote = null;
-      if (loteInicial && parseInt(loteInicial) > 0 && validadeInicial) {
+      if (loteInicial && parseInt(loteInicial) > 0) {
         const quantidadeLote = parseInt(loteInicial);
 
         // Gerar número do lote automaticamente (formato: LOTE-YYYYMMDD-XXXXX)
@@ -312,10 +305,15 @@ export async function POST(request: NextRequest) {
         lote = await tx.lote.create({
           data: {
             numeroLote,
-            dataValidade: new Date(validadeInicial),
+            dataValidade: validadeInicial
+              ? new Date(validadeInicial + "T12:00:00Z")
+              : null,
             quantidade: quantidadeLote,
             produtoId: product.id,
             precoCompra: precoCompra || 0,
+            dataCompra: dataCompraInicial
+              ? new Date(dataCompraInicial + "T12:00:00Z")
+              : undefined,
           },
         });
 
@@ -349,7 +347,9 @@ export async function POST(request: NextRequest) {
       lote: result.lote
         ? {
             ...result.lote,
-            dataValidade: result.lote.dataValidade.toISOString(),
+            dataValidade: result.lote.dataValidade
+              ? result.lote.dataValidade.toISOString()
+              : null,
           }
         : null,
     });

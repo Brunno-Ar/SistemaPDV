@@ -86,6 +86,8 @@ interface Lote {
   quantidade: number;
   precoCompra: number;
   status?: string;
+  createdAt: string;
+  dataCompra?: string;
 }
 
 interface EstoqueClientProps {
@@ -127,6 +129,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     dataValidade: "",
     quantidade: "",
     precoCompra: "",
+    dataCompra: "",
   });
   const [creatingLote, setCreatingLote] = useState(false);
   const [showNewLoteForm, setShowNewLoteForm] = useState(false);
@@ -147,6 +150,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
           precoCompra: newLoteData.precoCompra
             ? parseFloat(newLoteData.precoCompra)
             : 0,
+          dataCompra: newLoteData.dataCompra || null,
         }),
       });
 
@@ -168,6 +172,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         dataValidade: "",
         quantidade: "",
         precoCompra: "",
+        dataCompra: "",
       });
       setShowNewLoteForm(false);
     } catch (error) {
@@ -195,6 +200,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     validadeInicial: "",
     categoryId: "",
     valorTotalLoteInicial: "",
+    dataCompraInicial: "",
   });
   const [semValidadeInicial, setSemValidadeInicial] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -318,6 +324,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         validadeInicial: "",
         categoryId: product.categoryId || "",
         valorTotalLoteInicial: "",
+        dataCompraInicial: "",
       });
       setImagePreview("");
       setSelectedFile(null);
@@ -336,6 +343,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         validadeInicial: "",
         categoryId: "",
         valorTotalLoteInicial: "",
+        dataCompraInicial: "",
       });
       setImagePreview("");
       setSelectedFile(null);
@@ -359,6 +367,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       validadeInicial: "",
       categoryId: "",
       valorTotalLoteInicial: "",
+      dataCompraInicial: "",
     });
     setSelectedFile(null);
     setImagePreview("");
@@ -500,6 +509,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
           validadeInicial: semValidadeInicial
             ? null
             : formData.validadeInicial || undefined,
+          dataCompraInicial: formData.dataCompraInicial || null,
           categoryId: formData.categoryId || null,
         }),
       });
@@ -969,6 +979,21 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                 </div>
 
                 {/* 🆕 Campos de Custo do Lote */}
+                <div className="space-y-2">
+                  <Label htmlFor="dataCompraInicial">Data de Compra</Label>
+                  <Input
+                    id="dataCompraInicial"
+                    type="date"
+                    value={formData.dataCompraInicial}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        dataCompraInicial: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="valorTotalLoteInicial">
@@ -1137,7 +1162,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
 
       {/* Dialog de Visualização de Lotes */}
       <Dialog open={lotsDialogOpen} onOpenChange={setLotsDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>Lotes: {selectedProductForLots?.nome}</DialogTitle>
             <DialogDescription>
@@ -1178,7 +1203,21 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dataCompraLote">Data Compra</Label>
+                  <Input
+                    id="dataCompraLote"
+                    type="date"
+                    value={newLoteData.dataCompra}
+                    onChange={(e) =>
+                      setNewLoteData({
+                        ...newLoteData,
+                        dataCompra: e.target.value,
+                      })
+                    }
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="validadeLote">Validade</Label>
                   <Input
@@ -1265,6 +1304,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                       <TableHeader>
                         <TableRow className="bg-gray-50">
                           <TableHead>Lote</TableHead>
+                          <TableHead>Data Compra</TableHead>
                           <TableHead>Validade</TableHead>
                           <TableHead>Custo Total</TableHead>
                           <TableHead>Qtd.</TableHead>
@@ -1279,7 +1319,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                         ).length === 0 ? (
                           <TableRow>
                             <TableCell
-                              colSpan={5}
+                              colSpan={6}
                               className="text-center py-4 text-gray-500"
                             >
                               Nenhum lote encontrado.
@@ -1293,73 +1333,96 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                                   lote.quantidade > 0
                                 : true
                             )
-                            .map((lote) => (
-                              <TableRow key={lote.id}>
-                                <TableCell className="font-mono text-xs">
-                                  {lote.numeroLote}
-                                </TableCell>
-                                <TableCell>
-                                  {lote.dataValidade ? (
-                                    <div className="flex items-center gap-1">
-                                      <Calendar className="h-3 w-3 text-gray-400" />
-                                      {new Date(
-                                        lote.dataValidade
-                                      ).toLocaleDateString("pt-BR")}
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-500 italic">
-                                      Indeterminado
-                                    </span>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  R${" "}
-                                  {(
-                                    Number(lote.precoCompra || 0) *
-                                    lote.quantidade
-                                  ).toFixed(2)}
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                  {lote.quantidade}
-                                </TableCell>
-                                <TableCell>
-                                  {lote.status === "vencido" ? (
-                                    <Badge
-                                      variant="destructive"
-                                      className="text-[10px] h-5 whitespace-nowrap"
-                                    >
-                                      Vencido
-                                    </Badge>
-                                  ) : lote.status === "proximo_vencimento" ? (
-                                    <Badge className="bg-yellow-500 text-[10px] h-5 whitespace-nowrap">
-                                      Vence Logo
-                                    </Badge>
-                                  ) : !lote.dataValidade ? (
-                                    <Badge
-                                      variant="secondary"
-                                      className="text-[10px] h-5 whitespace-nowrap"
-                                    >
-                                      S/ Validade
-                                    </Badge>
-                                  ) : lote.quantidade === 0 ||
-                                    lote.status === "esgotado" ? (
-                                    <Badge
-                                      variant="secondary"
-                                      className="bg-gray-200 text-gray-600 text-[10px] h-5 whitespace-nowrap"
-                                    >
-                                      Finalizado
-                                    </Badge>
-                                  ) : (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-green-600 border-green-200 text-[10px] h-5 whitespace-nowrap"
-                                    >
-                                      Normal
-                                    </Badge>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))
+                            .map((lote) => {
+                              // Lógica de Status simplificada
+                              let statusBadge;
+                              if (lote.status === "vencido") {
+                                statusBadge = (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-[10px] h-5 whitespace-nowrap"
+                                  >
+                                    Vencido
+                                  </Badge>
+                                );
+                              } else if (lote.status === "proximo_vencimento") {
+                                statusBadge = (
+                                  <Badge className="bg-yellow-500 text-[10px] h-5 whitespace-nowrap">
+                                    Vence Logo
+                                  </Badge>
+                                );
+                              } else if (!lote.dataValidade) {
+                                statusBadge = (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px] h-5 whitespace-nowrap"
+                                  >
+                                    S/ Validade
+                                  </Badge>
+                                );
+                              } else if (
+                                lote.quantidade === 0 ||
+                                lote.status === "esgotado"
+                              ) {
+                                statusBadge = (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-gray-200 text-gray-600 text-[10px] h-5 whitespace-nowrap"
+                                  >
+                                    Finalizado
+                                  </Badge>
+                                );
+                              } else {
+                                statusBadge = (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-green-600 border-green-200 text-[10px] h-5 whitespace-nowrap"
+                                  >
+                                    Normal
+                                  </Badge>
+                                );
+                              }
+
+                              return (
+                                <TableRow key={lote.id}>
+                                  <TableCell className="font-mono text-xs">
+                                    {lote.numeroLote}
+                                  </TableCell>
+                                  <TableCell>
+                                    {lote.dataCompra || lote.createdAt
+                                      ? new Date(
+                                          lote.dataCompra || lote.createdAt
+                                        ).toLocaleDateString("pt-BR")
+                                      : "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {lote.dataValidade ? (
+                                      <div className="flex items-center gap-1">
+                                        <Calendar className="h-3 w-3 text-gray-400" />
+                                        {new Date(
+                                          lote.dataValidade
+                                        ).toLocaleDateString("pt-BR")}
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-500 italic">
+                                        Indeterminado
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    R${" "}
+                                    {(
+                                      Number(lote.precoCompra || 0) *
+                                      lote.quantidade
+                                    ).toFixed(2)}
+                                  </TableCell>
+                                  <TableCell className="font-medium">
+                                    {lote.quantidade}
+                                  </TableCell>
+                                  <TableCell>{statusBadge}</TableCell>
+                                </TableRow>
+                              );
+                            })
                         )}
                       </TableBody>
                     </Table>

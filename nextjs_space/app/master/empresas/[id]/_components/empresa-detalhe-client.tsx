@@ -1,42 +1,17 @@
-"use client";
-
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft,
-  Package,
-  ShoppingCart,
-  BarChart3,
-  Users,
-  Building2,
-} from "lucide-react";
-import EstoqueClient from "@/app/estoque/_components/estoque-client";
-import MovimentacoesClient from "@/app/movimentacoes/_components/movimentacoes-client";
-import RelatoriosClient from "@/app/relatorios/_components/relatorios-client";
-import EquipeClient from "@/app/equipe/_components/equipe-client";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { toast } from "@/hooks/use-toast";
+import { Mail } from "lucide-react";
 
-interface Empresa {
-  id: string;
-  nome: string;
-  status: "PENDENTE" | "ATIVO" | "PAUSADO";
-  vencimentoPlano: Date | null;
-  createdAt: Date;
-  _count: {
-    users: number;
-    products: number;
-    sales: number;
-  };
-}
-
-interface EmpresaDetalheClientProps {
-  empresa: Empresa;
-  companyId: string;
-}
+// ... (rest of imports)
 
 export default function EmpresaDetalheClient({
   empresa,
@@ -44,6 +19,43 @@ export default function EmpresaDetalheClient({
 }: EmpresaDetalheClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("estoque");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [mensagem, setMensagem] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleSendAviso = async () => {
+    if (!mensagem.trim()) return;
+    setSending(true);
+
+    try {
+      const response = await fetch("/api/avisos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mensagem,
+          importante: true,
+          targetEmpresaId: companyId, // Envia para esta empresa
+        }),
+      });
+
+      if (!response.ok) throw new Error("Erro ao enviar aviso");
+
+      toast({
+        title: "Sucesso",
+        description: "Aviso enviado para a empresa com sucesso!",
+      });
+      setDialogOpen(false);
+      setMensagem("");
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao enviar aviso.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -87,8 +99,52 @@ export default function EmpresaDetalheClient({
             </div>
           </div>
         </div>
-        {getStatusBadge(empresa.status)}
+
+        <div className="flex items-center gap-4">
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Mail className="h-4 w-4" />
+                Enviar Aviso ao Admin
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Enviar Aviso para {empresa.nome}</DialogTitle>
+                <DialogDescription>
+                  Esta mensagem aparecerá no mural de avisos dos administradores
+                  desta empresa.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Mensagem</Label>
+                  <Textarea
+                    placeholder="Digite o aviso importante..."
+                    value={mensagem}
+                    onChange={(e) => setMensagem(e.target.value)}
+                    rows={4}
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleSendAviso} disabled={sending}>
+                    {sending ? "Enviando..." : "Enviar Aviso"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          {getStatusBadge(empresa.status)}
+        </div>
       </div>
+
+      {/* ... (rest of the component) */}
 
       {/* Info Card */}
       <Card>

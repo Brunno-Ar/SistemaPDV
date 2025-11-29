@@ -84,12 +84,15 @@ model User {
   role          Role      @default(caixa)
   empresaId     String?   @map("empresa_id")
   createdAt     DateTime  @default(now()) @map("created_at")
+  metaMensal    Decimal   @default(0) @map("meta_mensal") @db.Decimal(10, 2)
 
   accounts      Account[]
   sessions      Session[]
   sales         Sale[]
   movimentacoes MovimentacaoEstoque[]
   caixas        Caixa[]
+  avisosEnviados   Aviso[] @relation("Remetente")
+  avisosRecebidos  Aviso[] @relation("Destinatario")
   empresa       Empresa?              @relation(fields: [empresaId], references: [id])
 
   @@map("users")
@@ -167,6 +170,7 @@ model Lote {
   quantidade   Int       @default(0)
   produtoId    String    @map("produto_id")
   createdAt    DateTime  @default(now()) @map("created_at")
+  dataCompra   DateTime? @default(now()) @map("data_compra")
 
   produto Product @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 
@@ -225,15 +229,21 @@ model MovimentacaoEstoque {
 }
 
 model Aviso {
-  id         String   @id @default(cuid())
-  mensagem   String   @db.Text
-  importante Boolean  @default(false)
-  empresaId  String   @map("empresa_id")
-  criadoEm   DateTime @default(now()) @map("criado_em")
+  id             String   @id @default(cuid())
+  mensagem       String   @db.Text
+  importante     Boolean  @default(false)
+  lido           Boolean  @default(false)
+  empresaId      String?  @map("empresa_id")
+  remetenteId    String   @map("remetente_id")
+  destinatarioId String?  @map("destinatario_id") // Se null, é para toda a empresa (ou admin da empresa)
+  criadoEm       DateTime @default(now()) @map("criado_em")
 
-  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  empresa      Empresa? @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  remetente    User     @relation("Remetente", fields: [remetenteId], references: [id])
+  destinatario User?    @relation("Destinatario", fields: [destinatarioId], references: [id])
 
   @@index([empresaId])
+  @@index([destinatarioId])
   @@map("avisos")
 }
 

@@ -145,8 +145,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { produtoId, numeroLote, dataValidade, quantidade, precoCompra } =
-      body;
+    const {
+      produtoId,
+      numeroLote,
+      dataValidade,
+      quantidade,
+      precoCompra,
+      dataCompra,
+    } = body;
 
     // Validações
     if (!produtoId || !quantidade) {
@@ -194,7 +200,7 @@ export async function POST(request: NextRequest) {
     // Validar data de validade APENAS SE FORNECIDA
     let dataValidadeDate: Date | null = null;
     if (dataValidade) {
-      dataValidadeDate = new Date(dataValidade);
+      dataValidadeDate = new Date(dataValidade + "T12:00:00Z");
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
 
@@ -207,6 +213,35 @@ export async function POST(request: NextRequest) {
     }
 
     const custoLote = Number(precoCompra || 0);
+
+    // Validar se dataCompra é futura
+    if (dataCompra) {
+      const dataCompraDate = new Date(dataCompra + "T12:00:00Z");
+      const hoje = new Date();
+      hoje.setHours(23, 59, 59, 999); // Considerar o final do dia de hoje
+
+      if (dataCompraDate > hoje) {
+        return NextResponse.json(
+          { error: "Data de compra não pode ser futura" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Verificar se o usuário existe para evitar erro de FK
+    const userExists = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
+    if (!userExists) {
+      return NextResponse.json(
+        {
+          error:
+            "Usuário da sessão não encontrado no banco de dados. Faça login novamente.",
+        },
+        { status: 401 }
+      );
+    }
 
     // Criar lote e atualizar estoque em uma transação
     const result = await prisma.$transaction(async (tx: any) => {
@@ -231,6 +266,9 @@ export async function POST(request: NextRequest) {
           quantidade,
           produtoId,
           precoCompra: custoLote,
+          dataCompra: dataCompra
+            ? new Date(dataCompra + "T12:00:00Z")
+            : undefined,
         },
       });
 
@@ -376,7 +414,14 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, numeroLote, dataValidade, quantidade, precoCompra } = body;
+    const {
+      id,
+      numeroLote,
+      dataValidade,
+      quantidade,
+      precoCompra,
+      dataCompra,
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -386,7 +431,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Buscar o lote atual
-    const loteAtual = await prisma.lote.findFirst({
+    const loteAtual: any = await prisma.lote.findFirst({
       where: {
         id,
         produto: {
@@ -417,11 +462,40 @@ export async function PUT(request: NextRequest) {
     // Validar nova data
     let novaDataValidade: Date | null = null;
     if (dataValidade) {
-      novaDataValidade = new Date(dataValidade);
+      novaDataValidade = new Date(dataValidade + "T12:00:00Z");
     }
 
     // Calcular diferença de quantidade
     const diferencaQuantidade = novaQuantidade - loteAtual.quantidade;
+
+    // Validar se dataCompra é futura
+    if (dataCompra) {
+      const dataCompraDate = new Date(dataCompra + "T12:00:00Z");
+      const hoje = new Date();
+      hoje.setHours(23, 59, 59, 999); // Considerar o final do dia de hoje
+
+      if (dataCompraDate > hoje) {
+        return NextResponse.json(
+          { error: "Data de compra não pode ser futura" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Verificar se o usuário existe para evitar erro de FK
+    const userExists = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
+    if (!userExists) {
+      return NextResponse.json(
+        {
+          error:
+            "Usuário da sessão não encontrado no banco de dados. Faça login novamente.",
+        },
+        { status: 401 }
+      );
+    }
 
     // Atualizar em transação
     const result = await prisma.$transaction(async (tx: any) => {
@@ -434,6 +508,9 @@ export async function PUT(request: NextRequest) {
           quantidade: novaQuantidade,
           precoCompra:
             precoCompra !== undefined ? Number(precoCompra) : undefined,
+          dataCompra: dataCompra
+            ? new Date(dataCompra + "T12:00:00Z")
+            : undefined,
         },
       });
 
@@ -468,6 +545,22 @@ export async function PUT(request: NextRequest) {
             precoCompra
           ).toFixed(2)}`
         );
+      }
+      // Check for dataCompra changes
+      const newDataCompra = dataCompra
+        ? new Date(dataCompra + "T12:00:00Z")
+        : null;
+      if (
+        (newDataCompra?.getTime() || 0) !==
+        (loteAtual.dataCompra?.getTime() || 0)
+      ) {
+        const oldDate = loteAtual.dataCompra
+          ? new Date(loteAtual.dataCompra).toLocaleDateString("pt-BR")
+          : "S/ Data";
+        const newDate = newDataCompra
+          ? new Date(newDataCompra).toLocaleDateString("pt-BR")
+          : "S/ Data";
+        changes.push(`Compra: ${oldDate} -> ${newDate}`);
       }
 
       // 3. Atualizar estoque do produto se houve mudança na quantidade

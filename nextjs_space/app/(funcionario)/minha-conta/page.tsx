@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { Clock, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MuralAvisos } from "@/components/mural-avisos";
 
 interface Sale {
   id: string;
@@ -61,6 +62,10 @@ export default function MinhaContaPage() {
         <p className="text-gray-500 dark:text-gray-400">
           Histórico recente de vendas realizadas por você.
         </p>
+      </div>
+
+      <div className="mb-6">
+        <MuralAvisos />
       </div>
 
       <Card className="bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl">

@@ -67,6 +67,7 @@ interface Lote {
   };
   status?: string;
   diasParaVencer?: number;
+  dataCompra?: string;
 }
 
 export default function LotesClient() {
@@ -98,6 +99,7 @@ export default function LotesClient() {
     quantidade: "",
     valorTotalLote: "",
     precoCompra: "",
+    dataCompra: "",
   });
   const [semValidade, setSemValidade] = useState(false);
 
@@ -127,7 +129,7 @@ export default function LotesClient() {
 
   const fetchLotes = async () => {
     try {
-      const response = await fetch("/api/admin/lotes");
+      const response = await fetch("/api/admin/lotes", { cache: "no-store" });
       const data = await response.json();
 
       if (!response.ok) {
@@ -181,6 +183,9 @@ export default function LotesClient() {
         quantidade: lote.quantidade.toString(),
         valorTotalLote: (Number(lote.precoCompra) * lote.quantidade).toFixed(2),
         precoCompra: Number(lote.precoCompra).toFixed(2),
+        dataCompra: lote.dataCompra
+          ? new Date(lote.dataCompra).toISOString().split("T")[0]
+          : "",
       });
       setSemValidade(!lote.dataValidade);
     } else {
@@ -192,6 +197,7 @@ export default function LotesClient() {
         quantidade: "",
         valorTotalLote: "",
         precoCompra: "",
+        dataCompra: "",
       });
       setSemValidade(false);
     }
@@ -208,6 +214,7 @@ export default function LotesClient() {
       quantidade: "",
       valorTotalLote: "",
       precoCompra: "",
+      dataCompra: "",
     });
     setSemValidade(false);
   };
@@ -257,7 +264,10 @@ export default function LotesClient() {
         dataValidade: semValidade ? null : formData.dataValidade,
         quantidade,
         precoCompra: parseFloat(formData.precoCompra) || 0,
+        dataCompra: formData.dataCompra || null,
       };
+
+      console.log("Submitting lot update:", body);
 
       const response = await fetch(url, {
         method,
@@ -270,6 +280,16 @@ export default function LotesClient() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          toast({
+            title: "Sessão Expirada",
+            description: "Por favor, faça login novamente.",
+            variant: "destructive",
+          });
+          // Opcional: Redirecionar para login ou forçar logout
+          // window.location.href = "/login";
+          return;
+        }
         throw new Error(data.error || "Erro ao salvar lote");
       }
 
@@ -537,6 +557,7 @@ export default function LotesClient() {
                   <TableHead>Número do Lote</TableHead>
                   <TableHead>Quantidade</TableHead>
                   <TableHead>Custo Unit.</TableHead>
+                  <TableHead>Data Compra</TableHead>
                   <TableHead>Data de Validade</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -561,6 +582,11 @@ export default function LotesClient() {
                     </TableCell>
                     <TableCell>
                       R$ {Number(lote.precoCompra).toFixed(2)}
+                    </TableCell>
+                    <TableCell>
+                      {lote.dataCompra
+                        ? new Date(lote.dataCompra).toLocaleDateString("pt-BR")
+                        : "-"}
                     </TableCell>
                     <TableCell>
                       {lote.dataValidade
@@ -650,6 +676,19 @@ export default function LotesClient() {
                   disabled={!!editingLoteId}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dataCompra">Data de Compra</Label>
+              <Input
+                id="dataCompra"
+                type="date"
+                value={formData.dataCompra}
+                onChange={(e) =>
+                  setFormData({ ...formData, dataCompra: e.target.value })
+                }
+                max={new Date().toISOString().split("T")[0]}
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

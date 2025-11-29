@@ -166,15 +166,29 @@ async function main() {
   ];
 
   for (const produto of produtos) {
-    await prisma.product.upsert({
+    const createdProduct = await prisma.product.upsert({
       where: { sku: produto.sku },
       update: {},
       create: {
         nome: produto.nome,
         sku: produto.sku,
         precoVenda: produto.precoVenda,
+        precoCompra: produto.precoVenda * 0.6, // Custo estimado de 60%
         estoqueAtual: produto.estoqueAtual,
         empresaId: empresa.id,
+      },
+    });
+
+    // Criar lote inicial para o produto
+    await prisma.lote.create({
+      data: {
+        numeroLote: `LOTE-${produto.sku}-INI`,
+        produtoId: createdProduct.id,
+        quantidade: produto.estoqueAtual,
+        precoCompra: produto.precoVenda * 0.6,
+        dataValidade: new Date(
+          new Date().setFullYear(new Date().getFullYear() + 1)
+        ), // Validade de 1 ano
       },
     });
   }
