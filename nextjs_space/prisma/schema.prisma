@@ -175,6 +175,7 @@ model Lote {
   dataCompra   DateTime? @default(now()) @map("data_compra")
 
   produto Product @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  movimentacoes MovimentacaoEstoque[]
 
   @@index([produtoId])
   @@index([dataValidade])
@@ -222,11 +223,13 @@ model MovimentacaoEstoque {
   tipo             TipoMovimentacao
   quantidade       Int
   motivo           String?
+  loteId           String?          @map("lote_id")
   dataMovimentacao DateTime         @default(now()) @map("data_movimentacao")
 
   produto Product @relation(fields: [produtoId], references: [id])
   usuario User    @relation(fields: [usuarioId], references: [id])
   empresa Empresa @relation(fields: [empresaId], references: [id])
+  lote    Lote?   @relation(fields: [loteId], references: [id])
 
   @@map("movimentacoes_estoque")
 }

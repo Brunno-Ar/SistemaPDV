@@ -241,6 +241,20 @@ export default function MovimentacoesClient({
       return;
     }
 
+    // Validação de Lote Obrigatório para Saídas
+    if (
+      (movementFormData.tipo === "SAIDA" ||
+        movementFormData.tipo === "PERDA") &&
+      movementFormData.loteId === "sem_lote"
+    ) {
+      toast({
+        title: "Erro",
+        description: "Selecione um Lote para registrar Saída ou Perda.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const qtd = Number(movementFormData.quantidade);
     if (qtd <= 0) {
       toast({
@@ -566,7 +580,13 @@ export default function MovimentacoesClient({
 
             {movementFormData.produtoId && (
               <div className="space-y-2">
-                <Label htmlFor="movLote">Lote (Opcional)</Label>
+                <Label htmlFor="movLote">
+                  Lote{" "}
+                  {movementFormData.tipo === "SAIDA" ||
+                  movementFormData.tipo === "PERDA"
+                    ? "(Obrigatório)"
+                    : "(Opcional)"}
+                </Label>
                 <Select
                   value={movementFormData.loteId}
                   onValueChange={(value) =>
@@ -574,15 +594,23 @@ export default function MovimentacoesClient({
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um lote (ou sem lote)" />
+                    <SelectValue placeholder="Selecione um lote" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sem_lote">
-                      Sem Lote (Ajuste Geral)
-                    </SelectItem>
+                    {movementFormData.tipo !== "SAIDA" &&
+                      movementFormData.tipo !== "PERDA" && (
+                        <SelectItem value="sem_lote">
+                          Sem Lote (Ajuste Geral)
+                        </SelectItem>
+                      )}
                     {availableLotes.map((lote) => (
                       <SelectItem key={lote.id} value={lote.id}>
-                        {lote.numeroLote} (Qtd: {lote.quantidade})
+                        {lote.numeroLote} (Qtd: {lote.quantidade}) - Val:{" "}
+                        {lote.dataValidade
+                          ? new Date(lote.dataValidade).toLocaleDateString(
+                              "pt-BR"
+                            )
+                          : "N/A"}
                       </SelectItem>
                     ))}
                   </SelectContent>

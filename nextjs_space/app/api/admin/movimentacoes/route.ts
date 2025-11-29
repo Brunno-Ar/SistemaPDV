@@ -181,6 +181,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validação Estrita de Lote para Saídas/Perdas
+    if ((tipo === "SAIDA" || tipo === "AJUSTE_QUEBRA") && !loteId) {
+      return NextResponse.json(
+        {
+          error:
+            "É obrigatório selecionar um Lote para registrar saídas ou perdas.",
+        },
+        { status: 400 }
+      );
+    }
+
     // Determinar sinal da operação
     let multiplier = 1;
     if (tipo === "AJUSTE_QUEBRA" || tipo === "SAIDA") {
@@ -268,6 +279,7 @@ export async function POST(request: NextRequest) {
           tipo: tipo, // ENTRADA, AJUSTE_QUEBRA, AJUSTE_INVENTARIO
           quantidade: delta,
           motivo: `${motivo || "Ajuste manual"}${loteInfo}`,
+          loteId: loteId || null,
         },
       });
 
