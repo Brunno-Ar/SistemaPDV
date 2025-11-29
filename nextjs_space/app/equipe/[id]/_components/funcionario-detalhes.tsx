@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,6 +42,7 @@ interface FuncionarioDetalhesProps {
 export default function FuncionarioDetalhes({
   funcionarioId,
 }: FuncionarioDetalhesProps) {
+  const { data: session } = useSession();
   const router = useRouter();
   const [funcionario, setFuncionario] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -82,8 +84,17 @@ export default function FuncionarioDetalhes({
   };
 
   useEffect(() => {
+    if (session?.user?.id === funcionarioId) {
+      toast({
+        title: "Acesso Negado",
+        description: "Você não pode gerenciar seu próprio perfil aqui.",
+        variant: "destructive",
+      });
+      router.push("/equipe");
+      return;
+    }
     fetchFuncionario();
-  }, [funcionarioId]);
+  }, [funcionarioId, session]);
 
   const fetchFuncionario = async () => {
     try {
@@ -307,10 +318,10 @@ export default function FuncionarioDetalhes({
 
             <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="destructive" className="gap-2">
-                  <Trash2 className="h-4 w-4" />
+                <InteractiveHoverButton className="bg-red-500 text-white hover:bg-red-600 border-red-600">
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Excluir Funcionário
-                </Button>
+                </InteractiveHoverButton>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>

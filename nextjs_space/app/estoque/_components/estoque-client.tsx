@@ -56,6 +56,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { MessageLoading } from "@/components/ui/message-loading";
 
 interface Product {
   id: string;
@@ -596,8 +597,8 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        Carregando estoque...
+      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+        <MessageLoading />
       </div>
     );
   }
@@ -941,6 +942,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     setFormData({ ...formData, estoqueAtual: e.target.value })
                   }
                   required
+                  disabled
                 />
               </div>
             ) : (

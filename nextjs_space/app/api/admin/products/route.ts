@@ -5,8 +5,8 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-// Função para gerar SKU único
-async function generateUniqueSKU(): Promise<string> {
+// Função para gerar SKU único por empresa
+async function generateUniqueSKU(empresaId: string): Promise<string> {
   let sku = "";
   let exists = true;
 
@@ -24,9 +24,12 @@ async function generateUniqueSKU(): Promise<string> {
 
     sku = `${letters}-${numbers}`;
 
-    // Verificar se já existe
-    const existingProduct = await prisma.product.findUnique({
-      where: { sku },
+    // Verificar se já existe na empresa
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        sku,
+        empresaId,
+      },
     });
 
     exists = !!existingProduct;
@@ -92,41 +95,15 @@ export async function GET(request: NextRequest) {
             nome: true,
           },
         },
-        lotes: {
-          where: {
-            quantidade: { gt: 0 },
-          },
-        },
       },
     });
 
-    // Converter Decimal para number para serialização JSON e calcular custo médio
+    // Converter Decimal para number para serialização JSON
     const serializedProducts = products.map((product: any) => {
-      // Calcular custo médio ponderado baseado nos lotes ativos
-      let custoMedioCalculado = Number(product.precoCompra);
-
-      if (product.lotes && product.lotes.length > 0) {
-        const totalValor = product.lotes.reduce((acc: number, lote: any) => {
-          return acc + Number(lote.precoCompra) * lote.quantidade;
-        }, 0);
-
-        const totalQuantidade = product.lotes.reduce(
-          (acc: number, lote: any) => {
-            return acc + lote.quantidade;
-          },
-          0
-        );
-
-        if (totalQuantidade > 0) {
-          custoMedioCalculado = totalValor / totalQuantidade;
-        }
-      }
-
       return {
         ...product,
-        precoCompra: custoMedioCalculado, // Substitui pelo valor calculado
+        precoCompra: Number(product.precoCompra),
         precoVenda: Number(product.precoVenda),
-        lotes: undefined, // Não precisa enviar os lotes na lista de produtos
       };
     });
 
@@ -251,16 +228,16 @@ export async function POST(request: NextRequest) {
     // Gerar SKU se não fornecido
     let productSku = sku;
     if (!productSku || productSku.trim() === "") {
-      productSku = await generateUniqueSKU();
+      productSku = await generateUniqueSKU(empresaId);
     } else {
-      // Verificar se SKU já existe
-      const existingProduct = await prisma.product.findUnique({
-        where: { sku: productSku },
+      // Verificar se SKU já existe na empresa
+      const existingProduct = await prisma.product.findFirst({
+        where: { sku: productSku, empresaId },
       });
 
       if (existingProduct) {
         return NextResponse.json(
-          { error: "SKU já existe. Escolha outro." },
+          { error: "SKU já existe nesta empresa. Escolha outro." },
           { status: 400 }
         );
       }

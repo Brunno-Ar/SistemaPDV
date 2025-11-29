@@ -9,78 +9,46 @@ export const dynamic = "force-dynamic";
  * FEFO Engine - First Expired, First Out
  * Desconta a quantidade vendida dos lotes, priorizando os que vencem primeiro
  */
+/**
+ * FEFO Engine - First Expired, First Out
+ * Desconta a quantidade vendida dos lotes, priorizando os que vencem primeiro
+ */
 async function descontarLotesFEFO(
   tx: any,
   produtoId: string,
   quantidadeNecessaria: number
-): Promise<{ lotesUsados: string[]; quantidadeTotal: number }> {
-  // 1. Buscar todos os lotes do produto com estoque disponível
-  // Ordenação feita em memória para garantir que NULLs (sem validade) fiquem por último
-  let lotes = await tx.lote.findMany({
+): Promise<{
+  lotesUsados: string[];
+  quantidadeTotal: number;
+  custoTotalBaixado: number;
+}> {
+  // 1. Buscar lotes ordenados por validade (FEFO)
+  const lotes = await tx.lote.findMany({
     where: {
       produtoId: produtoId,
       quantidade: {
         gt: 0,
       },
     },
+    orderBy: [
+      { dataValidade: "asc" }, // Menor data (mais antiga) primeiro
+      { createdAt: "asc" }, // Desempate: lote mais antigo primeiro
+    ],
   });
-
-  // Ordenar em memória: Datas mais antigas primeiro, NULLs por último
-  lotes.sort((a: any, b: any) => {
-    if (a.dataValidade === b.dataValidade) return 0;
-    if (a.dataValidade === null) return 1;
-    if (b.dataValidade === null) return -1;
-    return (
-      new Date(a.dataValidade).getTime() - new Date(b.dataValidade).getTime()
-    );
-  });
-
-  // 🔥 FIX: Se não há lotes, criar um lote genérico para produtos legados
-  if (lotes.length === 0) {
-    const produto = await tx.product.findUnique({
-      where: { id: produtoId },
-    });
-
-    if (!produto || produto.estoqueAtual < quantidadeNecessaria) {
-      throw new Error("Estoque insuficiente para este produto");
-    }
-
-    // Criar lote automático para produto sem sistema de lotes
-    const dataAtual = new Date();
-    const dataFormatada = dataAtual
-      .toISOString()
-      .split("T")[0]
-      .replace(/-/g, "");
-    const numeroAleatorio = Math.floor(Math.random() * 99999)
-      .toString()
-      .padStart(5, "0");
-    const numeroLote = `LOTE-AUTO-${dataFormatada}-${numeroAleatorio}`;
-
-    // Data de validade: null (indefinida) ou 1 ano? Vamos usar null se opcional, ou manter 1 ano.
-    // O prompt diz "Torne dataValidade opcional". Vamos usar null para produtos sem validade explícita.
-    // Mas para o lote automático, talvez seja melhor null.
-
-    const loteAutomatico = await tx.lote.create({
-      data: {
-        numeroLote,
-        dataValidade: null, // Sem validade definida
-        quantidade: produto.estoqueAtual,
-        produtoId: produtoId,
-        precoCompra: produto.precoCompra, // Copiar custo atual
-      },
-    });
-
-    lotes.push(loteAutomatico);
-  }
 
   let quantidadeRestante = quantidadeNecessaria;
+  let custoTotalBaixado = 0;
   const lotesUsados: string[] = [];
 
-  // 2. Iterar pelos lotes e descontar a quantidade necessária
+  // 2. Iterar pelos lotes e descontar
   for (const lote of lotes) {
     if (quantidadeRestante === 0) break;
 
     const quantidadeADescontar = Math.min(lote.quantidade, quantidadeRestante);
+    const custoLote = Number(lote.precoCompra) || 0;
+
+    // Acumular o custo real dos itens retirados deste lote
+    custoTotalBaixado += quantidadeADescontar * custoLote;
 
     // 3. Atualizar o lote
     await tx.lote.update({
@@ -97,38 +65,15 @@ async function descontarLotesFEFO(
   // 4. Verificar se conseguiu descontar tudo
   if (quantidadeRestante > 0) {
     throw new Error(
-      `Estoque insuficiente nos lotes. Faltam ${quantidadeRestante} unidades`
+      `Estoque insuficiente nos lotes cadastrados. Faltam ${quantidadeRestante} unidades. Verifique se há lotes cadastrados para este produto.`
     );
   }
 
   return {
     lotesUsados,
     quantidadeTotal: quantidadeNecessaria,
+    custoTotalBaixado,
   };
-}
-
-/**
- * Recalcula o estoque atual do produto baseado na soma de todos os lotes
- */
-async function recalcularEstoqueCache(
-  tx: any,
-  produtoId: string
-): Promise<number> {
-  const lotes = await tx.lote.findMany({
-    where: { produtoId },
-  });
-
-  const estoqueTotal = lotes.reduce(
-    (sum: number, lote: any) => sum + lote.quantidade,
-    0
-  );
-
-  await tx.product.update({
-    where: { id: produtoId },
-    data: { estoqueAtual: estoqueTotal },
-  });
-
-  return estoqueTotal;
 }
 
 export async function POST(request: NextRequest) {
@@ -262,29 +207,43 @@ export async function POST(request: NextRequest) {
           const subtotal =
             item.quantidade * item.precoUnitario - descontoAplicado;
 
-          // Criar item da venda
+          // *** APLICAR LÓGICA FEFO PRIMEIRO ***
+          // Para saber o custo real dos lotes que serão consumidos
+          const { lotesUsados, custoTotalBaixado } = await descontarLotesFEFO(
+            tx,
+            item.productId,
+            item.quantidade
+          );
+
+          // Calcular custo unitário médio real desta venda
+          // Se por algum motivo o custoTotal for 0 (ex: lotes sem custo cadastrado), usa o custo do produto como fallback
+          const custoUnitarioReal =
+            custoTotalBaixado > 0
+              ? custoTotalBaixado / item.quantidade
+              : Number(product.precoCompra);
+
+          // Criar item da venda com o CUSTO REAL
           await tx.saleItem.create({
             data: {
               saleId: sale.id,
               productId: item.productId,
               quantidade: item.quantidade,
               precoUnitario: item.precoUnitario,
-              custoUnitario: product.precoCompra, // SNAPSHOT DO CUSTO
+              custoUnitario: custoUnitarioReal, // AGORA SIM: Custo preciso baseado nos lotes
               descontoAplicado: descontoAplicado,
               subtotal: subtotal,
             },
           });
 
-          // *** APLICAR LÓGICA FEFO ***
-          // Descontar dos lotes com vencimento mais próximo
-          const { lotesUsados } = await descontarLotesFEFO(
-            tx,
-            item.productId,
-            item.quantidade
-          );
-
-          // Recalcular o estoque total do produto (cache)
-          const novoEstoque = await recalcularEstoqueCache(tx, item.productId);
+          // Atualizar estoque do produto (decremento atômico)
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              estoqueAtual: {
+                decrement: item.quantidade,
+              },
+            },
+          });
 
           // Criar movimentação de estoque com informação dos lotes
           await tx.movimentacaoEstoque.create({

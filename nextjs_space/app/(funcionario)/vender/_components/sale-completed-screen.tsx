@@ -1,0 +1,291 @@
+"use client";
+
+import * as React from "react";
+import { motion } from "framer-motion";
+import { CheckCircle2, Package, CreditCard, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+
+interface ConfettiProps {
+  isActive?: boolean;
+  duration?: number;
+  autoPlay?: boolean;
+  zIndex?: number;
+  loop?: boolean;
+}
+
+const Confetti = ({
+  isActive: externalIsActive,
+  duration = 6000,
+  autoPlay = false,
+  zIndex = 50,
+  loop = false,
+}: ConfettiProps) => {
+  const [isActive, setIsActive] = useState(autoPlay);
+
+  useEffect(() => {
+    if (externalIsActive !== undefined) {
+      setIsActive(externalIsActive);
+    }
+  }, [externalIsActive]);
+
+  useEffect(() => {
+    let timeoutId: number;
+
+    if (isActive && !loop && duration > 0) {
+      timeoutId = window.setTimeout(() => {
+        setIsActive(false);
+      }, duration);
+    }
+
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [isActive, duration, loop]);
+
+  if (!isActive) return null;
+
+  const colors = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-yellow-500",
+    "bg-red-500",
+    "bg-purple-500",
+    "bg-pink-500",
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 pointer-events-none overflow-hidden"
+      style={{ zIndex }}
+    >
+      {[...Array(50)].map((_, i) => {
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const randomX = Math.random() * 100;
+        const randomDelay = Math.random() * 0.5;
+        const randomDuration = 2 + Math.random() * 2;
+        const randomRotation = Math.random() * 360;
+
+        return (
+          <motion.div
+            key={i}
+            className={`absolute w-3 h-3 ${randomColor} rounded-sm`}
+            initial={{
+              top: "-10%",
+              left: `${randomX}%`,
+              opacity: 1,
+              rotate: 0,
+            }}
+            animate={{
+              top: "110%",
+              opacity: 0,
+              rotate: randomRotation,
+            }}
+            transition={{
+              duration: randomDuration,
+              delay: randomDelay,
+              ease: "easeIn",
+              repeat: loop ? Infinity : 0,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+const ShiningText = ({ text }: { text: string }) => {
+  return (
+    <motion.h1
+      className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base font-regular text-transparent"
+      initial={{ backgroundPosition: "200% 0" }}
+      animate={{ backgroundPosition: "-200% 0" }}
+      transition={{
+        repeat: Infinity,
+        duration: 2,
+        ease: "linear",
+      }}
+    >
+      {text}
+    </motion.h1>
+  );
+};
+
+interface SaleCompletedScreenProps {
+  total: number;
+  paymentMethod: string;
+  onNewSale: () => void;
+}
+
+const SaleCompletedScreen = ({
+  total,
+  paymentMethod,
+  onNewSale,
+}: SaleCompletedScreenProps) => {
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    setShowConfetti(true);
+    setTimeout(() => setShowContent(true), 300);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
+      <Confetti
+        isActive={showConfetti}
+        duration={5000}
+        loop={false}
+        zIndex={100}
+      />
+
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="max-w-2xl w-full"
+      >
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-green-100">
+          {/* Header Section */}
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-8 text-center relative overflow-hidden">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="inline-block"
+            >
+              <div className="bg-white rounded-full p-4 mb-4 inline-block">
+                <CheckCircle2 className="w-16 h-16 text-green-500" />
+              </div>
+            </motion.div>
+
+            <motion.h1
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-4xl font-bold text-white mb-2"
+            >
+              Venda Concluída!
+            </motion.h1>
+
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-green-100 text-lg"
+            >
+              Parabéns pela sua venda!
+            </motion.p>
+
+            {/* Decorative elements */}
+            <motion.div
+              animate={{
+                rotate: 360,
+              }}
+              transition={{
+                duration: 20,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full"
+            />
+            <motion.div
+              animate={{
+                rotate: -360,
+              }}
+              transition={{
+                duration: 15,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full"
+            />
+          </div>
+
+          {/* Content Section */}
+          {showContent && (
+            <div className="p-8">
+              {/* Order Details */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-green-100 p-3 rounded-full">
+                      <Package className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Número do Pedido</p>
+                      <p className="text-lg font-bold text-gray-800">
+                        #VND-{Math.floor(Math.random() * 10000)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">Total</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      R$ {total.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <CreditCard className="w-5 h-5 text-gray-400" />
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">
+                        Método de Pagamento
+                      </p>
+                      <p className="font-semibold text-gray-800 capitalize">
+                        {paymentMethod}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Success Messages */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="space-y-3 mb-6"
+              >
+                <div className="flex items-start gap-3 p-4 bg-green-50 rounded-xl border border-green-100">
+                  <Sparkles className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-green-900">
+                      Sucesso Absoluto!
+                    </p>
+                    <p className="text-sm text-green-700">
+                      Venda registrada e estoque atualizado.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Action Buttons */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.9 }}
+                className="flex gap-3"
+              >
+                <button
+                  onClick={onNewSale}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-4 px-6 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Nova Venda
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default SaleCompletedScreen;

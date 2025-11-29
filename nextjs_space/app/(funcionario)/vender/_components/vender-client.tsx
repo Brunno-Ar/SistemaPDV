@@ -25,8 +25,10 @@ import {
   Package,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { MessageLoading } from "@/components/ui/message-loading";
+import SaleCompletedScreen from "./sale-completed-screen";
 
-// Componente para exibir imagem do produto com URL assinada
+// Componente para exibir imagem do produto
 function ProductImage({
   imagemUrl,
   nome,
@@ -34,44 +36,7 @@ function ProductImage({
   imagemUrl: string;
   nome: string;
 }) {
-  const [signedUrl, setSignedUrl] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    async function fetchSignedUrl() {
-      try {
-        const response = await fetch(
-          `/api/products/image?key=${encodeURIComponent(imagemUrl)}`
-        );
-        const data = await response.json();
-
-        if (response.ok && data.url) {
-          setSignedUrl(data.url);
-        } else {
-          setError(true);
-        }
-      } catch (err) {
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchSignedUrl();
-  }, [imagemUrl]);
-
-  if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-        <div className="animate-pulse">
-          <Package className="h-12 w-12 text-gray-300" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !signedUrl) {
+  if (!imagemUrl) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100">
         <Package className="h-12 w-12 text-gray-300" />
@@ -81,7 +46,7 @@ function ProductImage({
 
   return (
     <Image
-      src={signedUrl}
+      src={imagemUrl}
       alt={nome}
       fill
       className="object-cover"
@@ -116,11 +81,56 @@ export default function VenderClient() {
   const [loading, setLoading] = useState(true);
   const [finalizing, setFinalizing] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
+  const [showSuccessScreen, setShowSuccessScreen] = useState(false);
+  const [lastSaleTotal, setLastSaleTotal] = useState(0);
 
-  // Carregar produtos
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Carregar dados do localStorage e configurar listeners de rede
   useEffect(() => {
+    // 1. Carregar carrinho salvo
+    const savedCart = localStorage.getItem("pdv_cart");
+    if (savedCart) {
+      try {
+        setCart(JSON.parse(savedCart));
+      } catch (e) {
+        console.error("Erro ao carregar carrinho salvo:", e);
+      }
+    }
+
+    // 2. Carregar método de pagamento salvo
+    const savedPayment = localStorage.getItem("pdv_payment_method");
+    if (savedPayment) {
+      setMetodoPagamento(savedPayment);
+    }
+
+    // 3. Configurar detecção de offline/online
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Definir estado inicial
+    setIsOffline(!navigator.onLine);
+
     fetchProducts();
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, []);
+
+  // Salvar carrinho no localStorage sempre que mudar
+  useEffect(() => {
+    localStorage.setItem("pdv_cart", JSON.stringify(cart));
+  }, [cart]);
+
+  // Salvar método de pagamento no localStorage sempre que mudar
+  useEffect(() => {
+    localStorage.setItem("pdv_payment_method", metodoPagamento);
+  }, [metodoPagamento]);
 
   // Filtrar produtos por nome
   useEffect(() => {
@@ -136,6 +146,12 @@ export default function VenderClient() {
   }, [searchTerm, products]);
 
   const fetchProducts = async () => {
+    if (!navigator.onLine) {
+      // Se estiver offline, tentar carregar produtos do cache local se existir (opcional)
+      // Por enquanto, apenas não faz nada ou mostra aviso
+      return;
+    }
+
     try {
       const response = await fetch("/api/products");
       const data = await response.json();
@@ -148,12 +164,33 @@ export default function VenderClient() {
       if (Array.isArray(data)) {
         setProducts(data);
         setFilteredProducts(data);
+        // Salvar produtos em cache local para uso offline futuro (opcional, mas recomendado)
+        localStorage.setItem("pdv_products_cache", JSON.stringify(data));
       } else {
         setProducts([]);
         setFilteredProducts([]);
       }
     } catch (error) {
       console.error("Erro ao carregar produtos:", error);
+
+      // Tentar recuperar do cache se falhar
+      const cachedProducts = localStorage.getItem("pdv_products_cache");
+      if (cachedProducts) {
+        try {
+          const parsed = JSON.parse(cachedProducts);
+          setProducts(parsed);
+          setFilteredProducts(parsed);
+          toast({
+            title: "Modo Offline",
+            description: "Carregando produtos do cache local.",
+            variant: "default",
+          });
+          return;
+        } catch (e) {
+          console.error("Erro ao ler cache de produtos", e);
+        }
+      }
+
       setProducts([]);
       setFilteredProducts([]);
       toast({
@@ -271,11 +308,23 @@ export default function VenderClient() {
   const clearCart = () => {
     setCart([]);
     setMetodoPagamento("");
+    localStorage.removeItem("pdv_cart");
+    localStorage.removeItem("pdv_payment_method");
   };
 
   const valorTotal = cart.reduce((total, item) => total + item.subtotal, 0);
 
   const finalizarVenda = async () => {
+    if (isOffline) {
+      toast({
+        title: "Sem conexão",
+        description:
+          "Não é possível finalizar vendas offline. Aguarde a conexão retornar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (cart.length === 0) {
       toast({
         title: "Carrinho vazio",
@@ -328,15 +377,15 @@ export default function VenderClient() {
         throw new Error(data.error || "Erro ao finalizar venda");
       }
 
-      toast({
-        title: "Venda finalizada!",
-        description: `Venda de R$ ${valorTotal.toFixed(
-          2
-        )} finalizada com sucesso`,
-      });
+      // Sucesso!
+      setLastSaleTotal(valorTotal);
+      setShowSuccessScreen(true);
 
-      clearCart();
-      fetchProducts(); // Recarregar produtos para atualizar estoque
+      // Limpar dados do localStorage mas manter estado local até clicar em "Nova Venda"
+      localStorage.removeItem("pdv_cart");
+      localStorage.removeItem("pdv_payment_method");
+
+      fetchProducts(); // Recarregar produtos para atualizar estoque em background
     } catch (error) {
       toast({
         title: "Erro",
@@ -349,23 +398,57 @@ export default function VenderClient() {
     }
   };
 
+  const handleNewSale = () => {
+    setShowSuccessScreen(false);
+    clearCart();
+  };
+
+  if (showSuccessScreen) {
+    return (
+      <SaleCompletedScreen
+        total={lastSaleTotal}
+        paymentMethod={metodoPagamento}
+        onNewSale={handleNewSale}
+      />
+    );
+  }
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        Carregando produtos...
+      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+        <MessageLoading />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 lg:grid lg:grid-cols-1 lg:grid-cols-5 lg:gap-6 lg:space-y-0">
+    <div className="space-y-6 lg:grid lg:grid-cols-5 lg:gap-6 lg:space-y-0 relative">
+      {/* Overlay de Finalização */}
+      {finalizing && (
+        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
+          <div className="bg-white p-6 rounded-xl shadow-xl border flex flex-col items-center gap-4">
+            <MessageLoading />
+            <p className="font-medium text-lg text-gray-700">
+              Processando Venda...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Coluna Esquerda - Grid de Produtos (60%) */}
       <div className="lg:col-span-3">
         <Card>
           <CardHeader className="space-y-4">
-            <CardTitle className="text-lg sm:text-xl">
-              Produtos Disponíveis
-            </CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg sm:text-xl">
+                Produtos Disponíveis
+              </CardTitle>
+              {isOffline && (
+                <Badge variant="destructive" className="animate-pulse">
+                  Sem Conexão (Offline)
+                </Badge>
+              )}
+            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -611,11 +694,15 @@ export default function VenderClient() {
                   <InteractiveHoverButton
                     onClick={finalizarVenda}
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base border-green-600"
-                    disabled={finalizing}
+                    disabled={finalizing || isOffline}
                   >
                     <span className="flex items-center justify-center gap-2">
                       <DollarSign className="h-4 w-4" />
-                      {finalizing ? "Finalizando..." : "Finalizar Venda"}
+                      {finalizing
+                        ? "Finalizando..."
+                        : isOffline
+                        ? "Sem Conexão"
+                        : "Finalizar Venda"}
                     </span>
                   </InteractiveHoverButton>
                   <InteractiveHoverButton

@@ -42,6 +42,7 @@ import {
   Edit,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { MessageLoading } from "@/components/ui/message-loading";
 
 interface Product {
   id: string;
@@ -435,8 +436,8 @@ export default function LotesClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        Carregando lotes...
+      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+        <MessageLoading />
       </div>
     );
   }
