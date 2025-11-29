@@ -226,14 +226,21 @@ export default function RelatoriosClient({
   return (
     <div className="space-y-6">
       {/* Filtros de Data */}
-      <Card>
+      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader>
-          <CardTitle>Filtros de Período</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-gray-100">
+            Filtros de Período
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex-1 min-w-[200px]">
-              <Label htmlFor="startDate">Data Inicial</Label>
+              <Label
+                htmlFor="startDate"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Data Inicial
+              </Label>
               <Input
                 id="startDate"
                 type="date"
@@ -241,10 +248,16 @@ export default function RelatoriosClient({
                 onChange={(e) =>
                   setDateRange({ ...dateRange, startDate: e.target.value })
                 }
+                className="bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div className="flex-1 min-w-[200px]">
-              <Label htmlFor="endDate">Data Final</Label>
+              <Label
+                htmlFor="endDate"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Data Final
+              </Label>
               <Input
                 id="endDate"
                 type="date"
@@ -252,16 +265,17 @@ export default function RelatoriosClient({
                 onChange={(e) =>
                   setDateRange({ ...dateRange, endDate: e.target.value })
                 }
+                className="bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-gray-100"
               />
             </div>
             <InteractiveHoverButton
               onClick={fetchFilteredData}
-              className="bg-[#137fec] text-white border-[#137fec]"
+              className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
             >
               Aplicar Filtro
             </InteractiveHoverButton>
             <InteractiveHoverButton
-              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+              className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
               onClick={clearFilter}
             >
               Limpar
@@ -272,15 +286,19 @@ export default function RelatoriosClient({
 
       {/* Cards de Resumo - Vendas */}
       <div>
-        <h3 className="text-lg font-semibold mb-3">📊 Faturamento</h3>
+        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
+          📊 Faturamento
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card>
+          <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vendas Hoje</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Vendas Hoje
+              </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {formatCurrency(analytics?.totalVendasHoje || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -289,15 +307,15 @@ export default function RelatoriosClient({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 Vendas Semana
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {formatCurrency(analytics?.totalVendasSemana || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -306,13 +324,15 @@ export default function RelatoriosClient({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Vendas Mês</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Vendas Mês
+              </CardTitle>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {formatCurrency(analytics?.totalVendasMes || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -325,54 +345,56 @@ export default function RelatoriosClient({
 
       {/* Cards de Lucro */}
       <div>
-        <h3 className="text-lg font-semibold mb-3">💰 Lucro Líquido</h3>
+        <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">
+          💰 Lucro Líquido
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="bg-green-50 border-green-200">
+          <Card className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
+              <CardTitle className="text-sm font-medium text-green-900 dark:text-green-200">
                 Lucro Hoje
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
                 {formatCurrency(analytics?.lucroHoje || 0)}
               </div>
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-green-600 dark:text-green-400">
                 Margem: {(analytics?.margemHoje || 0).toFixed(1)}%
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-green-50 border-green-200">
+          <Card className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
+              <CardTitle className="text-sm font-medium text-green-900 dark:text-green-200">
                 Lucro Semana
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
                 {formatCurrency(analytics?.lucroSemana || 0)}
               </div>
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-green-600 dark:text-green-400">
                 Margem: {(analytics?.margemSemana || 0).toFixed(1)}%
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-green-50 border-green-200">
+          <Card className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-900">
+              <CardTitle className="text-sm font-medium text-green-900 dark:text-green-200">
                 Lucro Mês
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-700">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">
                 {formatCurrency(analytics?.lucroMes || 0)}
               </div>
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-green-600 dark:text-green-400">
                 Margem: {(analytics?.margemMes || 0).toFixed(1)}%
               </p>
             </CardContent>
@@ -383,9 +405,11 @@ export default function RelatoriosClient({
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Produtos Mais Vendidos */}
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
           <CardHeader>
-            <CardTitle>Produtos Mais Vendidos</CardTitle>
+            <CardTitle className="text-gray-900 dark:text-gray-100">
+              Produtos Mais Vendidos
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -400,6 +424,11 @@ export default function RelatoriosClient({
                 <Tooltip
                   formatter={(value: any) => [value, "Quantidade"]}
                   wrapperStyle={{ fontSize: 11 }}
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    borderColor: "#e5e7eb",
+                    color: "#000",
+                  }}
                 />
                 <Bar dataKey="totalVendido" fill="#60B5FF" name="Quantidade" />
               </BarChart>
@@ -408,9 +437,11 @@ export default function RelatoriosClient({
         </Card>
 
         {/* Vendas por Método */}
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
           <CardHeader>
-            <CardTitle>Vendas por Método de Pagamento</CardTitle>
+            <CardTitle className="text-gray-900 dark:text-gray-100">
+              Vendas por Método de Pagamento
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -440,6 +471,11 @@ export default function RelatoriosClient({
                 <Tooltip
                   formatter={(value: any) => formatCurrency(value)}
                   wrapperStyle={{ fontSize: 11 }}
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    borderColor: "#e5e7eb",
+                    color: "#000",
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -448,35 +484,56 @@ export default function RelatoriosClient({
       </div>
 
       {/* Histórico de Vendas */}
-      <Card>
+      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader>
-          <CardTitle>Vendas Recentes</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-gray-100">
+            Vendas Recentes
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Data/Hora</TableHead>
-                <TableHead>Vendedor</TableHead>
-                <TableHead>Valor Total</TableHead>
-                <TableHead>Custo</TableHead>
-                <TableHead>Lucro</TableHead>
-                <TableHead>Margem</TableHead>
-                <TableHead>Método</TableHead>
+              <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800">
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Data/Hora
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Vendedor
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Valor Total
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Custo
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Lucro
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Margem
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Método
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {recentSales?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8">
-                    <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p className="text-gray-500">Nenhuma venda encontrada</p>
+                    <Calendar className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Nenhuma venda encontrada
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 recentSales?.map((sale) => (
-                  <TableRow key={sale.id}>
-                    <TableCell>
+                  <TableRow
+                    key={sale.id}
+                    className="border-gray-200 dark:border-zinc-800"
+                  >
+                    <TableCell className="text-gray-900 dark:text-gray-100">
                       {new Date(sale.dataHora).toLocaleString("pt-BR", {
                         day: "2-digit",
                         month: "2-digit",
@@ -485,14 +542,16 @@ export default function RelatoriosClient({
                         minute: "2-digit",
                       })}
                     </TableCell>
-                    <TableCell>{sale.user?.nome || "N/A"}</TableCell>
-                    <TableCell className="font-semibold">
+                    <TableCell className="text-gray-900 dark:text-gray-100">
+                      {sale.user?.nome || "N/A"}
+                    </TableCell>
+                    <TableCell className="font-semibold text-gray-900 dark:text-gray-100">
                       {formatCurrency(sale.valorTotal)}
                     </TableCell>
-                    <TableCell className="text-red-600">
+                    <TableCell className="text-red-600 dark:text-red-400">
                       {formatCurrency(sale.custoTotal || 0)}
                     </TableCell>
-                    <TableCell className="font-semibold text-green-600">
+                    <TableCell className="font-semibold text-green-600 dark:text-green-400">
                       {formatCurrency(sale.lucro || 0)}
                     </TableCell>
                     <TableCell>

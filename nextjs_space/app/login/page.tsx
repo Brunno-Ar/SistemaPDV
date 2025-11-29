@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Store, Mail, Lock, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -108,7 +109,10 @@ export default function LoginPage() {
                 </p>
               </div>
             </div>
-            <div className="flex col-span-1 md:col-span-2 flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 p-6 sm:p-12">
+            <div className="flex col-span-1 md:col-span-2 flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 p-6 sm:p-12 relative">
+              <div className="absolute top-4 right-4">
+                <ThemeToggle />
+              </div>
               <div className="w-full max-w-md">
                 <div className="flex flex-col items-center justify-center text-center md:hidden mb-10">
                   <Store className="text-6xl mb-2 text-[#137fec] dark:text-[#137fec] h-16 w-16" />

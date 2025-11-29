@@ -156,14 +156,16 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gerenciar Equipe</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Gerenciar Equipe
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Adicione e gerencie os usuários da sua empresa
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
-            <InteractiveHoverButton className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600">
+            <InteractiveHoverButton className="bg-cta-bg hover:bg-cta-bg/90 text-white border-cta-bg">
               <span className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Novo Usuário Caixa
@@ -219,7 +221,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
               <div className="flex justify-end space-x-2 pt-4">
                 <InteractiveHoverButton
                   type="button"
-                  className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                  className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                   onClick={() => handleDialogChange(false)}
                   disabled={submitting}
                 >
@@ -228,7 +230,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                 <InteractiveHoverButton
                   type="submit"
                   disabled={submitting}
-                  className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                  className="bg-cta-bg hover:bg-cta-bg/90 text-white border-cta-bg"
                 >
                   {submitting ? "Criando..." : "Criar Usuário"}
                 </InteractiveHoverButton>
@@ -246,17 +248,17 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
             return (
               <Card
                 key={usuario.id}
-                className="border-blue-200 bg-blue-50/50 relative"
+                className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20 relative"
               >
                 <div className="absolute top-2 right-2">
-                  <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
+                  <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs px-2 py-1 rounded-full font-medium">
                     Você
                   </span>
                 </div>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg">
+                      <CardTitle className="text-lg text-gray-900 dark:text-gray-100">
                         {usuario.nome ||
                           usuario.name ||
                           usuario.email.split("@")[0]}
@@ -265,10 +267,10 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                         <span
                           className={`inline-block px-2 py-1 text-xs rounded ${
                             usuario.role === "admin"
-                              ? "bg-purple-100 text-purple-700"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                           }`}
                         >
                           {usuario.role === "admin"
@@ -279,18 +281,18 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                         </span>
                       </CardDescription>
                     </div>
-                    <div className="p-2 bg-blue-100 rounded-lg opacity-50">
-                      <Users className="h-5 w-5 text-blue-600" />
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg opacity-50">
+                      <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                       <Mail className="h-4 w-4" />
                       <span className="truncate">{usuario.email}</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar className="h-4 w-4" />
                       <span>
                         Desde{" "}
@@ -307,11 +309,11 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
 
           return (
             <Link href={`/equipe/${usuario.id}`} key={usuario.id}>
-              <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
+              <Card className="cursor-pointer hover:shadow-md transition-shadow h-full bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg">
+                      <CardTitle className="text-lg text-gray-900 dark:text-gray-100">
                         {usuario.nome ||
                           usuario.name ||
                           usuario.email.split("@")[0]}
@@ -320,10 +322,10 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                         <span
                           className={`inline-block px-2 py-1 text-xs rounded ${
                             usuario.role === "admin"
-                              ? "bg-purple-100 text-purple-700"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-blue-100 text-blue-700"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                           }`}
                         >
                           {usuario.role === "admin"
@@ -334,18 +336,18 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                         </span>
                       </CardDescription>
                     </div>
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Users className="h-5 w-5 text-blue-600" />
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                       <Mail className="h-4 w-4" />
                       <span className="truncate">{usuario.email}</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                       <Calendar className="h-4 w-4" />
                       <span>
                         Desde{" "}
@@ -363,13 +365,13 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
       </div>
 
       {usuarios.length === 0 && (
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
               Nenhum usuário cadastrado
             </h3>
-            <p className="text-gray-600 text-center mb-4">
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-4">
               Comece adicionando um novo usuário caixa
             </p>
           </CardContent>

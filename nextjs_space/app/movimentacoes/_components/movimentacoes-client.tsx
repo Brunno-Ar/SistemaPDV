@@ -332,19 +332,21 @@ export default function MovimentacoesClient({
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <CardTitle>Central de Movimentações</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-gray-900 dark:text-gray-100">
+                Central de Movimentações
+              </CardTitle>
+              <CardDescription className="text-gray-500 dark:text-gray-400">
                 Visualize vendas, entradas e ajustes de estoque em uma linha do
                 tempo unificada.
               </CardDescription>
             </div>
             <InteractiveHoverButton
               onClick={handleOpenMovementDialog}
-              className="bg-[#137fec] text-white border-[#137fec]"
+              className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
             >
               <span className="flex items-center gap-2">
                 <ArrowRightLeft className="h-4 w-4" />
@@ -400,27 +402,32 @@ export default function MovimentacoesClient({
 
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             Carregando movimentações...
           </div>
         ) : filteredMovements.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 border rounded-lg bg-gray-50">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400 border rounded-lg bg-gray-50 dark:bg-zinc-800 dark:border-zinc-700">
             Nenhuma movimentação encontrada no período.
           </div>
         ) : (
           filteredMovements.map((mov) => (
-            <Card key={mov.id} className="overflow-hidden">
+            <Card
+              key={mov.id}
+              className="overflow-hidden bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800"
+            >
               {mov.type === "VENDA" ? (
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="item-1" className="border-none">
                     <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="p-2 bg-blue-100 rounded-full">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
                           {getIcon(mov.type)}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-lg">Venda</h3>
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                              Venda
+                            </h3>
                             <Badge
                               variant="outline"
                               className="font-mono text-xs"
@@ -428,7 +435,7 @@ export default function MovimentacoesClient({
                               #{mov.id.slice(-6).toUpperCase()}
                             </Badge>
                           </div>
-                          <div className="text-sm text-gray-500 flex items-center gap-2">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                             <span>
                               {format(new Date(mov.date), "dd/MM/yyyy HH:mm", {
                                 locale: ptBR,
@@ -442,8 +449,10 @@ export default function MovimentacoesClient({
 
                       <div className="flex items-center gap-6">
                         <div className="text-right">
-                          <p className="text-sm text-gray-500">Total</p>
-                          <p className="font-bold text-green-600 text-lg">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Total
+                          </p>
+                          <p className="font-bold text-green-600 dark:text-green-400 text-lg">
                             {formatCurrency(mov.totalValue || 0)}
                           </p>
                         </div>
@@ -451,22 +460,22 @@ export default function MovimentacoesClient({
                       </div>
                     </div>
                     <AccordionContent>
-                      <div className="bg-gray-50 p-4 border-t">
+                      <div className="bg-gray-50 dark:bg-zinc-800 p-4 border-t dark:border-zinc-700">
                         <div className="grid gap-2">
-                          <div className="font-medium text-sm text-gray-500 mb-2">
+                          <div className="font-medium text-sm text-gray-500 dark:text-gray-400 mb-2">
                             Itens da Venda
                           </div>
                           {mov.items?.map((item, idx) => (
                             <div
                               key={idx}
-                              className="flex justify-between text-sm items-center"
+                              className="flex justify-between text-sm items-center text-gray-700 dark:text-gray-300"
                             >
                               <div className="flex flex-col">
                                 <span>
                                   {item.quantity}x {item.productName}
                                 </span>
                                 {item.discount && item.discount > 0 ? (
-                                  <span className="text-xs text-green-600">
+                                  <span className="text-xs text-green-600 dark:text-green-400">
                                     Desconto: -{formatCurrency(item.discount)}
                                   </span>
                                 ) : null}
@@ -476,7 +485,7 @@ export default function MovimentacoesClient({
                               </span>
                             </div>
                           ))}
-                          <div className="mt-2 pt-2 border-t flex justify-between text-sm font-medium">
+                          <div className="mt-2 pt-2 border-t dark:border-zinc-700 flex justify-between text-sm font-medium text-gray-900 dark:text-gray-100">
                             <span>Forma de Pagamento</span>
                             <span className="capitalize">
                               {mov.paymentMethod}
@@ -493,21 +502,21 @@ export default function MovimentacoesClient({
                     <div
                       className={`p-2 rounded-full ${
                         mov.type === "ENTRADA"
-                          ? "bg-green-100"
+                          ? "bg-green-100 dark:bg-green-900/30"
                           : mov.type === "AJUSTE_QUEBRA"
-                          ? "bg-red-100"
-                          : "bg-gray-100"
+                          ? "bg-red-100 dark:bg-red-900/30"
+                          : "bg-gray-100 dark:bg-zinc-800"
                       }`}
                     >
                       {getIcon(mov.type)}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">
+                        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
                           {getTypeLabel(mov.type)}
                         </h3>
                       </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-2">
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                         <span>
                           {format(new Date(mov.date), "dd/MM/yyyy HH:mm", {
                             locale: ptBR,
@@ -521,7 +530,9 @@ export default function MovimentacoesClient({
 
                   <div className="flex flex-col items-end gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{mov.productName}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                        {mov.productName}
+                      </span>
                       <Badge
                         variant={
                           mov.type === "ENTRADA" ? "default" : "destructive"
@@ -532,7 +543,7 @@ export default function MovimentacoesClient({
                       </Badge>
                     </div>
                     {mov.reason && (
-                      <p className="text-sm text-gray-500 italic max-w-md text-right">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 italic max-w-md text-right">
                         "{mov.reason}"
                       </p>
                     )}
@@ -674,14 +685,14 @@ export default function MovimentacoesClient({
             <div className="flex justify-end gap-2 pt-4">
               <InteractiveHoverButton
                 type="button"
-                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                 onClick={() => setMovementDialogOpen(false)}
               >
                 Cancelar
               </InteractiveHoverButton>
               <InteractiveHoverButton
                 type="submit"
-                className="bg-[#137fec] text-white border-[#137fec]"
+                className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
               >
                 Confirmar
               </InteractiveHoverButton>

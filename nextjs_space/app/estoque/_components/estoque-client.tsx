@@ -606,18 +606,20 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
   return (
     <div className="space-y-6">
       {/* Header e Filtros */}
-      <Card>
+      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <CardTitle>Gestão de Estoque</CardTitle>
-              <p className="text-sm text-gray-600">
+              <CardTitle className="text-gray-900 dark:text-gray-100">
+                Gestão de Estoque
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {products.length} produtos cadastrados
               </p>
             </div>
             <InteractiveHoverButton
               onClick={() => handleOpenDialog()}
-              className="bg-[#137fec] text-white border-[#137fec]"
+              className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
             >
               <span className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
@@ -703,41 +705,63 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       </Card>
 
       {/* Tabela de Produtos */}
-      <Card>
+      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Produto</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Preços</TableHead>
-                <TableHead>Estoque Total</TableHead>
-                <TableHead>Lotes</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+              <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800">
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Produto
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Categoria
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Preços
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Estoque Total
+                </TableHead>
+                <TableHead className="text-gray-700 dark:text-gray-300">
+                  Lotes
+                </TableHead>
+                <TableHead className="text-right text-gray-700 dark:text-gray-300">
+                  Ações
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedProducts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    <Package className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p className="text-gray-500">Nenhum produto encontrado</p>
+                    <Package className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Nenhum produto encontrado
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredAndSortedProducts.map((product) => (
-                  <TableRow key={product.id}>
+                  <TableRow
+                    key={product.id}
+                    className="border-gray-200 dark:border-zinc-800"
+                  >
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="font-medium">{product.nome}</span>
-                        <span className="text-xs text-gray-500 font-mono">
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {product.nome}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
                           {product.sku}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       {product.category ? (
-                        <Badge variant="secondary" className="font-normal">
+                        <Badge
+                          variant="secondary"
+                          className="font-normal bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300"
+                        >
                           {product.category.nome}
                         </Badge>
                       ) : (
@@ -746,18 +770,18 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
-                        <span>
+                        <span className="text-gray-900 dark:text-gray-100">
                           Venda:{" "}
                           <strong>R$ {product.precoVenda.toFixed(2)}</strong>
                         </span>
-                        <span className="text-gray-500 text-xs">
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">
                           Custo: R$ {product.precoCompra.toFixed(2)}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
                           {product.estoqueAtual} un
                         </span>
                         {product.estoqueAtual <= product.estoqueMinimo ? (
@@ -770,7 +794,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                         ) : (
                           <Badge
                             variant="outline"
-                            className="text-green-600 border-green-200 bg-green-50 text-xs px-1.5 py-0 h-5"
+                            className="text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 text-xs px-1.5 py-0 h-5"
                           >
                             Normal
                           </Badge>
@@ -779,7 +803,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     </TableCell>
                     <TableCell>
                       <InteractiveHoverButton
-                        className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 min-w-[120px]"
+                        className="h-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-200 dark:border-blue-800 min-w-[120px]"
                         onClick={() => handleOpenLotsDialog(product)}
                       >
                         <span className="flex items-center gap-2">
@@ -791,14 +815,14 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-1">
                         <InteractiveHoverButton
-                          className="w-10 min-w-10 px-0 border-gray-200"
+                          className="w-10 min-w-10 px-0 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
                           onClick={() => handleOpenDialog(product)}
                         >
                           <Edit className="h-4 w-4" />
                         </InteractiveHoverButton>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <InteractiveHoverButton className="w-10 min-w-10 px-0 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700">
+                            <InteractiveHoverButton className="w-10 min-w-10 px-0 border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300">
                               <Trash2 className="h-4 w-4" />
                             </InteractiveHoverButton>
                           </AlertDialogTrigger>
@@ -947,14 +971,14 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               </div>
             ) : (
               /* 🆕 SEÇÃO: ESTOQUE INICIAL (PRIMEIRO LOTE) */
-              <div className="space-y-4 p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
+              <div className="space-y-4 p-4 border-2 border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <div className="flex items-center space-x-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-blue-900">
+                  <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100">
                     Estoque Inicial (Primeiro Lote)
                   </h3>
                 </div>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   📦 <strong>Cadastro Unificado:</strong> Crie o produto e seu
                   primeiro lote em uma única etapa!
                 </p>
@@ -974,7 +998,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     }
                     placeholder="0"
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     💡 Se informar quantidade &gt; 0, o estoque inicial será
                     definido automaticamente
                   </p>
@@ -1016,8 +1040,10 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-gray-600">Custo Unit. (Auto)</Label>
-                    <div className="h-10 px-3 py-2 bg-blue-100 border border-blue-200 rounded-md text-blue-800 font-medium flex items-center">
+                    <Label className="text-gray-600 dark:text-gray-400">
+                      Custo Unit. (Auto)
+                    </Label>
+                    <div className="h-10 px-3 py-2 bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 rounded-md text-blue-800 dark:text-blue-200 font-medium flex items-center">
                       R$ {formData.precoCompra || "0.00"}
                     </div>
                   </div>
@@ -1059,14 +1085,14 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     disabled={semValidadeInicial}
                     required={!semValidadeInicial && !!formData.loteInicial}
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     📅 Obrigatória se houver quantidade no lote (exceto se "Sem
                     validade")
                   </p>
                 </div>
 
-                <div className="bg-white p-3 rounded border border-blue-300">
-                  <p className="text-sm text-gray-700">
+                <div className="bg-white dark:bg-zinc-900 p-3 rounded border border-blue-300 dark:border-blue-700">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     <strong>Como funciona:</strong> Ao criar o produto com lote
                     inicial, você economiza tempo ao não precisar cadastrar o
                     lote em outra tela. O número do lote será gerado
@@ -1104,7 +1130,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
             <div className="flex justify-end gap-2 pt-2">
               <InteractiveHoverButton
                 type="button"
-                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                 onClick={handleCloseDialog}
               >
                 Cancelar
@@ -1112,7 +1138,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               <InteractiveHoverButton
                 type="submit"
                 disabled={uploadingImage}
-                className="bg-[#137fec] text-white border-[#137fec]"
+                className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
               >
                 {uploadingImage ? "Salvando..." : "Salvar"}
               </InteractiveHoverButton>
@@ -1145,7 +1171,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
             </div>
             <div className="flex justify-end gap-2">
               <InteractiveHoverButton
-                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                 onClick={() => setNewCategoryDialogOpen(false)}
               >
                 Cancelar
@@ -1153,7 +1179,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               <InteractiveHoverButton
                 onClick={handleCreateCategory}
                 disabled={creatingCategory}
-                className="bg-[#137fec] text-white border-[#137fec]"
+                className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
               >
                 {creatingCategory ? "Criando..." : "Criar Categoria"}
               </InteractiveHoverButton>
@@ -1253,7 +1279,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <InteractiveHoverButton
-                  className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                  className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                   onClick={() => setShowNewLoteForm(false)}
                 >
                   Cancelar
@@ -1261,7 +1287,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                 <InteractiveHoverButton
                   onClick={handleCreateLote}
                   disabled={creatingLote}
-                  className="bg-[#137fec] text-white border-[#137fec]"
+                  className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
                 >
                   {creatingLote ? "Salvando..." : "Salvar Lote"}
                 </InteractiveHoverButton>
@@ -1293,7 +1319,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                     </div>
                     <InteractiveHoverButton
                       onClick={() => setShowNewLoteForm(true)}
-                      className="gap-2 bg-[#137fec] text-white border-[#137fec]"
+                      className="gap-2 bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
                     >
                       <span className="flex items-center gap-2">
                         <Plus className="h-4 w-4" />
@@ -1304,13 +1330,25 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                   <div className="border rounded-md overflow-hidden max-h-[300px] overflow-y-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-gray-50">
-                          <TableHead>Lote</TableHead>
-                          <TableHead>Data Compra</TableHead>
-                          <TableHead>Validade</TableHead>
-                          <TableHead>Custo Total</TableHead>
-                          <TableHead>Qtd.</TableHead>
-                          <TableHead>Status</TableHead>
+                        <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800">
+                          <TableHead className="text-gray-700 dark:text-gray-300">
+                            Lote
+                          </TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">
+                            Data Compra
+                          </TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">
+                            Validade
+                          </TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">
+                            Custo Total
+                          </TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">
+                            Qtd.
+                          </TableHead>
+                          <TableHead className="text-gray-700 dark:text-gray-300">
+                            Status
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1431,7 +1469,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                   </div>
                   <div className="flex justify-end">
                     <InteractiveHoverButton
-                      className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                      className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                       onClick={() => setLotsDialogOpen(false)}
                     >
                       Fechar

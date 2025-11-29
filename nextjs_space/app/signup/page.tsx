@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Building2, User, Mail, Lock, Eye, EyeOff, Store } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -87,7 +88,10 @@ export default function SignupPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 justify-center py-8 px-4 sm:py-12 md:py-16 lg:w-1/2 lg:overflow-y-auto">
+      <div className="flex flex-1 justify-center py-8 px-4 sm:py-12 md:py-16 lg:w-1/2 lg:overflow-y-auto relative">
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeToggle />
+        </div>
         <div className="layout-content-container flex flex-col w-full max-w-[960px] flex-1 lg:max-w-xl">
           <header className="flex items-center justify-center whitespace-nowrap px-4 py-3 sm:px-10 lg:hidden">
             <div className="flex items-center gap-4 text-gray-900 dark:text-gray-100">

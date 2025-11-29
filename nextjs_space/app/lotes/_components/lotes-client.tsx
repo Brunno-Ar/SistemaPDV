@@ -448,15 +448,17 @@ export default function LotesClient() {
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <CardTitle>Lotes Cadastrados</CardTitle>
-              <p className="text-sm text-gray-600">
+              <CardTitle className="text-gray-900 dark:text-gray-100">
+                Lotes Cadastrados
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Gerencie validades e estoque por lote
               </p>
             </div>
 
             <InteractiveHoverButton
               onClick={() => handleOpenDialog()}
-              className="bg-[#137fec] text-white border-[#137fec]"
+              className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
             >
               <span className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
@@ -545,51 +547,77 @@ export default function LotesClient() {
           </div>
 
           {filteredAndSortedLotes.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 border rounded-md bg-gray-50">
-              <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400 border rounded-md bg-gray-50 dark:bg-zinc-800 dark:border-zinc-700">
+              <Package className="h-12 w-12 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
               <p>Nenhum lote encontrado</p>
               <p className="text-sm">Tente ajustar os filtros de busca</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Número do Lote</TableHead>
-                  <TableHead>Quantidade</TableHead>
-                  <TableHead>Custo Unit.</TableHead>
-                  <TableHead>Data Compra</TableHead>
-                  <TableHead>Data de Validade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                <TableRow className="hover:bg-gray-50 dark:hover:bg-zinc-800 border-gray-200 dark:border-zinc-700">
+                  <TableHead className="text-gray-600 dark:text-gray-400">
+                    Produto
+                  </TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400">
+                    Número do Lote
+                  </TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400">
+                    Quantidade
+                  </TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400">
+                    Custo Unit.
+                  </TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400">
+                    Data Compra
+                  </TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400">
+                    Data de Validade
+                  </TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-right text-gray-600 dark:text-gray-400">
+                    Ações
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAndSortedLotes.map((lote) => (
-                  <TableRow key={lote.id}>
+                  <TableRow
+                    key={lote.id}
+                    className="hover:bg-gray-50 dark:hover:bg-zinc-800 border-gray-200 dark:border-zinc-700"
+                  >
                     <TableCell>
                       <div>
-                        <p className="font-medium">{lote.produto.nome}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          {lote.produto.nome}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           SKU: {lote.produto.sku}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">
+                    <TableCell className="font-mono text-sm text-gray-600 dark:text-gray-300">
                       {lote.numeroLote}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{lote.quantidade} un</Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
+                      >
+                        {lote.quantidade} un
+                      </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-gray-600 dark:text-gray-300">
                       R$ {Number(lote.precoCompra).toFixed(2)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataCompra
                         ? new Date(lote.dataCompra).toLocaleDateString("pt-BR")
                         : "-"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataValidade
                         ? new Date(lote.dataValidade).toLocaleDateString(
                             "pt-BR"
@@ -602,7 +630,7 @@ export default function LotesClient() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleOpenDialog(lote)}
-                        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -714,7 +742,7 @@ export default function LotesClient() {
                   step="0.01"
                   value={formData.precoCompra}
                   readOnly
-                  className="bg-gray-100"
+                  className="bg-gray-100 dark:bg-zinc-800 dark:text-gray-300"
                   placeholder="Calculado auto"
                 />
               </div>
@@ -757,14 +785,14 @@ export default function LotesClient() {
             <div className="flex justify-end gap-2 pt-4">
               <InteractiveHoverButton
                 type="button"
-                className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                 onClick={handleCloseDialog}
               >
                 Cancelar
               </InteractiveHoverButton>
               <InteractiveHoverButton
                 type="submit"
-                className="bg-[#137fec] text-white border-[#137fec]"
+                className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
               >
                 {editingLoteId ? "Salvar Alterações" : "Criar Lote"}
               </InteractiveHoverButton>

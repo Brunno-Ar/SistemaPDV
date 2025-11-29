@@ -194,17 +194,17 @@ export default function UsuariosClient() {
           <div className="flex items-center gap-4 mb-2">
             <InteractiveHoverButton
               onClick={() => router.push("/master")}
-              className="flex items-center gap-2 border-2 hover:bg-purple-50 hover:border-purple-300 bg-white text-gray-900"
+              className="flex items-center gap-2 border-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-zinc-700"
             >
               <ArrowLeft className="h-4 w-4" />
               Voltar ao Início
             </InteractiveHoverButton>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Shield className="h-8 w-8 text-purple-600" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+            <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400" />
             Gerenciamento de Masters
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
             Visualize e gerencie todos os usuários master do sistema
           </p>
         </div>
@@ -268,7 +268,7 @@ export default function UsuariosClient() {
               <div className="flex justify-end space-x-2 pt-4">
                 <InteractiveHoverButton
                   type="button"
-                  className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
+                  className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
                   onClick={() => handleDialogChange(false)}
                   disabled={submitting}
                 >
@@ -289,59 +289,65 @@ export default function UsuariosClient() {
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/10 border-purple-200 dark:border-purple-900/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-purple-700 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300 flex items-center gap-2">
               <Users className="h-4 w-4" />
               Total de Masters
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-900">
+            <div className="text-3xl font-bold text-purple-900 dark:text-purple-100">
               {masters.length}
             </div>
-            <p className="text-xs text-purple-600 mt-1">Usuários cadastrados</p>
+            <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+              Usuários cadastrados
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/10 border-blue-200 dark:border-blue-900/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 flex items-center gap-2">
               <Shield className="h-4 w-4" />
               Sua Conta
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm font-semibold text-blue-900 truncate">
+            <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">
               {session?.user?.email}
             </div>
-            <p className="text-xs text-blue-600 mt-1">Master atual</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+              Master atual
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/10 border-green-200 dark:border-green-900/30">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300 flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Último Cadastro
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm font-semibold text-green-900">
+            <div className="text-sm font-semibold text-green-900 dark:text-green-100">
               {masters.length > 0
                 ? new Date(
                     masters[masters.length - 1].createdAt
                   ).toLocaleDateString("pt-BR")
                 : "N/A"}
             </div>
-            <p className="text-xs text-green-600 mt-1">Data do último master</p>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+              Data do último master
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Masters List */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Lista de Usuários Master
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -349,10 +355,10 @@ export default function UsuariosClient() {
             <Card
               key={master.id}
               className={cn(
-                "hover:shadow-xl transition-all duration-200 border-2",
+                "hover:shadow-xl transition-all duration-200 border-2 bg-white dark:bg-zinc-900",
                 currentUserId === master.id
-                  ? "border-purple-300 bg-gradient-to-br from-purple-50 to-white"
-                  : "border-gray-200 hover:border-purple-200"
+                  ? "border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-zinc-900"
+                  : "border-gray-200 dark:border-zinc-800 hover:border-purple-200 dark:hover:border-purple-800"
               )}
             >
               <CardHeader className="pb-3">
@@ -362,14 +368,14 @@ export default function UsuariosClient() {
                       className={cn(
                         "p-3 rounded-xl",
                         currentUserId === master.id
-                          ? "bg-purple-200"
-                          : "bg-purple-100"
+                          ? "bg-purple-200 dark:bg-purple-900/40"
+                          : "bg-purple-100 dark:bg-purple-900/20"
                       )}
                     >
-                      <Shield className="h-6 w-6 text-purple-600" />
+                      <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-lg font-bold text-gray-900">
+                      <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">
                         {master.nome || master.name}
                       </CardTitle>
                       {currentUserId === master.id && (
@@ -383,13 +389,13 @@ export default function UsuariosClient() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                    <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                  <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800 p-2 rounded">
+                    <Mail className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                     <span className="truncate">{master.email}</span>
                   </div>
 
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                    <Calendar className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-zinc-800 p-2 rounded">
+                    <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                     <span>
                       Desde{" "}
                       {new Date(master.createdAt).toLocaleDateString("pt-BR")}
@@ -432,7 +438,7 @@ export default function UsuariosClient() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel asChild>
-                              <InteractiveHoverButton className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200">
+                              <InteractiveHoverButton className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700">
                                 Cancelar
                               </InteractiveHoverButton>
                             </AlertDialogCancel>
@@ -452,7 +458,7 @@ export default function UsuariosClient() {
                     </div>
                   ) : (
                     <div className="pt-2">
-                      <div className="text-sm text-center py-2.5 bg-purple-100 text-purple-800 rounded font-medium">
+                      <div className="text-sm text-center py-2.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded font-medium">
                         🔒 Sua conta atual
                       </div>
                     </div>
@@ -464,15 +470,15 @@ export default function UsuariosClient() {
         </div>
 
         {masters.length === 0 && (
-          <Card className="border-2 border-dashed border-gray-300">
+          <Card className="border-2 border-dashed border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900">
             <CardContent className="flex flex-col items-center justify-center py-16">
-              <div className="p-4 bg-purple-100 rounded-full mb-4">
-                <Shield className="h-12 w-12 text-purple-600" />
+              <div className="p-4 bg-purple-100 dark:bg-purple-900/20 rounded-full mb-4">
+                <Shield className="h-12 w-12 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
                 Nenhum usuário master encontrado
               </h3>
-              <p className="text-gray-600 text-center mb-6 max-w-md">
+              <p className="text-gray-600 dark:text-gray-400 text-center mb-6 max-w-md">
                 Comece criando seu primeiro usuário master clicando no botão
                 "Criar Novo Master" acima
               </p>
