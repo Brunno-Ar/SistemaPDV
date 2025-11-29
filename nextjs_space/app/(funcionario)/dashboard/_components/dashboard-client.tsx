@@ -105,7 +105,7 @@ export default function DashboardClient() {
 
       {/* KPI Grid */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl">
+        <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Vendas Hoje
@@ -124,7 +124,7 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl">
+        <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Vendas no Mês
@@ -143,7 +143,7 @@ export default function DashboardClient() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl">
+        <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
               Itens Vendidos
@@ -174,7 +174,7 @@ export default function DashboardClient() {
           </CardHeader>
           <CardContent className="flex-1 flex flex-col gap-3 justify-center">
             <Link href="/vender" className="w-full">
-              <InteractiveHoverButton className="w-full h-14 text-base bg-[#137fec] hover:bg-[#137fec]/90 border-[#137fec] shadow-md transition-all hover:-translate-y-1 text-white">
+              <InteractiveHoverButton className="w-full h-14 text-base bg-cta-bg hover:bg-cta-bg/90 border-cta-bg shadow-md transition-all hover:-translate-y-1 text-white">
                 <span className="flex items-center justify-center gap-2">
                   <ShoppingCart className="h-5 w-5" />
                   Nova Venda (PDV)

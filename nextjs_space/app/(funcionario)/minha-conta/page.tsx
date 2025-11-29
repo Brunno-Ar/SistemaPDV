@@ -68,7 +68,7 @@ export default function MinhaContaPage() {
         <MuralAvisos />
       </div>
 
-      <Card className="bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl">
+      <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
         <CardHeader>
           <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
             Últimas Vendas

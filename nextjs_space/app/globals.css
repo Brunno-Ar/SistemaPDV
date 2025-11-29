@@ -1,71 +1,86 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
+    --card: #ffffff;
+    --ring: #0000bb;
+    --input: #d4d4d4;
+    --muted: #e4e4e7;
+    --accent: #ffcc91;
+    --border: #e5e5e5;
     --radius: 0.5rem;
+    --shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.15);
+    --chart-1: #dcc2f9;
+    --chart-2: #398282;
+    --chart-3: #96c0d6;
+    --chart-4: #ff6b56;
+    --chart-5: #611848;
+    --popover: #f5f5f5;
+    --primary: #0f1729;
+    --spacing: 0.25rem;
+    --font-mono: monospace;
+    --font-sans: "Aeonik Pro", sans-serif;
+    --secondary: #ededed;
+    --shadow-lg: 0 0 8px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 2px 10px -2px rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 2px 4px -2px rgba(0, 0, 0, 0.18);
+    --shadow-xl: 0 0 12px rgba(0, 0, 0, 0.1);
+    --background: #f5f5f5;
+    --font-serif: serif;
+    --foreground: #000000;
+    --shadow-2xl: 0 0 24px rgba(0, 0, 0, 0.15);
+    --destructive: #ff6b56;
+    --card-foreground: #000000;
+    --muted-foreground: #737373;
+    --accent-foreground: #000000;
+    --popover-foreground: #000000;
+    --primary-foreground: #ffffff;
+    --secondary-foreground: #000000;
+    --cta-bg: #137fec;
+    --destructive-foreground: #000000;
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --card: #1a1a1a;
+    --ring: #0000bb;
+    --input: #525252;
+    --muted: #2b2b2b;
+    --accent: #ffcc91;
+    --border: #404040;
+    --radius: 0.5rem;
+    --shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.75);
+    --chart-1: #dcc2f9;
+    --chart-2: #398282;
+    --chart-3: #96c0d6;
+    --chart-4: #ff6b56;
+    --chart-5: #611848;
+    --popover: #1a1a1a;
+    --primary: #137fec;
+    --font-mono: monospace;
+    --font-sans: "Aeonik Pro", sans-serif;
+    --secondary: #2b2b2b;
+    --shadow-lg: 0 0 8px rgba(0, 0, 0, 0.7);
+    --shadow-md: 0 2px 10px -2px rgba(0, 0, 0, 0.8);
+    --shadow-sm: 0 2px 4px -2px rgba(0, 0, 0, 0.8);
+    --shadow-xl: 0 0 12px rgba(0, 0, 0, 0.7);
+    --background: #000000;
+    --font-serif: serif;
+    --foreground: #f5f5f5;
+    --shadow-2xl: 0 0 24px rgba(0, 0, 0, 0.75);
+    --destructive: #ff6b56;
+    --card-foreground: #f5f5f5;
+    --muted-foreground: #737373;
+    --accent-foreground: #000000;
+    --popover-foreground: #f5f5f5;
+    --primary-foreground: #ffffff;
+    --secondary-foreground: #f5f5f5;
+    --cta-bg: #0f172a;
+    --destructive-foreground: #000000;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
@@ -131,9 +146,23 @@ img {
 
 /* Animação de Shake para validação de erro */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 .animate-shake {

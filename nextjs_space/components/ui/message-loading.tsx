@@ -6,7 +6,7 @@ export function MessageLoading() {
         height="48"
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
-        className="text-primary"
+        className="text-primary overflow-visible"
       >
         <circle cx="4" cy="12" r="2" fill="currentColor">
           <animate

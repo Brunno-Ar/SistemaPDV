@@ -12,15 +12,15 @@ import {
 
 export default function LandingPage() {
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f6f8] dark:bg-[#0f1323] font-sans text-gray-800 dark:text-gray-200">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f6f8] dark:bg-zinc-950 font-sans text-gray-800 dark:text-gray-200">
       {/* TopNavBar */}
-      <header className="sticky top-0 z-50 bg-[#f5f6f8]/80 dark:bg-[#0f1323]/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 bg-[#f5f6f8]/80 dark:bg-zinc-950/80 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between border-b border-gray-200 dark:border-white/10">
             <div className="flex items-center gap-4">
               <Store className="text-[#3b66ff] h-8 w-8" />
               <h2 className="text-lg font-bold leading-tight tracking-[-0.015em] text-gray-900 dark:text-white">
-                Sistema de Gestão
+                FlowPDV
               </h2>
             </div>
             <nav className="hidden items-center gap-9 md:flex">
@@ -96,7 +96,7 @@ export default function LandingPage() {
         {/* FeatureSection */}
         <section
           id="recursos"
-          className="py-16 sm:py-24 bg-gray-50 dark:bg-[#0f1323]/50"
+          className="py-16 sm:py-24 bg-gray-50 dark:bg-zinc-900/50"
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-10">
@@ -110,7 +110,7 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-[#0f1323] p-6 text-center items-center">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
                     <ShoppingCart className="h-8 w-8" />
                   </div>
@@ -124,7 +124,7 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-[#0f1323] p-6 text-center items-center">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
                     <Package className="h-8 w-8" />
                   </div>
@@ -138,7 +138,7 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-[#0f1323] p-6 text-center items-center">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
                     <Users className="h-8 w-8" />
                   </div>
@@ -152,7 +152,7 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-[#0f1323] p-6 text-center items-center">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
                     <BarChart3 className="h-8 w-8" />
                   </div>
@@ -238,7 +238,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gray-50 dark:bg-[#0f1323]/50">
+      <footer className="bg-gray-50 dark:bg-zinc-900/50">
         <div className="mx-auto max-w-7xl overflow-hidden px-6 py-12 lg:px-8">
           <nav
             aria-label="Footer"
@@ -286,7 +286,7 @@ export default function LandingPage() {
             </div>
           </nav>
           <p className="mt-10 text-center text-xs leading-5 text-gray-500 dark:text-gray-400">
-            © 2024 Sistema de Gestão. Todos os direitos reservados.
+            © 2024 FlowPDV. Todos os direitos reservados.
           </p>
         </div>
       </footer>

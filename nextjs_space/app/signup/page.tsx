@@ -79,7 +79,7 @@ export default function SignupPage() {
         <div className="relative z-10 flex flex-col items-center justify-center text-center">
           <Store className="h-48 w-48 text-[#137fec]/70 dark:text-[#137fec]/50 mb-8" />
           <h1 className="text-4xl font-bold text-[#137fec] dark:text-[#137fec] mb-4">
-            Gestão de Varejo
+            FlowPDV
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-md">
             Simplifique a gestão do seu negócio com nossa plataforma completa.
@@ -93,7 +93,7 @@ export default function SignupPage() {
             <div className="flex items-center gap-4 text-[#0d141b] dark:text-[#e1e7ec]">
               <Store className="text-[#137fec] h-8 w-8" />
               <h2 className="text-[#0d141b] dark:text-[#e1e7ec] text-xl font-bold leading-tight tracking-[-0.015em]">
-                Gestão de Varejo
+                FlowPDV
               </h2>
             </div>
           </header>

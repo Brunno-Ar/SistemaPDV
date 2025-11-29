@@ -1,7 +1,7 @@
 "use client";
 
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,8 @@ function ProductImage({
 }) {
   if (!imagemUrl) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-        <Package className="h-12 w-12 text-gray-300" />
+      <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-zinc-800">
+        <Package className="h-12 w-12 text-gray-300 dark:text-zinc-600" />
       </div>
     );
   }
@@ -83,8 +83,9 @@ export default function VenderClient() {
   const [paymentError, setPaymentError] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [lastSaleTotal, setLastSaleTotal] = useState(0);
-
   const [isOffline, setIsOffline] = useState(false);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Carregar dados do localStorage e configurar listeners de rede
   useEffect(() => {
@@ -132,23 +133,79 @@ export default function VenderClient() {
     localStorage.setItem("pdv_payment_method", metodoPagamento);
   }, [metodoPagamento]);
 
-  // Filtrar produtos por nome
+  // Atalhos de Teclado
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(
-        products.filter((product) =>
-          product.nome.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "F2") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "F12") {
+        e.preventDefault();
+        if (cart.length > 0) {
+          // Tenta finalizar. A função finalizarVenda checa se tem método de pagamento.
+          // Como finalizarVenda depende de estados, melhor chamar o botão ou refatorar.
+          // Aqui vou chamar uma ref que aponte para a função ou simplificar.
+          // Como finalizarVenda está no escopo, preciso garantir que ela use o estado atual.
+          // O useEffect tem dependências, então vai recriar o listener.
+          // Mas finalizarVenda depende de 'cart' e 'metodoPagamento'.
+          // Vou deixar o botão de finalizar fazer o trabalho ou chamar a função diretamente se possível.
+          // Para simplificar e evitar stale closures complexos, vou disparar o click do botão de finalizar se existir.
+          const btn = document.getElementById("btn-finalizar-venda");
+          if (btn) btn.click();
+        }
+      } else if (e.key === "Escape") {
+        if (document.activeElement === searchInputRef.current) {
+          setSearchTerm("");
+          searchInputRef.current?.blur();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cart.length]); // Dependência mínima para o F12 funcionar corretamente se baseando no carrinho
+
+  // Busca Rápida com Debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchTerm.trim() === "") {
+        setFilteredProducts(products);
+        return;
+      }
+
+      try {
+        // Busca otimizada no backend
+        const response = await fetch(
+          `/api/products/search?query=${encodeURIComponent(searchTerm)}`
+        );
+        const data = await response.json();
+
+        if (response.ok && Array.isArray(data)) {
+          setFilteredProducts(data);
+        } else {
+          // Fallback para filtro local se API falhar ou retornar erro
+          setFilteredProducts(
+            products.filter((product) =>
+              product.nome.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Erro na busca rápida:", error);
+        // Fallback local
+        setFilteredProducts(
+          products.filter((product) =>
+            product.nome.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        );
+      }
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, products]);
 
   const fetchProducts = async () => {
     if (!navigator.onLine) {
-      // Se estiver offline, tentar carregar produtos do cache local se existir (opcional)
-      // Por enquanto, apenas não faz nada ou mostra aviso
       return;
     }
 
@@ -160,52 +217,41 @@ export default function VenderClient() {
         throw new Error(data.error || "Erro ao carregar produtos");
       }
 
-      // Ensure data is an array
       if (Array.isArray(data)) {
         setProducts(data);
-        setFilteredProducts(data);
-        // Salvar produtos em cache local para uso offline futuro (opcional, mas recomendado)
+        // Se não tiver busca ativa, atualiza a lista filtrada também
+        if (searchTerm.trim() === "") {
+          setFilteredProducts(data);
+        }
         localStorage.setItem("pdv_products_cache", JSON.stringify(data));
       } else {
         setProducts([]);
-        setFilteredProducts([]);
+        if (searchTerm.trim() === "") setFilteredProducts([]);
       }
     } catch (error) {
       console.error("Erro ao carregar produtos:", error);
-
-      // Tentar recuperar do cache se falhar
       const cachedProducts = localStorage.getItem("pdv_products_cache");
       if (cachedProducts) {
         try {
           const parsed = JSON.parse(cachedProducts);
           setProducts(parsed);
-          setFilteredProducts(parsed);
+          if (searchTerm.trim() === "") setFilteredProducts(parsed);
           toast({
             title: "Modo Offline",
             description: "Carregando produtos do cache local.",
             variant: "default",
           });
           return;
-        } catch (e) {
-          console.error("Erro ao ler cache de produtos", e);
-        }
+        } catch (e) {}
       }
-
       setProducts([]);
       setFilteredProducts([]);
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error ? error.message : "Erro ao carregar produtos",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
   };
 
   const addToCart = (product: Product) => {
-    // Verificar se há estoque suficiente
     const existingItem = cart.find((item) => item.product.id === product.id);
     const currentQuantity = existingItem?.quantidade || 0;
 
@@ -224,7 +270,6 @@ export default function VenderClient() {
       );
 
       if (existingItemIndex >= 0) {
-        // Atualizar quantidade existente
         const newCart = [...prevCart];
         const newQuantity = newCart[existingItemIndex].quantidade + 1;
         const desconto = newCart[existingItemIndex].descontoAplicado;
@@ -235,7 +280,6 @@ export default function VenderClient() {
         };
         return newCart;
       } else {
-        // Adicionar novo item
         return [
           ...prevCart,
           {
@@ -255,7 +299,12 @@ export default function VenderClient() {
       return;
     }
 
-    const product = products.find((p) => p.id === productId);
+    // Procura no array completo de produtos para checar estoque,
+    // ou no item do carrinho se o produto não estiver na lista atual (ex: busca filtrou)
+    const productInList = products.find((p) => p.id === productId);
+    const itemInCart = cart.find((i) => i.product.id === productId);
+    const product = productInList || itemInCart?.product;
+
     if (!product) return;
 
     if (newQuantity > product.estoqueAtual) {
@@ -334,7 +383,6 @@ export default function VenderClient() {
       return;
     }
 
-    // 🔥 VALIDAÇÃO DE PAGAMENTO com highlight visual
     if (!metodoPagamento) {
       setPaymentError(true);
       toast({
@@ -343,7 +391,6 @@ export default function VenderClient() {
         variant: "destructive",
       });
 
-      // Remover highlight após 3 segundos
       setTimeout(() => {
         setPaymentError(false);
       }, 3000);
@@ -377,15 +424,13 @@ export default function VenderClient() {
         throw new Error(data.error || "Erro ao finalizar venda");
       }
 
-      // Sucesso!
       setLastSaleTotal(valorTotal);
       setShowSuccessScreen(true);
 
-      // Limpar dados do localStorage mas manter estado local até clicar em "Nova Venda"
       localStorage.removeItem("pdv_cart");
       localStorage.removeItem("pdv_payment_method");
 
-      fetchProducts(); // Recarregar produtos para atualizar estoque em background
+      fetchProducts();
     } catch (error) {
       toast({
         title: "Erro",
@@ -415,7 +460,7 @@ export default function VenderClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+      <div className="flex items-center justify-center h-[calc(100px)]">
         <MessageLoading />
       </div>
     );
@@ -423,19 +468,17 @@ export default function VenderClient() {
 
   return (
     <div className="space-y-6 lg:grid lg:grid-cols-5 lg:gap-6 lg:space-y-0 relative">
-      {/* Overlay de Finalização */}
       {finalizing && (
-        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
-          <div className="bg-white p-6 rounded-xl shadow-xl border flex flex-col items-center gap-4">
+        <div className="absolute inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center rounded-lg">
+          <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-xl border dark:border-zinc-800 flex flex-col items-center gap-4">
             <MessageLoading />
-            <p className="font-medium text-lg text-gray-700">
+            <p className="font-medium text-lg text-gray-700 dark:text-gray-300">
               Processando Venda...
             </p>
           </div>
         </div>
       )}
 
-      {/* Coluna Esquerda - Grid de Produtos (60%) */}
       <div className="lg:col-span-3">
         <Card>
           <CardHeader className="space-y-4">
@@ -452,7 +495,8 @@ export default function VenderClient() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Buscar produtos..."
+                ref={searchInputRef}
+                placeholder="Buscar produtos... (F2)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -461,8 +505,8 @@ export default function VenderClient() {
           </CardHeader>
           <CardContent>
             {filteredProducts.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">
-                <Package className="h-12 sm:h-16 w-12 sm:w-16 mx-auto mb-4 text-gray-300" />
+              <div className="text-center text-gray-500 dark:text-gray-400 py-12">
+                <Package className="h-12 sm:h-16 w-12 sm:w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
                 <p className="text-base sm:text-lg font-medium">
                   Nenhum produto encontrado
                 </p>
@@ -477,11 +521,11 @@ export default function VenderClient() {
                 {filteredProducts.map((product) => (
                   <Card
                     key={product.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow border border-gray-200 hover:border-blue-300 overflow-hidden"
+                    className="cursor-pointer hover:shadow-md transition-shadow border border-gray-200 dark:border-zinc-800 hover:border-blue-300 overflow-hidden"
                     onClick={() => addToCart(product)}
                   >
                     {product.imagemUrl && (
-                      <div className="relative w-full aspect-video bg-gray-100">
+                      <div className="relative w-full aspect-video bg-gray-100 dark:bg-zinc-800">
                         <ProductImage
                           imagemUrl={product.imagemUrl}
                           nome={product.nome}
@@ -494,7 +538,7 @@ export default function VenderClient() {
                           {product.nome}
                         </h3>
                         <div className="flex justify-between items-center gap-2">
-                          <span className="text-base sm:text-lg font-bold text-green-600">
+                          <span className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">
                             R$ {product.precoVenda.toFixed(2)}
                           </span>
                           <Badge
@@ -510,7 +554,7 @@ export default function VenderClient() {
                               : "Sem estoque"}
                           </Badge>
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           SKU: {product.sku}
                         </div>
                       </div>
@@ -523,7 +567,6 @@ export default function VenderClient() {
         </Card>
       </div>
 
-      {/* Coluna Direita - Carrinho (40%) */}
       <div className="lg:col-span-2">
         <Card className="lg:sticky lg:top-20">
           <CardHeader>
@@ -534,27 +577,25 @@ export default function VenderClient() {
           </CardHeader>
           <CardContent className="space-y-4">
             {cart.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <ShoppingCart className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                <ShoppingCart className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
                 <p>Carrinho vazio</p>
                 <p className="text-sm">Clique nos produtos para adicionar</p>
               </div>
             ) : (
               <>
-                {/* Lista de Itens */}
                 <div className="space-y-3 max-h-60 lg:max-h-80 overflow-y-auto">
                   {cart.map((item) => (
                     <div
                       key={item.product.id}
-                      className="p-3 bg-gray-50 rounded-lg space-y-2"
+                      className="p-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg space-y-2"
                     >
-                      {/* Linha 1: Nome e Remover */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-xs sm:text-sm truncate">
                             {item.product.nome}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
                             R$ {item.product.precoVenda.toFixed(2)} / un.
                           </p>
                         </div>
@@ -562,16 +603,15 @@ export default function VenderClient() {
                           size="sm"
                           variant="ghost"
                           onClick={() => removeFromCart(item.product.id)}
-                          className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
 
-                      {/* Linha 2: Quantidade e Desconto */}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-1">
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-gray-600 dark:text-gray-400">
                             Quantidade
                           </label>
                           <div className="flex items-center gap-1">
@@ -608,7 +648,7 @@ export default function VenderClient() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-gray-600 dark:text-gray-400">
                             Desconto (R$)
                           </label>
                           <Input
@@ -628,10 +668,11 @@ export default function VenderClient() {
                         </div>
                       </div>
 
-                      {/* Linha 3: Subtotal */}
-                      <div className="flex justify-between items-center pt-1 border-t border-gray-200">
-                        <span className="text-xs text-gray-600">Subtotal:</span>
-                        <span className="font-semibold text-sm text-green-600">
+                      <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-zinc-700">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          Subtotal:
+                        </span>
+                        <span className="font-semibold text-sm text-green-600 dark:text-green-400">
                           R$ {item.subtotal.toFixed(2)}
                         </span>
                       </div>
@@ -639,7 +680,6 @@ export default function VenderClient() {
                   ))}
                 </div>
 
-                {/* Método de Pagamento */}
                 <div className="space-y-2">
                   <label
                     className={`text-xs sm:text-sm font-medium ${
@@ -653,7 +693,7 @@ export default function VenderClient() {
                     value={metodoPagamento}
                     onValueChange={(value) => {
                       setMetodoPagamento(value);
-                      setPaymentError(false); // Limpar erro ao selecionar
+                      setPaymentError(false);
                     }}
                   >
                     <SelectTrigger
@@ -679,19 +719,18 @@ export default function VenderClient() {
                   )}
                 </div>
 
-                {/* Valor Total */}
-                <div className="border-t pt-4">
+                <div className="border-t pt-4 dark:border-zinc-800">
                   <div className="flex justify-between items-center text-base sm:text-lg font-bold">
                     <span>Total:</span>
-                    <span className="text-green-600">
+                    <span className="text-green-600 dark:text-green-400">
                       R$ {valorTotal.toFixed(2)}
                     </span>
                   </div>
                 </div>
 
-                {/* Botões de Ação */}
                 <div className="space-y-2">
                   <InteractiveHoverButton
+                    id="btn-finalizar-venda"
                     onClick={finalizarVenda}
                     className="w-full bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base border-green-600"
                     disabled={finalizing || isOffline}
@@ -702,12 +741,12 @@ export default function VenderClient() {
                         ? "Finalizando..."
                         : isOffline
                         ? "Sem Conexão"
-                        : "Finalizar Venda"}
+                        : "Finalizar Venda (F12)"}
                     </span>
                   </InteractiveHoverButton>
                   <InteractiveHoverButton
                     onClick={clearCart}
-                    className="w-full text-sm sm:text-base border-gray-200 hover:bg-gray-100 text-gray-800"
+                    className="w-full text-sm sm:text-base border-gray-200 hover:bg-gray-100 text-gray-800 dark:border-zinc-700 dark:text-gray-200 dark:hover:bg-zinc-800"
                     disabled={finalizing}
                   >
                     Limpar Carrinho

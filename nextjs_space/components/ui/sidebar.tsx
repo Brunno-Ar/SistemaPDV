@@ -5,6 +5,7 @@ import Link, { LinkProps } from "next/link";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface Links {
   label: string;
@@ -86,6 +87,28 @@ export const DesktopSidebar = ({
   ...props
 }: React.ComponentProps<typeof motion.div>) => {
   const { open, setOpen, animate } = useSidebar();
+  // We can't easily use useTheme inside the motion component's animate prop directly if we want it to be reactive
+  // without re-rendering the whole component tree or causing hydration mismatches.
+  // However, we can use CSS variables for the background color if we move the logic to className or style,
+  // but framer-motion animates inline styles.
+
+  // A better approach for framer-motion with themes is to rely on CSS classes for the base colors
+  // and only animate the width, OR pass the theme-aware colors.
+
+  // Let's try to use the `className` for the background color and remove it from `animate`
+  // IF we don't need to animate the color change itself (or if we can animate it via CSS).
+  // But the original code animates between blue (open) and neutral (closed).
+
+  // To keep the animation and support dark mode, we can use CSS variables that change value based on the class.
+  // But framer-motion needs explicit values to interpolate.
+
+  // Let's use `useTheme` here.
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const openColor = isDark ? "#137fec" : "#137fec"; // Blue is fine for both or maybe darker in dark mode? Let's keep blue.
+  const closedColor = isDark ? "#18181b" : "#f5f5f5"; // zinc-900 vs neutral-100
+
   return (
     <motion.div
       className={cn(
@@ -94,7 +117,7 @@ export const DesktopSidebar = ({
       )}
       animate={{
         width: animate ? (open ? "300px" : "80px") : "300px",
-        backgroundColor: open ? "#137fec" : "#f5f5f5", // Blue when open, neutral when closed
+        backgroundColor: open ? openColor : closedColor,
       }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
@@ -211,7 +234,7 @@ export const SidebarBrand = () => {
           open ? "text-white" : "text-neutral-700 dark:text-white"
         )}
       >
-        Flow PDV
+        FlowPDV
       </motion.span>
     </div>
   );

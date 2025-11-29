@@ -141,7 +141,7 @@ export function NavBar() {
           {/* Logo/Brand */}
           <div className="flex items-center space-x-4">
             <h1 className="text-sm sm:text-base font-bold text-blue-600">
-              Sistema PDV {isMaster && "(Master)"}
+              FlowPDV {isMaster && "(Master)"}
             </h1>
           </div>
 
