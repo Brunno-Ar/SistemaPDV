@@ -20,7 +20,7 @@ async function generateUniqueSKU(prisma: PrismaClient): Promise<string> {
       .map(() => Math.floor(Math.random() * 10))
       .join("");
     sku = `${letters}-${numbers}`;
-    const existing = await prisma.product.findUnique({ where: { sku } });
+    const existing = await prisma.product.findFirst({ where: { sku } });
     exists = !!existing;
   }
   return sku;
@@ -133,8 +133,8 @@ export async function PUT(
       }
     }
     if (finalSku !== existingProduct.sku) {
-      const skuExists = await prisma.product.findUnique({
-        where: { sku: finalSku },
+      const skuExists = await prisma.product.findFirst({
+        where: { sku: finalSku, empresaId },
       });
       if (skuExists) {
         return NextResponse.json(

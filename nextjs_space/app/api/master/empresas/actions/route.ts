@@ -220,6 +220,7 @@ export async function POST(request: NextRequest) {
             mensagem,
             importante: importante || false,
             empresaId,
+            remetenteId: session.user.id,
           },
         });
 

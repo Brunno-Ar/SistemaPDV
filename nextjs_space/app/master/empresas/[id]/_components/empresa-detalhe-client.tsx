@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Dialog,
   DialogContent,
@@ -11,7 +13,39 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Mail } from "lucide-react";
 
-// ... (rest of imports)
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ArrowLeft,
+  Building2,
+  Package,
+  ShoppingCart,
+  BarChart3,
+  Users,
+} from "lucide-react";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import EstoqueClient from "@/app/estoque/_components/estoque-client";
+import MovimentacoesClient from "@/app/movimentacoes/_components/movimentacoes-client";
+import RelatoriosClient from "@/app/relatorios/_components/relatorios-client";
+import EquipeClient from "@/app/equipe/_components/equipe-client";
+
+interface EmpresaDetalheClientProps {
+  empresa: {
+    id: string;
+    nome: string;
+    status: string;
+    vencimentoPlano: Date | null;
+    _count: {
+      users: number;
+      products: number;
+    };
+  };
+  companyId: string;
+}
 
 export default function EmpresaDetalheClient({
   empresa,

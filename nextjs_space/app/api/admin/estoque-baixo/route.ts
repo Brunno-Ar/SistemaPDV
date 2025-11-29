@@ -1,17 +1,21 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+export const dynamic = "force-dynamic";
 
 // GET - Listar produtos com estoque baixo (estoqueAtual <= estoqueMinimo)
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || (session.user.role !== 'admin' && session.user.role !== 'master')) {
+    if (
+      !session ||
+      (session.user.role !== "admin" && session.user.role !== "master")
+    ) {
       return NextResponse.json(
-        { error: 'Acesso negado. Apenas administradores.' },
+        { error: "Acesso negado. Apenas administradores." },
         { status: 403 }
       );
     }
@@ -20,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     if (!empresaId) {
       return NextResponse.json(
-        { error: 'Empresa não identificada' },
+        { error: "Empresa não identificada" },
         { status: 400 }
       );
     }
@@ -45,9 +49,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(produtosEstoqueBaixo);
   } catch (error) {
-    console.error('Erro ao buscar produtos com estoque baixo:', error);
+    console.error("Erro ao buscar produtos com estoque baixo:", error);
     return NextResponse.json(
-      { error: 'Erro ao buscar produtos com estoque baixo' },
+      { error: "Erro ao buscar produtos com estoque baixo" },
       { status: 500 }
     );
   }
