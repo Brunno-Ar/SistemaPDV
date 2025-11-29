@@ -166,7 +166,7 @@ export default function DashboardClient() {
       {/* Main Area - Reduced Height as requested */}
       <div className="grid gap-4 md:grid-cols-7">
         {/* Shortcuts (Left - 2 cols) */}
-        <Card className="md:col-span-2 bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl flex flex-col h-[220px]">
+        <Card className="md:col-span-2 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl flex flex-col h-[220px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
               Acesso Rápido
@@ -193,7 +193,7 @@ export default function DashboardClient() {
         </Card>
 
         {/* Chart (Right - 5 cols) */}
-        <Card className="md:col-span-5 bg-white dark:bg-[#182635] border-none shadow-sm rounded-xl h-[220px]">
+        <Card className="md:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[220px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
               Desempenho Semanal

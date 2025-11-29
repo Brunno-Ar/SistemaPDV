@@ -78,8 +78,8 @@ export default function SignupPage() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#137fec]/10 to-[#137fec]/20 items-center justify-center p-8 relative">
         <div className="absolute inset-0 bg-grid-pattern bg-repeat opacity-5 dark:opacity-10"></div>
         <div className="relative z-10 flex flex-col items-center justify-center text-center">
-          <Store className="h-48 w-48 text-[#137fec]/70 dark:text-[#137fec]/50 mb-8" />
-          <h1 className="text-4xl font-bold text-[#137fec] dark:text-[#137fec] mb-4">
+          <Store className="h-48 w-48 text-primary/70 dark:text-primary/50 mb-8" />
+          <h1 className="text-4xl font-bold text-primary dark:text-primary mb-4">
             FlowPDV
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-md">

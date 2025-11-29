@@ -115,7 +115,7 @@ export default function LoginPage() {
               </div>
               <div className="w-full max-w-md">
                 <div className="flex flex-col items-center justify-center text-center md:hidden mb-10">
-                  <Store className="text-6xl mb-2 text-[#137fec] dark:text-[#137fec] h-16 w-16" />
+                  <Store className="text-6xl mb-2 text-primary dark:text-primary h-16 w-16" />
                   <h2 className="text-4xl font-sans font-bold tracking-tight text-gray-800 dark:text-gray-100">
                     FlowPDV
                   </h2>

@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
     const empresaId = session.user.empresaId;
 
+    const isCaixa = session.user.role === "caixa";
+
     // Buscar avisos onde o usuário é o destinatário OU (destinatário é null E é da mesma empresa)
+    // Se for caixa, não ver avisos de broadcast do Master
     const avisos = await prisma.aviso.findMany({
       where: {
         AND: [
@@ -27,6 +30,15 @@ export async function GET(request: NextRequest) {
               {
                 destinatarioId: null,
                 empresaId: empresaId,
+                ...(isCaixa
+                  ? {
+                      remetente: {
+                        role: {
+                          not: "master",
+                        },
+                      },
+                    }
+                  : {}),
               },
             ],
           },
