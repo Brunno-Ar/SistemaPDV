@@ -9,16 +9,17 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LandingPage() {
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#f5f6f8] dark:bg-zinc-950 font-sans text-gray-800 dark:text-gray-200">
+    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-gray-50 dark:bg-zinc-950 font-sans text-gray-800 dark:text-gray-200">
       {/* TopNavBar */}
-      <header className="sticky top-0 z-50 bg-[#f5f6f8]/80 dark:bg-zinc-950/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 bg-gray-50/80 dark:bg-zinc-950/80 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between border-b border-gray-200 dark:border-white/10">
             <div className="flex items-center gap-4">
-              <Store className="text-[#3b66ff] h-8 w-8" />
+              <Store className="text-[#137fec] h-8 w-8" />
               <h2 className="text-lg font-bold leading-tight tracking-[-0.015em] text-gray-900 dark:text-white">
                 FlowPDV
               </h2>
@@ -26,31 +27,32 @@ export default function LandingPage() {
             <nav className="hidden items-center gap-9 md:flex">
               <Link
                 href="#recursos"
-                className="text-sm font-medium leading-normal text-gray-600 hover:text-[#3b66ff] dark:text-gray-300 dark:hover:text-[#3b66ff]"
+                className="text-sm font-medium leading-normal text-gray-600 hover:text-[#137fec] dark:text-gray-300 dark:hover:text-[#137fec]"
               >
                 Recursos
               </Link>
               <Link
                 href="#precos"
-                className="text-sm font-medium leading-normal text-gray-600 hover:text-[#3b66ff] dark:text-gray-300 dark:hover:text-[#3b66ff]"
+                className="text-sm font-medium leading-normal text-gray-600 hover:text-[#137fec] dark:text-gray-300 dark:hover:text-[#137fec]"
               >
                 Preços
               </Link>
               <Link
                 href="#contato"
-                className="text-sm font-medium leading-normal text-gray-600 hover:text-[#3b66ff] dark:text-gray-300 dark:hover:text-[#3b66ff]"
+                className="text-sm font-medium leading-normal text-gray-600 hover:text-[#137fec] dark:text-gray-300 dark:hover:text-[#137fec]"
               >
                 Contato
               </Link>
             </nav>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Link href="/login">
                 <InteractiveHoverButton className="w-32">
                   Login
                 </InteractiveHoverButton>
               </Link>
               <Link href="/signup">
-                <InteractiveHoverButton className="w-32 bg-[#3b66ff] text-white hover:bg-[#3b66ff]/90 border-[#3b66ff]">
+                <InteractiveHoverButton className="w-32 bg-cta-bg text-white hover:bg-cta-bg/90 border-cta-bg">
                   Cadastrar
                 </InteractiveHoverButton>
               </Link>
@@ -74,7 +76,7 @@ export default function LandingPage() {
                   de usar.
                 </h2>
                 <Link href="/signup">
-                  <InteractiveHoverButton className="w-64 bg-[#3b66ff] text-white hover:bg-[#3b66ff]/90 border-[#3b66ff]">
+                  <InteractiveHoverButton className="w-64 bg-cta-bg text-white hover:bg-cta-bg/90 border-cta-bg">
                     Experimente Grátis por 14 dias
                   </InteractiveHoverButton>
                 </Link>
@@ -110,8 +112,8 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-6 text-center items-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#137fec]/10 text-[#137fec]">
                     <ShoppingCart className="h-8 w-8" />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -124,8 +126,8 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-6 text-center items-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#137fec]/10 text-[#137fec]">
                     <Package className="h-8 w-8" />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -138,8 +140,8 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-6 text-center items-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#137fec]/10 text-[#137fec]">
                     <Users className="h-8 w-8" />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -152,8 +154,8 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-[#f5f6f8] dark:bg-zinc-950 p-6 text-center items-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b66ff]/10 text-[#3b66ff]">
+                <div className="flex flex-col gap-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-6 text-center items-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#137fec]/10 text-[#137fec]">
                     <BarChart3 className="h-8 w-8" />
                   </div>
                   <div className="flex flex-col gap-1">
@@ -217,7 +219,7 @@ export default function LandingPage() {
         {/* Final CTA Section */}
         <section className="py-16 sm:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="relative isolate overflow-hidden bg-[#3b66ff]/10 px-6 py-24 text-center shadow-2xl rounded-xl sm:px-16">
+            <div className="relative isolate overflow-hidden bg-[#137fec]/10 px-6 py-24 text-center shadow-2xl rounded-xl sm:px-16">
               <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
                 Pronto para transformar a gestão do seu negócio?
               </h2>
@@ -227,7 +229,7 @@ export default function LandingPage() {
               </p>
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link href="/signup">
-                  <InteractiveHoverButton className="w-48 bg-[#3b66ff] text-white hover:bg-[#3b66ff]/90 border-[#3b66ff]">
+                  <InteractiveHoverButton className="w-48 bg-cta-bg text-white hover:bg-cta-bg/90 border-cta-bg">
                     Comece Agora
                   </InteractiveHoverButton>
                 </Link>

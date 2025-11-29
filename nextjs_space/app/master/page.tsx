@@ -79,14 +79,14 @@ export default async function MasterDashboard() {
   return (
     <div className="space-y-6">
       {/* TopNavBar / Header */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#101922] px-4 sm:px-10 py-3 rounded-xl shadow-sm">
+      <header className="flex items-center justify-between whitespace-nowrap border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 sm:px-10 py-3 rounded-xl shadow-sm">
         <div className="flex items-center gap-4">
-          <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
+          <h2 className="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
             Dashboard Master
           </h2>
         </div>
         <div className="flex flex-1 justify-end gap-4">
-          <InteractiveHoverButton className="w-10 min-w-10 px-0 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800">
+          <InteractiveHoverButton className="w-10 min-w-10 px-0 bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-800">
             <Bell className="h-5 w-5" />
           </InteractiveHoverButton>
           <div
@@ -103,11 +103,11 @@ export default async function MasterDashboard() {
       <section>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Faturamento Total */}
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm relative overflow-hidden">
             <div className="absolute top-4 right-4 text-green-500 opacity-20">
               <DollarSign className="h-12 w-12" />
             </div>
-            <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal z-10">
+            <p className="text-gray-600 dark:text-gray-400 text-base font-medium leading-normal z-10">
               Faturamento Total
             </p>
             <p className="text-green-600 dark:text-green-400 tracking-light text-3xl font-bold leading-tight z-10">
@@ -116,34 +116,34 @@ export default async function MasterDashboard() {
           </div>
 
           {/* Total Vendas */}
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
             <div className="flex items-center justify-between">
-              <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal">
+              <p className="text-gray-600 dark:text-gray-400 text-base font-medium leading-normal">
                 Total de Vendas
               </p>
               <ShoppingBag className="h-5 w-5 text-blue-500" />
             </div>
-            <p className="text-slate-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+            <p className="text-gray-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
               {totalVendas}
             </p>
           </div>
 
           {/* Empresas Ativas */}
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-            <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal">
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-base font-medium leading-normal">
               Empresas Ativas
             </p>
-            <p className="text-slate-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+            <p className="text-gray-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
               {empresasAtivas}
             </p>
           </div>
 
           {/* Produtos Cadastrados */}
-          <div className="flex flex-col gap-2 rounded-xl p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-            <p className="text-slate-600 dark:text-slate-400 text-base font-medium leading-normal">
+          <div className="flex flex-col gap-2 rounded-xl p-6 border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-base font-medium leading-normal">
               Produtos Cadastrados
             </p>
-            <p className="text-slate-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
+            <p className="text-gray-900 dark:text-white tracking-light text-3xl font-bold leading-tight">
               {totalProdutos}
             </p>
           </div>
@@ -152,12 +152,12 @@ export default async function MasterDashboard() {
 
       {/* Quick Actions Section */}
       <section>
-        <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">
+        <h3 className="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">
           Ações Rápidas
         </h3>
         <div className="flex flex-wrap gap-4 py-3 justify-start">
           <Link href="/master/empresas">
-            <InteractiveHoverButton className="bg-[#137fec] text-white border-[#137fec]">
+            <InteractiveHoverButton className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90">
               <span className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
                 <span className="truncate">Adicionar Empresa</span>
@@ -165,7 +165,7 @@ export default async function MasterDashboard() {
             </InteractiveHoverButton>
           </Link>
           <Link href="/master/usuarios">
-            <InteractiveHoverButton className="bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700">
+            <InteractiveHoverButton className="bg-gray-200 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700">
               <span className="flex items-center gap-2">
                 <UserCog className="h-5 w-5" />
                 <span className="truncate">Gerenciar Usuários Master</span>
@@ -177,46 +177,46 @@ export default async function MasterDashboard() {
 
       {/* Recent Activity Section */}
       <section>
-        <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">
+        <h3 className="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] pb-2 pt-4">
           Empresas Recentes
         </h3>
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+              <thead className="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50">
                 <tr>
                   <th
-                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    className="px-6 py-3 font-medium text-gray-600 dark:text-gray-400"
                     scope="col"
                   >
                     Empresa
                   </th>
                   <th
-                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    className="px-6 py-3 font-medium text-gray-600 dark:text-gray-400"
                     scope="col"
                   >
                     Fat. Mês
                   </th>
                   <th
-                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    className="px-6 py-3 font-medium text-gray-600 dark:text-gray-400"
                     scope="col"
                   >
                     Produtos
                   </th>
                   <th
-                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    className="px-6 py-3 font-medium text-gray-600 dark:text-gray-400"
                     scope="col"
                   >
                     Vendas
                   </th>
                   <th
-                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    className="px-6 py-3 font-medium text-gray-600 dark:text-gray-400"
                     scope="col"
                   >
                     Vencimento
                   </th>
                   <th
-                    className="px-6 py-3 font-medium text-slate-600 dark:text-slate-400"
+                    className="px-6 py-3 font-medium text-gray-600 dark:text-gray-400"
                     scope="col"
                   >
                     Status
@@ -227,17 +227,21 @@ export default async function MasterDashboard() {
                 {empresasRecentes.map((empresa) => (
                   <tr
                     key={empresa.id}
-                    className="border-b border-slate-200 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    className="border-b border-gray-200 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                       {empresa.nome}
                     </td>
                     <td className="px-6 py-4 font-medium text-green-600 dark:text-green-400">
                       {formatCurrency(empresa.faturamentoMensal)}
                     </td>
-                    <td className="px-6 py-4">{empresa.totalProdutos}</td>
-                    <td className="px-6 py-4">{empresa.totalVendas}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                      {empresa.totalProdutos}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                      {empresa.totalVendas}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                       {empresa.vencimentoPlano
                         ? new Date(empresa.vencimentoPlano).toLocaleDateString(
                             "pt-BR"

@@ -400,7 +400,7 @@ export default function EmpresasClient() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
-            <InteractiveHoverButton className="bg-[#137fec] text-white border-[#137fec]">
+            <InteractiveHoverButton className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90">
               <span className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
                 <span className="truncate">Cadastrar Nova Empresa</span>
@@ -460,7 +460,7 @@ export default function EmpresasClient() {
               </div>
               <InteractiveHoverButton
                 type="submit"
-                className="w-full bg-[#137fec] text-white border-[#137fec]"
+                className="w-full bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
                 disabled={submitting}
               >
                 {submitting ? "Criando..." : "Criar Empresa"}
@@ -471,17 +471,17 @@ export default function EmpresasClient() {
       </header>
 
       {/* Search and Filters Section */}
-      <div className="bg-white dark:bg-[#182635] p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
+      <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm mb-6">
         <div className="flex flex-col md:flex-row items-center gap-4">
           {/* SearchBar */}
           <div className="w-full md:flex-1">
             <label className="flex flex-col w-full">
               <div className="flex w-full flex-1 items-stretch rounded-lg h-14">
-                <div className="text-gray-500 dark:text-gray-400 flex bg-[#f6f7f8] dark:bg-[#101922] items-center justify-center px-4 rounded-l-lg border border-gray-300 dark:border-gray-600 border-r-0">
+                <div className="text-gray-500 dark:text-gray-400 flex bg-gray-50 dark:bg-zinc-800 items-center justify-center px-4 rounded-l-lg border border-gray-300 dark:border-zinc-700 border-r-0">
                   <Search className="h-5 w-5" />
                 </div>
                 <input
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#137fec] border border-gray-300 dark:border-gray-600 bg-[#f6f7f8] dark:bg-[#101922] h-14 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal"
+                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 h-14 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal"
                   placeholder="Buscar por nome..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -496,7 +496,8 @@ export default function EmpresasClient() {
             </p>
             {["Todos", "Pendente", "Ativa", "Inadimplente", "Pausada"].map(
               (status) => {
-                let activeClass = "bg-[#137fec]/10 text-[#137fec]"; // Default (Todos)
+                let activeClass =
+                  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"; // Default (Todos)
                 if (status === "Pendente")
                   activeClass =
                     "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
@@ -517,7 +518,7 @@ export default function EmpresasClient() {
                     className={`flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full px-4 text-sm font-medium transition-colors ${
                       filterStatus === status
                         ? activeClass
-                        : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                        : "bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-400"
                     }`}
                   >
                     {status}
@@ -533,9 +534,9 @@ export default function EmpresasClient() {
       </div>
 
       {/* Data Table */}
-      <div className="overflow-x-auto bg-white dark:bg-[#182635] rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="overflow-x-auto bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-800">
+          <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-zinc-800/50">
             <tr>
               <th className="px-6 py-3" scope="col">
                 Empresa
@@ -563,7 +564,7 @@ export default function EmpresasClient() {
               return (
                 <tr
                   key={empresa.id}
-                  className="bg-white dark:bg-[#182635] border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
+                  className="bg-white dark:bg-zinc-900 border-b dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
                 >
                   <th
                     className="px-6 py-4 font-bold text-gray-900 dark:text-white whitespace-nowrap"
@@ -609,7 +610,7 @@ export default function EmpresasClient() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <InteractiveHoverButton
-                        className="w-10 min-w-10 px-0 border-[#137fec]/20 text-[#137fec] hover:bg-[#137fec]/10"
+                        className="w-10 min-w-10 px-0 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         title="Detalhes"
                         onClick={() =>
                           router.push(`/master/empresas/${empresa.id}`)

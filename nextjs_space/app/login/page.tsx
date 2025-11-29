@@ -66,7 +66,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden font-sans bg-[#f6f7f8] dark:bg-[#101922] text-gray-800 dark:text-gray-100">
+    <div className="relative flex min-h-screen w-full flex-col group/design-root overflow-x-hidden font-sans bg-gray-50 dark:bg-zinc-950 text-gray-800 dark:text-gray-100">
       {inactivityMessage && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 w-full max-w-lg z-50 px-4">
           <div className="flex items-start gap-4 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-4 shadow-lg dark:bg-[#2d1a03] dark:border-[#78350f]">
@@ -108,7 +108,7 @@ export default function LoginPage() {
                 </p>
               </div>
             </div>
-            <div className="flex col-span-1 md:col-span-2 flex-col items-center justify-center bg-[#f6f7f8] dark:bg-[#101922] p-6 sm:p-12">
+            <div className="flex col-span-1 md:col-span-2 flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 p-6 sm:p-12">
               <div className="w-full max-w-md">
                 <div className="flex flex-col items-center justify-center text-center md:hidden mb-10">
                   <Store className="text-6xl mb-2 text-[#137fec] dark:text-[#137fec] h-16 w-16" />
@@ -133,7 +133,7 @@ export default function LoginPage() {
                     <div className="relative flex items-center">
                       <Mail className="absolute left-4 text-gray-400 dark:text-gray-500 pointer-events-none h-6 w-6" />
                       <input
-                        className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-800 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-[#137fec]/50 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-[#137fec] dark:focus:border-[#137fec] h-14 placeholder:text-gray-400 dark:placeholder:text-gray-500 pl-12 pr-4 text-base font-sans font-normal leading-normal shadow-sm"
+                        className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-800 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:border-blue-500 dark:focus:border-blue-500 h-14 placeholder:text-gray-400 dark:placeholder:text-gray-500 pl-12 pr-4 text-base font-sans font-normal leading-normal shadow-sm"
                         placeholder="seuemail@exemplo.com"
                         type="email"
                         value={email}
@@ -149,7 +149,7 @@ export default function LoginPage() {
                       </p>
                       <Link
                         href="#"
-                        className="text-[#137fec] hover:underline text-sm font-sans font-normal leading-normal"
+                        className="text-blue-600 dark:text-blue-500 hover:underline text-sm font-sans font-normal leading-normal"
                       >
                         Esqueceu sua senha?
                       </Link>
@@ -157,7 +157,7 @@ export default function LoginPage() {
                     <div className="relative flex items-center">
                       <Lock className="absolute left-4 text-gray-400 dark:text-gray-500 pointer-events-none h-6 w-6" />
                       <input
-                        className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-800 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-[#137fec]/50 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:border-[#137fec] dark:focus:border-[#137fec] h-14 placeholder:text-gray-400 dark:placeholder:text-gray-500 pl-12 pr-12 text-base font-sans font-normal leading-normal shadow-sm"
+                        className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-800 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border border-gray-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:border-blue-500 dark:focus:border-blue-500 h-14 placeholder:text-gray-400 dark:placeholder:text-gray-500 pl-12 pr-12 text-base font-sans font-normal leading-normal shadow-sm"
                         placeholder="••••••••"
                         type={showPassword ? "text" : "password"}
                         value={password}
@@ -186,7 +186,7 @@ export default function LoginPage() {
 
                   <div className="pt-4 space-y-4">
                     <InteractiveHoverButton
-                      className="w-full bg-[#137fec] text-white hover:bg-[#137fec]/90 border-[#137fec] h-14 text-lg"
+                      className="w-full bg-cta-bg text-white hover:bg-cta-bg/90 border-cta-bg h-14 text-lg"
                       type="submit"
                       disabled={loading}
                     >
@@ -197,7 +197,7 @@ export default function LoginPage() {
                         Não tem uma conta?{" "}
                         <Link
                           href="/signup"
-                          className="text-[#137fec] hover:underline font-medium"
+                          className="text-blue-600 dark:text-blue-500 hover:underline font-medium"
                         >
                           Cadastre-se
                         </Link>

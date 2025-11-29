@@ -49,6 +49,11 @@ export default function RoleBasedLayout({
         href: "/master/usuarios",
         icon: <Users className="h-5 w-5 flex-shrink-0" />,
       },
+      {
+        label: "Configurações",
+        href: "/configuracoes",
+        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
+      },
     ];
   } else if (role === "admin") {
     links = [
@@ -125,7 +130,7 @@ export default function RoleBasedLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-neutral-900 font-body">
+    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-zinc-900 font-body">
       <Sidebar>
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
@@ -150,7 +155,7 @@ export default function RoleBasedLayout({
         </SidebarBody>
       </Sidebar>
       {/* Conteúdo com Scroll Independente */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-white dark:bg-neutral-950 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 m-2 ml-0 shadow-sm">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-white dark:bg-zinc-950 rounded-tl-2xl border border-gray-200 dark:border-zinc-800 m-2 ml-0 shadow-sm">
         {children}
       </main>
     </div>

@@ -73,7 +73,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full group/design-root overflow-hidden font-sans bg-[#f6f7f8] dark:bg-[#101922] text-[#0d141b] dark:text-[#e1e7ec]">
+    <div className="relative flex min-h-screen w-full group/design-root overflow-hidden font-sans bg-gray-50 dark:bg-zinc-950 text-gray-900 dark:text-gray-100">
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#137fec]/10 to-[#137fec]/20 items-center justify-center p-8 relative">
         <div className="absolute inset-0 bg-grid-pattern bg-repeat opacity-5 dark:opacity-10"></div>
         <div className="relative z-10 flex flex-col items-center justify-center text-center">
@@ -90,39 +90,39 @@ export default function SignupPage() {
       <div className="flex flex-1 justify-center py-8 px-4 sm:py-12 md:py-16 lg:w-1/2 lg:overflow-y-auto">
         <div className="layout-content-container flex flex-col w-full max-w-[960px] flex-1 lg:max-w-xl">
           <header className="flex items-center justify-center whitespace-nowrap px-4 py-3 sm:px-10 lg:hidden">
-            <div className="flex items-center gap-4 text-[#0d141b] dark:text-[#e1e7ec]">
+            <div className="flex items-center gap-4 text-gray-900 dark:text-gray-100">
               <Store className="text-[#137fec] h-8 w-8" />
-              <h2 className="text-[#0d141b] dark:text-[#e1e7ec] text-xl font-bold leading-tight tracking-[-0.015em]">
+              <h2 className="text-gray-900 dark:text-gray-100 text-xl font-bold leading-tight tracking-[-0.015em]">
                 FlowPDV
               </h2>
             </div>
           </header>
 
           <main className="flex-1 w-full max-w-2xl mx-auto lg:max-w-xl">
-            <div className="bg-white dark:bg-[#182635] rounded-xl shadow-lg border border-[#cfdbe7] dark:border-[#344558] p-6 sm:p-8 md:p-10">
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 p-6 sm:p-8 md:p-10">
               <div className="flex flex-wrap justify-between gap-3 mb-2">
-                <p className="font-sans text-[#0d141b] dark:text-[#e1e7ec] text-3xl sm:text-4xl font-bold leading-tight tracking-[-0.033em] min-w-72">
+                <p className="font-sans text-gray-900 dark:text-gray-100 text-3xl sm:text-4xl font-bold leading-tight tracking-[-0.033em] min-w-72">
                   Desbloqueie o Potencial da sua Loja.
                 </p>
               </div>
-              <p className="text-[#4c739a] dark:text-[#a0b3c6] text-lg font-normal leading-normal pb-6 pt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-lg font-normal leading-normal pb-6 pt-1">
                 Cadastro Rápido e Descomplicado!
               </p>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <div className="border-t border-[#cfdbe7] dark:border-[#344558] pt-6">
-                  <h3 className="text-[#0d141b] dark:text-[#e1e7ec] text-lg font-bold leading-tight tracking-[-0.015em] pb-2">
+                <div className="border-t border-gray-200 dark:border-zinc-800 pt-6">
+                  <h3 className="text-gray-900 dark:text-gray-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2">
                     Dados da Empresa
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                     <label className="flex flex-col min-w-40 flex-1 sm:col-span-2">
-                      <p className="text-[#0d141b] dark:text-[#e1e7ec] text-base font-medium leading-normal pb-2">
+                      <p className="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal pb-2">
                         Nome da Empresa
                       </p>
                       <div className="relative">
                         <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                         <input
-                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-[#e1e7ec] focus:outline-0 focus:ring-2 focus:ring-[#137fec]/50 border border-[#cfdbe7] dark:border-[#344558] bg-[#f6f7f8] dark:bg-[#101922] h-12 placeholder:text-[#4c739a] dark:placeholder:text-[#a0b3c6] pl-10 pr-4 text-base font-normal leading-normal"
+                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 pl-10 pr-4 text-base font-normal leading-normal"
                           placeholder="Digite o nome da sua empresa"
                           value={nomeEmpresa}
                           onChange={(e) => setNomeEmpresa(e.target.value)}
@@ -132,19 +132,19 @@ export default function SignupPage() {
                     </label>
                   </div>
                 </div>
-                <div className="border-t border-[#cfdbe7] dark:border-[#344558] pt-6">
-                  <h3 className="text-[#0d141b] dark:text-[#e1e7ec] text-lg font-bold leading-tight tracking-[-0.015em] pb-2">
+                <div className="border-t border-gray-200 dark:border-zinc-800 pt-6">
+                  <h3 className="text-gray-900 dark:text-gray-100 text-lg font-bold leading-tight tracking-[-0.015em] pb-2">
                     Usuário Administrador
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                     <label className="flex flex-col min-w-40 flex-1 sm:col-span-2">
-                      <p className="text-[#0d141b] dark:text-[#e1e7ec] text-base font-medium leading-normal pb-2">
+                      <p className="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal pb-2">
                         Nome Completo
                       </p>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                         <input
-                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-[#e1e7ec] focus:outline-0 focus:ring-2 focus:ring-[#137fec]/50 border border-[#cfdbe7] dark:border-[#344558] bg-[#f6f7f8] dark:bg-[#101922] h-12 placeholder:text-[#4c739a] dark:placeholder:text-[#a0b3c6] pl-10 pr-4 text-base font-normal leading-normal"
+                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 pl-10 pr-4 text-base font-normal leading-normal"
                           placeholder="Digite seu nome completo"
                           value={nome}
                           onChange={(e) => setNome(e.target.value)}
@@ -153,13 +153,13 @@ export default function SignupPage() {
                       </div>
                     </label>
                     <label className="flex flex-col min-w-40 flex-1 sm:col-span-2">
-                      <p className="text-[#0d141b] dark:text-[#e1e7ec] text-base font-medium leading-normal pb-2">
+                      <p className="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal pb-2">
                         E-mail
                       </p>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                         <input
-                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-[#e1e7ec] focus:outline-0 focus:ring-2 focus:ring-[#137fec]/50 border border-[#cfdbe7] dark:border-[#344558] bg-[#f6f7f8] dark:bg-[#101922] h-12 placeholder:text-[#4c739a] dark:placeholder:text-[#a0b3c6] pl-10 pr-4 text-base font-normal leading-normal"
+                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 pl-10 pr-4 text-base font-normal leading-normal"
                           placeholder="seuemail@exemplo.com"
                           type="email"
                           value={email}
@@ -169,13 +169,13 @@ export default function SignupPage() {
                       </div>
                     </label>
                     <label className="flex flex-col min-w-40 flex-1 relative">
-                      <p className="text-[#0d141b] dark:text-[#e1e7ec] text-base font-medium leading-normal pb-2">
+                      <p className="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal pb-2">
                         Senha
                       </p>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                         <input
-                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-[#e1e7ec] focus:outline-0 focus:ring-2 focus:ring-[#137fec]/50 border border-[#cfdbe7] dark:border-[#344558] bg-[#f6f7f8] dark:bg-[#101922] h-12 placeholder:text-[#4c739a] dark:placeholder:text-[#a0b3c6] pl-10 pr-12 text-base font-normal leading-normal"
+                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 pl-10 pr-12 text-base font-normal leading-normal"
                           placeholder="Crie uma senha forte"
                           type={showPassword ? "text" : "password"}
                           value={password}
@@ -185,7 +185,7 @@ export default function SignupPage() {
                         />
                         <button
                           aria-label="Mostrar senha"
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#4c739a] dark:text-[#a0b3c6]"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                         >
@@ -196,18 +196,18 @@ export default function SignupPage() {
                           )}
                         </button>
                       </div>
-                      <p className="text-xs text-[#4c739a] dark:text-[#a0b3c6] mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Mínimo 8 caracteres.
                       </p>
                     </label>
                     <label className="flex flex-col min-w-40 flex-1">
-                      <p className="text-[#0d141b] dark:text-[#e1e7ec] text-base font-medium leading-normal pb-2">
+                      <p className="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal pb-2">
                         Confirmar Senha
                       </p>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                         <input
-                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-[#e1e7ec] focus:outline-0 focus:ring-2 focus:ring-[#137fec]/50 border border-[#cfdbe7] dark:border-[#344558] bg-[#f6f7f8] dark:bg-[#101922] h-12 placeholder:text-[#4c739a] dark:placeholder:text-[#a0b3c6] pl-10 pr-4 text-base font-normal leading-normal"
+                          className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-blue-500/50 border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-950 h-12 placeholder:text-gray-500 dark:placeholder:text-gray-400 pl-10 pr-4 text-base font-normal leading-normal"
                           placeholder="Repita sua senha"
                           type="password"
                           value={confirmPassword}
@@ -220,27 +220,27 @@ export default function SignupPage() {
                 </div>
                 <div className="flex items-start pt-4">
                   <input
-                    className="form-checkbox h-5 w-5 rounded border-[#cfdbe7] dark:border-[#344558] text-[#137fec] focus:ring-[#137fec]/50 bg-[#f6f7f8] dark:bg-[#101922] mt-0.5"
+                    className="form-checkbox h-5 w-5 rounded border-gray-200 dark:border-zinc-800 text-blue-600 focus:ring-blue-500/50 bg-gray-50 dark:bg-zinc-950 mt-0.5"
                     id="terms"
                     type="checkbox"
                     required
                   />
                   <label className="ml-3 text-sm" htmlFor="terms">
-                    <span className="text-[#0d141b] dark:text-[#e1e7ec]">
+                    <span className="text-gray-900 dark:text-gray-100">
                       Eu li e aceito os
                     </span>{" "}
                     <Link
-                      className="font-medium text-[#137fec] hover:underline"
+                      className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
                       href="#"
                     >
                       Termos de Serviço
                     </Link>
-                    <span className="text-[#0d141b] dark:text-[#e1e7ec]">
+                    <span className="text-gray-900 dark:text-gray-100">
                       {" "}
                       e a{" "}
                     </span>
                     <Link
-                      className="font-medium text-[#137fec] hover:underline"
+                      className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
                       href="#"
                     >
                       Política de Privacidade
@@ -263,17 +263,17 @@ export default function SignupPage() {
                 )}
 
                 <InteractiveHoverButton
-                  className="w-full bg-[#137fec] text-white hover:bg-[#137fec]/90 border-[#137fec] h-12 text-base font-bold mt-4"
+                  className="w-full bg-cta-bg text-white hover:bg-cta-bg/90 border-cta-bg h-12 text-base font-bold mt-4"
                   type="submit"
                   disabled={loading}
                 >
                   {loading ? "Criando..." : "Finalizar Cadastro"}
                 </InteractiveHoverButton>
               </form>
-              <p className="text-center text-[#4c739a] dark:text-[#a0b3c6] text-sm mt-8">
+              <p className="text-center text-gray-500 dark:text-gray-400 text-sm mt-8">
                 Já tem uma conta?{" "}
                 <Link
-                  className="font-medium text-[#137fec] hover:underline"
+                  className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
                   href="/login"
                 >
                   Faça login
