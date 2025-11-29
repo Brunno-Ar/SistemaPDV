@@ -165,47 +165,66 @@ async function main() {
     },
   ];
 
-  for (const produto of produtos) {
-    // Verificar se o produto já existe
-    const existingProduct = await prisma.product.findFirst({
-      where: {
-        sku: produto.sku,
-        empresaId: empresa.id,
-      },
-    });
-
-    let createdProduct;
-
-    if (existingProduct) {
-      createdProduct = await prisma.product.update({
-        where: { id: existingProduct.id },
-        data: {}, // Nada a atualizar no seed se já existe
-      });
-    } else {
-      createdProduct = await prisma.product.create({
-        data: {
-          nome: produto.nome,
+  if (process.env.SEED_SAMPLE_DATA === "true") {
+    console.log("📦 Seeding sample products...");
+    for (const produto of produtos) {
+      // Verificar se o produto já existe
+      const existingProduct = await prisma.product.findFirst({
+        where: {
           sku: produto.sku,
-          precoVenda: produto.precoVenda,
-          precoCompra: produto.precoVenda * 0.6, // Custo estimado de 60%
-          estoqueAtual: produto.estoqueAtual,
           empresaId: empresa.id,
         },
       });
 
-      // Criar lote inicial APENAS se o produto acabou de ser criado
-      await prisma.lote.create({
-        data: {
-          numeroLote: `LOTE-${produto.sku}-INI`,
+      let createdProduct;
+
+      if (existingProduct) {
+        createdProduct = await prisma.product.update({
+          where: { id: existingProduct.id },
+          data: {},
+        });
+      } else {
+        createdProduct = await prisma.product.create({
+          data: {
+            nome: produto.nome,
+            sku: produto.sku,
+            precoVenda: produto.precoVenda,
+            precoCompra: produto.precoVenda * 0.6,
+            estoqueAtual: produto.estoqueAtual,
+            empresaId: empresa.id,
+          },
+        });
+      }
+
+      // Verificar se o lote inicial já existe para este produto
+      const initialLotNumber = `LOTE-${produto.sku}-INI`;
+      const existingLot = await prisma.lote.findFirst({
+        where: {
+          numeroLote: initialLotNumber,
           produtoId: createdProduct.id,
-          quantidade: produto.estoqueAtual,
-          precoCompra: produto.precoVenda * 0.6,
-          dataValidade: new Date(
-            new Date().setFullYear(new Date().getFullYear() + 1)
-          ), // Validade de 1 ano
         },
       });
+
+      if (!existingLot) {
+        await prisma.lote.create({
+          data: {
+            numeroLote: initialLotNumber,
+            produtoId: createdProduct.id,
+            quantidade: produto.estoqueAtual,
+            precoCompra: produto.precoVenda * 0.6,
+            dataValidade: new Date(
+              new Date().setFullYear(new Date().getFullYear() + 1)
+            ),
+          },
+        });
+        console.log(`   + Lote criado para ${produto.sku}`);
+      }
     }
+    console.log("✅ Produtos criados!");
+  } else {
+    console.log(
+      "ℹ️ Pulei a criação de produtos de exemplo (SEED_SAMPLE_DATA não definido)."
+    );
   }
 
   console.log("✅ Produtos criados!");
