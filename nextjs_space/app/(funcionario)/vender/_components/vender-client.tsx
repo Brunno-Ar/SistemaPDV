@@ -1,6 +1,7 @@
 "use client";
 
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -479,19 +480,25 @@ export default function VenderClient() {
         </div>
       )}
 
-      <div className="lg:col-span-3">
+      <div className="lg:col-span-3 space-y-6">
+        <PageHeader
+          title="Ponto de Venda"
+          description={
+            isOffline
+              ? "Modo Offline Ativo"
+              : "Selecione os produtos para venda"
+          }
+          actions={
+            isOffline && (
+              <Badge variant="destructive" className="animate-pulse">
+                Sem Conexão
+              </Badge>
+            )
+          }
+        />
+
         <Card>
           <CardHeader className="space-y-4">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-lg sm:text-xl">
-                Produtos Disponíveis
-              </CardTitle>
-              {isOffline && (
-                <Badge variant="destructive" className="animate-pulse">
-                  Sem Conexão (Offline)
-                </Badge>
-              )}
-            </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -517,11 +524,11 @@ export default function VenderClient() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+              <div className="grid-responsive">
                 {filteredProducts.map((product) => (
                   <Card
                     key={product.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow border border-gray-200 dark:border-zinc-800 hover:border-blue-300 overflow-hidden"
+                    className="cursor-pointer hover:shadow-md transition-shadow border border-gray-200 dark:border-zinc-800 hover:border-primary overflow-hidden"
                     onClick={() => addToCart(product)}
                   >
                     {product.imagemUrl && (

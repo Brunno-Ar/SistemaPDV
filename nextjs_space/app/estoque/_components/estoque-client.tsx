@@ -1,12 +1,13 @@
 "use client";
 
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -21,7 +22,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -42,21 +42,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Package,
-  Search,
-  Filter,
-  Layers,
-  AlertTriangle,
-  CheckCircle,
-  Calendar,
-} from "lucide-react";
+import { Plus, Edit, Trash2, Package, Search, Layers } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { MessageLoading } from "@/components/ui/message-loading";
+import { ProductFormDialog } from "./product-form-dialog";
+import { LotManagerDialog } from "./lot-manager-dialog";
 
 interface Product {
   id: string;
@@ -80,17 +70,6 @@ interface Category {
   nome: string;
 }
 
-interface Lote {
-  id: string;
-  numeroLote: string;
-  dataValidade: string | null;
-  quantidade: number;
-  precoCompra: number;
-  status?: string;
-  createdAt: string;
-  dataCompra?: string;
-}
-
 interface EstoqueClientProps {
   companyId?: string;
 }
@@ -100,8 +79,13 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Dialog States
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [lotsDialogOpen, setLotsDialogOpen] = useState(false);
+  const [selectedProductForLots, setSelectedProductForLots] =
+    useState<Product | null>(null);
 
   // New Category Dialog State
   const [newCategoryDialogOpen, setNewCategoryDialogOpen] = useState(false);
@@ -116,98 +100,6 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
   const [categoryFilter, setCategoryFilter] = useState("todos");
   const [ordenacao, setOrdenacao] = useState("nome-asc");
 
-  // Lotes
-  const [lotsDialogOpen, setLotsDialogOpen] = useState(false);
-  const [selectedProductForLots, setSelectedProductForLots] =
-    useState<Product | null>(null);
-  const [productLots, setProductLots] = useState<Lote[]>([]);
-  const [loadingLots, setLoadingLots] = useState(false);
-  const [hideFinishedLots, setHideFinishedLots] = useState(true);
-
-  // New Lot State
-  const [newLoteData, setNewLoteData] = useState({
-    numeroLote: "",
-    dataValidade: "",
-    quantidade: "",
-    precoCompra: "",
-    dataCompra: "",
-  });
-  const [creatingLote, setCreatingLote] = useState(false);
-  const [showNewLoteForm, setShowNewLoteForm] = useState(false);
-
-  const handleCreateLote = async () => {
-    if (!selectedProductForLots || !newLoteData.quantidade) return;
-
-    setCreatingLote(true);
-    try {
-      const response = await fetch("/api/admin/lotes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          produtoId: selectedProductForLots.id,
-          numeroLote: newLoteData.numeroLote,
-          dataValidade: newLoteData.dataValidade || null,
-          quantidade: parseInt(newLoteData.quantidade),
-          precoCompra: newLoteData.precoCompra
-            ? parseFloat(newLoteData.precoCompra)
-            : 0,
-          dataCompra: newLoteData.dataCompra || null,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar lote");
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Lote criado com sucesso!",
-      });
-
-      fetchProductLots(selectedProductForLots.id);
-      fetchProducts(); // Atualizar estoque total
-      setNewLoteData({
-        numeroLote: "",
-        dataValidade: "",
-        quantidade: "",
-        precoCompra: "",
-        dataCompra: "",
-      });
-      setShowNewLoteForm(false);
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error ? error.message : "Erro ao criar lote",
-        variant: "destructive",
-      });
-    } finally {
-      setCreatingLote(false);
-    }
-  };
-
-  // Form state
-  const [formData, setFormData] = useState({
-    nome: "",
-    sku: "",
-    precoVenda: "",
-    precoCompra: "",
-    estoqueAtual: "",
-    estoqueMinimo: "",
-    imagemUrl: "",
-    loteInicial: "",
-    validadeInicial: "",
-    categoryId: "",
-    valorTotalLoteInicial: "",
-    dataCompraInicial: "",
-  });
-  const [semValidadeInicial, setSemValidadeInicial] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string>("");
-
   useEffect(() => {
     fetchProducts();
     fetchCategories();
@@ -218,20 +110,6 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       setStatusFilter("baixo");
     }
   }, [searchParams]);
-
-  // Cálculo automático do Custo Unitário (Estoque Inicial)
-  useEffect(() => {
-    const qtd = parseFloat(formData.loteInicial);
-    const total = parseFloat(formData.valorTotalLoteInicial);
-
-    if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
-      const unitario = total / qtd;
-      setFormData((prev) => ({
-        ...prev,
-        precoCompra: unitario.toFixed(2),
-      }));
-    }
-  }, [formData.loteInicial, formData.valorTotalLoteInicial]);
 
   const fetchCategories = async () => {
     try {
@@ -271,108 +149,18 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     }
   };
 
-  const fetchProductLots = async (productId: string) => {
-    setLoadingLots(true);
-    setProductLots([]);
-    try {
-      const response = await fetch(`/api/admin/lotes?produtoId=${productId}`);
-      const data = await response.json();
-      if (response.ok) {
-        // Ordenar: vencimento mais próximo primeiro (nulls por último)
-        const sortedLots = Array.isArray(data)
-          ? data.sort((a: any, b: any) => {
-              if (!a.dataValidade) return 1;
-              if (!b.dataValidade) return -1;
-              return (
-                new Date(a.dataValidade).getTime() -
-                new Date(b.dataValidade).getTime()
-              );
-            })
-          : [];
-        setProductLots(sortedLots);
-      } else {
-        toast({
-          title: "Erro",
-          description: "Erro ao buscar lotes.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao buscar lotes:", error);
-    } finally {
-      setLoadingLots(false);
-    }
-  };
-
   const handleOpenLotsDialog = (product: Product) => {
     setSelectedProductForLots(product);
     setLotsDialogOpen(true);
-    fetchProductLots(product.id);
   };
 
   const handleOpenDialog = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
-      setFormData({
-        nome: product.nome,
-        sku: product.sku,
-        precoVenda: product.precoVenda.toString(),
-        precoCompra: product.precoCompra.toString(),
-        estoqueAtual: product.estoqueAtual.toString(),
-        estoqueMinimo: product.estoqueMinimo.toString(),
-        imagemUrl: product.imagemUrl || "",
-        loteInicial: "",
-        validadeInicial: "",
-        categoryId: product.categoryId || "",
-        valorTotalLoteInicial: "",
-        dataCompraInicial: "",
-      });
-      setImagePreview("");
-      setSelectedFile(null);
-      setSemValidadeInicial(false);
     } else {
       setEditingProduct(null);
-      setFormData({
-        nome: "",
-        sku: "",
-        precoVenda: "",
-        precoCompra: "",
-        estoqueAtual: "0",
-        estoqueMinimo: "5",
-        imagemUrl: "",
-        loteInicial: "0",
-        validadeInicial: "",
-        categoryId: "",
-        valorTotalLoteInicial: "",
-        dataCompraInicial: "",
-      });
-      setImagePreview("");
-      setSelectedFile(null);
-      setSemValidadeInicial(false);
     }
     setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingProduct(null);
-    setFormData({
-      nome: "",
-      sku: "",
-      precoVenda: "",
-      precoCompra: "",
-      estoqueAtual: "",
-      estoqueMinimo: "",
-      imagemUrl: "",
-      loteInicial: "",
-      validadeInicial: "",
-      categoryId: "",
-      valorTotalLoteInicial: "",
-      dataCompraInicial: "",
-    });
-    setSelectedFile(null);
-    setImagePreview("");
-    setSemValidadeInicial(false);
   };
 
   const handleCreateCategory = async () => {
@@ -397,11 +185,10 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         description: "Categoria criada com sucesso!",
       });
 
-      // Atualizar lista e selecionar a nova categoria
+      // Atualizar lista
       setCategories((prev) =>
         [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome))
       );
-      setFormData((prev) => ({ ...prev, categoryId: data.id }));
       setNewCategoryName("");
       setNewCategoryDialogOpen(false);
     } catch (error) {
@@ -413,124 +200,6 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
       });
     } finally {
       setCreatingCategory(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const uploadImage = async (): Promise<string | null> => {
-    if (!selectedFile) return null;
-    setUploadingImage(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
-      return data.cloud_storage_path;
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao fazer upload da imagem",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Validar campos obrigatórios (Custo pode ser 0/vazio no cadastro inicial se não houver estoque)
-    if (!formData.nome || !formData.precoVenda) {
-      toast({
-        title: "Erro",
-        description: "Preencha os campos obrigatórios (Nome e Valor de venda)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const precoVenda = parseFloat(formData.precoVenda);
-    const precoCompra = parseFloat(formData.precoCompra) || 0;
-    const estoqueAtual = formData.estoqueAtual
-      ? parseInt(formData.estoqueAtual)
-      : 0;
-    const estoqueMinimo = parseInt(formData.estoqueMinimo) || 5;
-
-    if (precoVenda <= 0 || precoCompra < 0) {
-      toast({
-        title: "Erro",
-        description: "Preços inválidos",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      let imagemUrl = formData.imagemUrl;
-      if (selectedFile) {
-        const uploadedUrl = await uploadImage();
-        if (uploadedUrl) imagemUrl = uploadedUrl;
-      }
-
-      let url = editingProduct
-        ? `/api/admin/products/${editingProduct.id}`
-        : "/api/admin/products";
-      if (companyId) url += `?companyId=${companyId}`;
-
-      const method = editingProduct ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: formData.nome,
-          sku: formData.sku,
-          precoVenda,
-          precoCompra,
-          estoqueAtual,
-          estoqueMinimo,
-          imagemUrl: imagemUrl || null,
-          loteInicial: formData.loteInicial
-            ? parseInt(formData.loteInicial)
-            : undefined,
-          validadeInicial: semValidadeInicial
-            ? null
-            : formData.validadeInicial || undefined,
-          dataCompraInicial: formData.dataCompraInicial || null,
-          categoryId: formData.categoryId || null,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Erro ao salvar produto");
-
-      toast({
-        title: "Sucesso",
-        description: editingProduct ? "Produto atualizado" : "Produto criado",
-      });
-      handleCloseDialog();
-      fetchProducts();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error ? error.message : "Erro desconhecido",
-        variant: "destructive",
-      });
     }
   };
 
@@ -606,54 +275,71 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
   return (
     <div className="space-y-6">
       {/* Header e Filtros */}
+      <PageHeader
+        title="Gestão de Estoque"
+        description={`${products.length} produtos cadastrados`}
+        actions={
+          <InteractiveHoverButton
+            onClick={() => handleOpenDialog()}
+            className="bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+          >
+            <span className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Novo Produto
+            </span>
+          </InteractiveHoverButton>
+        }
+      />
+
+      {/* Filtros */}
       <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle className="text-gray-900 dark:text-gray-100">
-                Gestão de Estoque
-              </CardTitle>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {products.length} produtos cadastrados
-              </p>
-            </div>
-            <InteractiveHoverButton
-              onClick={() => handleOpenDialog()}
-              className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
-            >
-              <span className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Novo Produto
-              </span>
-            </InteractiveHoverButton>
-          </div>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
-              <Label htmlFor="search">Buscar Produto</Label>
+              <Label
+                htmlFor="search"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Buscar Produto
+              </Label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
                   id="search"
                   placeholder="Nome ou SKU..."
-                  className="pl-8"
+                  className="pl-8 bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
             <div className="w-full md:w-[200px]">
-              <Label>Categoria</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Categoria
+              </Label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="Todas as categorias" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas</SelectItem>
-                  <SelectItem value="sem_categoria">Sem Categoria</SelectItem>
+                <SelectContent className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+                  <SelectItem
+                    value="todos"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
+                    Todas
+                  </SelectItem>
+                  <SelectItem
+                    value="sem_categoria"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
+                    Sem Categoria
+                  </SelectItem>
                   {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
+                    <SelectItem
+                      key={cat.id}
+                      value={cat.id}
+                      className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                    >
                       {cat.nome}
                     </SelectItem>
                   ))}
@@ -661,40 +347,81 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               </Select>
             </div>
             <div className="w-full md:w-[200px]">
-              <Label>Status do Estoque</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Status do Estoque
+              </Label>
               <Select
                 value={statusFilter}
                 onValueChange={(value: any) => setStatusFilter(value)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="baixo">⚠️ Estoque Baixo</SelectItem>
-                  <SelectItem value="normal">✅ Estoque Normal</SelectItem>
+                <SelectContent className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+                  <SelectItem
+                    value="todos"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
+                    Todos
+                  </SelectItem>
+                  <SelectItem
+                    value="baixo"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
+                    ⚠️ Estoque Baixo
+                  </SelectItem>
+                  <SelectItem
+                    value="normal"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
+                    ✅ Estoque Normal
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="w-full md:w-[200px]">
-              <Label>Ordenar por</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Ordenar por
+              </Label>
               <Select value={ordenacao} onValueChange={setOrdenacao}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100">
                   <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nome-asc">Nome (A-Z)</SelectItem>
-                  <SelectItem value="nome-desc">Nome (Z-A)</SelectItem>
-                  <SelectItem value="preco-asc">
+                <SelectContent className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+                  <SelectItem
+                    value="nome-asc"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
+                    Nome (A-Z)
+                  </SelectItem>
+                  <SelectItem
+                    value="nome-desc"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
+                    Nome (Z-A)
+                  </SelectItem>
+                  <SelectItem
+                    value="preco-asc"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
                     Preço (Menor &gt; Maior)
                   </SelectItem>
-                  <SelectItem value="preco-desc">
+                  <SelectItem
+                    value="preco-desc"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
                     Preço (Maior &gt; Menor)
                   </SelectItem>
-                  <SelectItem value="estoque-asc">
+                  <SelectItem
+                    value="estoque-asc"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
                     Estoque (Menor &gt; Maior)
                   </SelectItem>
-                  <SelectItem value="estoque-desc">
+                  <SelectItem
+                    value="estoque-desc"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-zinc-800"
+                  >
                     Estoque (Maior &gt; Menor)
                   </SelectItem>
                 </SelectContent>
@@ -709,7 +436,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800">
+              <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 border-gray-200 dark:border-zinc-700">
                 <TableHead className="text-gray-700 dark:text-gray-300">
                   Produto
                 </TableHead>
@@ -744,7 +471,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                 filteredAndSortedProducts.map((product) => (
                   <TableRow
                     key={product.id}
-                    className="border-gray-200 dark:border-zinc-800"
+                    className="border-gray-200 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50"
                   >
                     <TableCell>
                       <div className="flex flex-col">
@@ -826,20 +553,22 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
                               <Trash2 className="h-4 w-4" />
                             </InteractiveHoverButton>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
                             <AlertDialogHeader>
-                              <AlertDialogTitle>
+                              <AlertDialogTitle className="text-gray-900 dark:text-gray-100">
                                 Excluir Produto
                               </AlertDialogTitle>
-                              <AlertDialogDescription>
+                              <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
                                 Tem certeza que deseja excluir "{product.nome}"?
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogCancel className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-700">
+                                Cancelar
+                              </AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(product.id)}
-                                className="bg-red-600 hover:bg-red-700"
+                                className="bg-red-600 hover:bg-red-700 text-white"
                               >
                                 Excluir
                               </AlertDialogAction>
@@ -856,317 +585,50 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         </CardContent>
       </Card>
 
-      {/* Dialog de Edição/Criação */}
-      <Dialog
+      <ProductFormDialog
         open={dialogOpen}
-        onOpenChange={(open) => !open && handleCloseDialog()}
-      >
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingProduct ? "Editar Produto" : "Novo Produto"}
-            </DialogTitle>
-            <DialogDescription>
-              {editingProduct
-                ? "Atualize os dados do produto."
-                : "Preencha as informações do novo produto."}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 py-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nome: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU</Label>
-                <Input
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(e) =>
-                    setFormData({ ...formData, sku: e.target.value })
-                  }
-                  placeholder="Gerado automaticamente se vazio"
-                />
-              </div>
-            </div>
+        onOpenChange={setDialogOpen}
+        productToEdit={editingProduct}
+        onSuccess={fetchProducts}
+        categories={categories}
+        companyId={companyId}
+        onOpenCategoryDialog={() => setNewCategoryDialogOpen(true)}
+      />
 
-            {/* Categoria */}
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <div className="flex gap-2">
-                <Select
-                  value={formData.categoryId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, categoryId: value })
-                  }
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sem_categoria">Sem Categoria</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <InteractiveHoverButton
-                  type="button"
-                  className="w-10 min-w-10 px-0 border-gray-200"
-                  onClick={() => setNewCategoryDialogOpen(true)}
-                  title="Nova Categoria"
-                >
-                  <Plus className="h-4 w-4" />
-                </InteractiveHoverButton>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {editingProduct && (
-                <div className="space-y-2">
-                  <Label className="text-gray-500">Custo (Auto)</Label>
-                  <div className="flex h-10 w-full items-center rounded-md border border-input bg-gray-100 px-3 py-2 text-sm text-gray-500">
-                    R$ {formData.precoCompra}
-                  </div>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="precoVenda">Valor de venda</Label>
-                <Input
-                  id="precoVenda"
-                  type="number"
-                  step="0.01"
-                  value={formData.precoVenda}
-                  onChange={(e) =>
-                    setFormData({ ...formData, precoVenda: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-
-            {editingProduct ? (
-              <div className="space-y-2">
-                <Label htmlFor="estoqueAtual">Estoque Atual</Label>
-                <Input
-                  id="estoqueAtual"
-                  type="number"
-                  value={formData.estoqueAtual}
-                  onChange={(e) =>
-                    setFormData({ ...formData, estoqueAtual: e.target.value })
-                  }
-                  required
-                  disabled
-                />
-              </div>
-            ) : (
-              /* 🆕 SEÇÃO: ESTOQUE INICIAL (PRIMEIRO LOTE) */
-              <div className="space-y-4 p-4 border-2 border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                    Estoque Inicial (Primeiro Lote)
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  📦 <strong>Cadastro Unificado:</strong> Crie o produto e seu
-                  primeiro lote em uma única etapa!
-                </p>
-
-                <div className="space-y-2">
-                  <Label htmlFor="loteInicial">Quantidade do Lote</Label>
-                  <Input
-                    id="loteInicial"
-                    type="number"
-                    min="0"
-                    value={formData.loteInicial}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        loteInicial: e.target.value,
-                      })
-                    }
-                    placeholder="0"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    💡 Se informar quantidade &gt; 0, o estoque inicial será
-                    definido automaticamente
-                  </p>
-                </div>
-
-                {/* 🆕 Campos de Custo do Lote */}
-                <div className="space-y-2">
-                  <Label htmlFor="dataCompraInicial">Data de Compra</Label>
-                  <Input
-                    id="dataCompraInicial"
-                    type="date"
-                    value={formData.dataCompraInicial}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        dataCompraInicial: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="valorTotalLoteInicial">
-                      Valor de compra
-                    </Label>
-                    <Input
-                      id="valorTotalLoteInicial"
-                      type="number"
-                      step="0.01"
-                      value={formData.valorTotalLoteInicial}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          valorTotalLoteInicial: e.target.value,
-                        })
-                      }
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-gray-600 dark:text-gray-400">
-                      Custo Unit. (Auto)
-                    </Label>
-                    <div className="h-10 px-3 py-2 bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 rounded-md text-blue-800 dark:text-blue-200 font-medium flex items-center">
-                      R$ {formData.precoCompra || "0.00"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="validadeInicial">Data de Validade</Label>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="semValidadeInicial"
-                        checked={semValidadeInicial}
-                        onCheckedChange={(checked) => {
-                          setSemValidadeInicial(checked as boolean);
-                          if (checked) {
-                            setFormData({ ...formData, validadeInicial: "" });
-                          }
-                        }}
-                      />
-                      <Label
-                        htmlFor="semValidadeInicial"
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        Produto sem validade
-                      </Label>
-                    </div>
-                  </div>
-                  <Input
-                    id="validadeInicial"
-                    type="date"
-                    value={formData.validadeInicial}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        validadeInicial: e.target.value,
-                      })
-                    }
-                    min={new Date().toISOString().split("T")[0]}
-                    disabled={semValidadeInicial}
-                    required={!semValidadeInicial && !!formData.loteInicial}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    📅 Obrigatória se houver quantidade no lote (exceto se "Sem
-                    validade")
-                  </p>
-                </div>
-
-                <div className="bg-white dark:bg-zinc-900 p-3 rounded border border-blue-300 dark:border-blue-700">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <strong>Como funciona:</strong> Ao criar o produto com lote
-                    inicial, você economiza tempo ao não precisar cadastrar o
-                    lote em outra tela. O número do lote será gerado
-                    automaticamente.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="estoqueMinimo">Estoque Mínimo (Alerta)</Label>
-              <Input
-                id="estoqueMinimo"
-                type="number"
-                value={formData.estoqueMinimo}
-                onChange={(e) =>
-                  setFormData({ ...formData, estoqueMinimo: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Imagem (Opcional)</Label>
-              <Input type="file" accept="image/*" onChange={handleFileChange} />
-              {(imagePreview ||
-                (editingProduct?.imagemUrl && !selectedFile)) && (
-                <img
-                  src={imagePreview || editingProduct?.imagemUrl || ""}
-                  alt="Preview"
-                  className="w-20 h-20 object-cover rounded border mt-2"
-                />
-              )}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <InteractiveHoverButton
-                type="button"
-                className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
-                onClick={handleCloseDialog}
-              >
-                Cancelar
-              </InteractiveHoverButton>
-              <InteractiveHoverButton
-                type="submit"
-                disabled={uploadingImage}
-                className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
-              >
-                {uploadingImage ? "Salvando..." : "Salvar"}
-              </InteractiveHoverButton>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <LotManagerDialog
+        open={lotsDialogOpen}
+        onOpenChange={setLotsDialogOpen}
+        product={selectedProductForLots}
+      />
 
       {/* Dialog de Nova Categoria */}
       <Dialog
         open={newCategoryDialogOpen}
         onOpenChange={setNewCategoryDialogOpen}
       >
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[400px] bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
           <DialogHeader>
-            <DialogTitle>Nova Categoria</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">
+              Nova Categoria
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 dark:text-gray-400">
               Crie uma nova categoria para organizar seus produtos.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="categoryName">Nome da Categoria</Label>
+              <Label
+                htmlFor="categoryName"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Nome da Categoria
+              </Label>
               <Input
                 id="categoryName"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="Ex: Bebidas, Limpeza..."
+                className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
               />
             </div>
             <div className="flex justify-end gap-2">
@@ -1179,306 +641,12 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
               <InteractiveHoverButton
                 onClick={handleCreateCategory}
                 disabled={creatingCategory}
-                className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
+                className="bg-primary text-primary-foreground border-primary hover:bg-primary/90"
               >
                 {creatingCategory ? "Criando..." : "Criar Categoria"}
               </InteractiveHoverButton>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog de Visualização de Lotes */}
-      <Dialog open={lotsDialogOpen} onOpenChange={setLotsDialogOpen}>
-        <DialogContent className="sm:max-w-[900px]">
-          <DialogHeader>
-            <DialogTitle>Lotes: {selectedProductForLots?.nome}</DialogTitle>
-            <DialogDescription>
-              Gerenciamento de validade e lotes ativos.
-            </DialogDescription>
-          </DialogHeader>
-
-          {showNewLoteForm ? (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="numeroLote">Número do Lote (Opcional)</Label>
-                  <Input
-                    id="numeroLote"
-                    value={newLoteData.numeroLote}
-                    onChange={(e) =>
-                      setNewLoteData({
-                        ...newLoteData,
-                        numeroLote: e.target.value,
-                      })
-                    }
-                    placeholder="Gerado automaticamente"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="quantidadeLote">Quantidade</Label>
-                  <Input
-                    id="quantidadeLote"
-                    type="number"
-                    value={newLoteData.quantidade}
-                    onChange={(e) =>
-                      setNewLoteData({
-                        ...newLoteData,
-                        quantidade: e.target.value,
-                      })
-                    }
-                    placeholder="Qtd"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dataCompraLote">Data Compra</Label>
-                  <Input
-                    id="dataCompraLote"
-                    type="date"
-                    value={newLoteData.dataCompra}
-                    onChange={(e) =>
-                      setNewLoteData({
-                        ...newLoteData,
-                        dataCompra: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="validadeLote">Validade</Label>
-                  <Input
-                    id="validadeLote"
-                    type="date"
-                    value={newLoteData.dataValidade}
-                    onChange={(e) =>
-                      setNewLoteData({
-                        ...newLoteData,
-                        dataValidade: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="custoLote">Custo Unit. (R$)</Label>
-                  <Input
-                    id="custoLote"
-                    type="number"
-                    step="0.01"
-                    value={newLoteData.precoCompra}
-                    onChange={(e) =>
-                      setNewLoteData({
-                        ...newLoteData,
-                        precoCompra: e.target.value,
-                      })
-                    }
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <InteractiveHoverButton
-                  className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
-                  onClick={() => setShowNewLoteForm(false)}
-                >
-                  Cancelar
-                </InteractiveHoverButton>
-                <InteractiveHoverButton
-                  onClick={handleCreateLote}
-                  disabled={creatingLote}
-                  className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
-                >
-                  {creatingLote ? "Salvando..." : "Salvar Lote"}
-                </InteractiveHoverButton>
-              </div>
-            </div>
-          ) : (
-            <>
-              {loadingLots ? (
-                <div className="py-8 text-center text-gray-500">
-                  Carregando lotes...
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="hideFinishedLots"
-                        checked={hideFinishedLots}
-                        onCheckedChange={(checked) =>
-                          setHideFinishedLots(checked as boolean)
-                        }
-                      />
-                      <Label
-                        htmlFor="hideFinishedLots"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Ocultar finalizados
-                      </Label>
-                    </div>
-                    <InteractiveHoverButton
-                      onClick={() => setShowNewLoteForm(true)}
-                      className="gap-2 bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        Novo Lote
-                      </span>
-                    </InteractiveHoverButton>
-                  </div>
-                  <div className="border rounded-md overflow-hidden max-h-[300px] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800">
-                          <TableHead className="text-gray-700 dark:text-gray-300">
-                            Lote
-                          </TableHead>
-                          <TableHead className="text-gray-700 dark:text-gray-300">
-                            Data Compra
-                          </TableHead>
-                          <TableHead className="text-gray-700 dark:text-gray-300">
-                            Validade
-                          </TableHead>
-                          <TableHead className="text-gray-700 dark:text-gray-300">
-                            Custo Total
-                          </TableHead>
-                          <TableHead className="text-gray-700 dark:text-gray-300">
-                            Qtd.
-                          </TableHead>
-                          <TableHead className="text-gray-700 dark:text-gray-300">
-                            Status
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {productLots.filter((lote) =>
-                          hideFinishedLots
-                            ? lote.status !== "esgotado" && lote.quantidade > 0
-                            : true
-                        ).length === 0 ? (
-                          <TableRow>
-                            <TableCell
-                              colSpan={6}
-                              className="text-center py-4 text-gray-500"
-                            >
-                              Nenhum lote encontrado.
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          productLots
-                            .filter((lote) =>
-                              hideFinishedLots
-                                ? lote.status !== "esgotado" &&
-                                  lote.quantidade > 0
-                                : true
-                            )
-                            .map((lote) => {
-                              // Lógica de Status simplificada
-                              let statusBadge;
-                              if (lote.status === "vencido") {
-                                statusBadge = (
-                                  <Badge
-                                    variant="destructive"
-                                    className="text-[10px] h-5 whitespace-nowrap"
-                                  >
-                                    Vencido
-                                  </Badge>
-                                );
-                              } else if (lote.status === "proximo_vencimento") {
-                                statusBadge = (
-                                  <Badge className="bg-yellow-500 text-[10px] h-5 whitespace-nowrap">
-                                    Vence Logo
-                                  </Badge>
-                                );
-                              } else if (!lote.dataValidade) {
-                                statusBadge = (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-[10px] h-5 whitespace-nowrap"
-                                  >
-                                    S/ Validade
-                                  </Badge>
-                                );
-                              } else if (
-                                lote.quantidade === 0 ||
-                                lote.status === "esgotado"
-                              ) {
-                                statusBadge = (
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-gray-200 text-gray-600 text-[10px] h-5 whitespace-nowrap"
-                                  >
-                                    Finalizado
-                                  </Badge>
-                                );
-                              } else {
-                                statusBadge = (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-green-600 border-green-200 text-[10px] h-5 whitespace-nowrap"
-                                  >
-                                    Normal
-                                  </Badge>
-                                );
-                              }
-
-                              return (
-                                <TableRow key={lote.id}>
-                                  <TableCell className="font-mono text-xs">
-                                    {lote.numeroLote}
-                                  </TableCell>
-                                  <TableCell>
-                                    {lote.dataCompra || lote.createdAt
-                                      ? new Date(
-                                          lote.dataCompra || lote.createdAt
-                                        ).toLocaleDateString("pt-BR")
-                                      : "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {lote.dataValidade ? (
-                                      <div className="flex items-center gap-1">
-                                        <Calendar className="h-3 w-3 text-gray-400" />
-                                        {new Date(
-                                          lote.dataValidade
-                                        ).toLocaleDateString("pt-BR")}
-                                      </div>
-                                    ) : (
-                                      <span className="text-gray-500 italic">
-                                        Indeterminado
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    R${" "}
-                                    {(
-                                      Number(lote.precoCompra || 0) *
-                                      lote.quantidade
-                                    ).toFixed(2)}
-                                  </TableCell>
-                                  <TableCell className="font-medium">
-                                    {lote.quantidade}
-                                  </TableCell>
-                                  <TableCell>{statusBadge}</TableCell>
-                                </TableRow>
-                              );
-                            })
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  <div className="flex justify-end">
-                    <InteractiveHoverButton
-                      className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
-                      onClick={() => setLotsDialogOpen(false)}
-                    >
-                      Fechar
-                    </InteractiveHoverButton>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
         </DialogContent>
       </Dialog>
     </div>
