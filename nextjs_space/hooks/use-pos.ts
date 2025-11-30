@@ -28,6 +28,7 @@ export function usePOS() {
   const [paymentError, setPaymentError] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [lastSaleTotal, setLastSaleTotal] = useState(0);
+  const [lastPaymentMethod, setLastPaymentMethod] = useState("");
   const [isOffline, setIsOffline] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -312,6 +313,7 @@ export function usePOS() {
 
       const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
       setLastSaleTotal(total);
+      setLastPaymentMethod(metodoPagamento); // Salvar método para tela de sucesso
       setShowSuccessScreen(true);
       clearCart();
       fetchProducts();
@@ -355,5 +357,6 @@ export function usePOS() {
     clearCart,
     finalizarVenda,
     handleNewSale,
+    lastPaymentMethod, // Exportar o estado
   };
 }

@@ -16,17 +16,19 @@ interface Sale {
 export default function MinhaContaPage() {
   const { data: session } = useSession();
   const [sales, setSales] = useState<Sale[]>([]);
+  const [salesMonth, setSalesMonth] = useState(0);
+  const [metaMensal, setMetaMensal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchSales() {
       try {
-        // Reusing the analytics API but we only need the lastSales part
-        // In a real app, we might want a dedicated endpoint for sales history with pagination
         const res = await fetch("/api/employee/analytics");
         if (res.ok) {
           const json = await res.json();
           setSales(json.lastSales || []);
+          setSalesMonth(json.salesMonth || 0);
+          setMetaMensal(json.metaMensal || 0);
         }
       } catch (error) {
         console.error("Failed to fetch sales", error);
@@ -42,6 +44,11 @@ export default function MinhaContaPage() {
       style: "currency",
       currency: "BRL",
     }).format(value);
+  };
+
+  const calculateProgress = () => {
+    if (metaMensal === 0) return 0;
+    return Math.min((salesMonth / metaMensal) * 100, 100);
   };
 
   if (loading) {
@@ -60,9 +67,56 @@ export default function MinhaContaPage() {
           Minhas Vendas
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Histórico recente de vendas realizadas por você.
+          Acompanhe seu desempenho e histórico de vendas.
         </p>
       </div>
+
+      {/* Meta e Progresso */}
+      <Card className="bg-gradient-to-br from-blue-600 to-blue-700 border-none shadow-lg rounded-xl text-white overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+        <CardContent className="p-6 relative z-10">
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <p className="text-blue-100 text-sm font-medium mb-1">
+                Vendas no Mês
+              </p>
+              <h2 className="text-3xl font-bold">
+                {formatCurrency(salesMonth)}
+              </h2>
+            </div>
+            <div className="text-right">
+              <p className="text-blue-100 text-sm font-medium mb-1">
+                Meta Mensal
+              </p>
+              <p className="text-xl font-semibold">
+                {formatCurrency(metaMensal)}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs font-medium text-blue-100">
+              <span>Progresso</span>
+              <span>
+                {((salesMonth / (metaMensal || 1)) * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div className="h-3 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${calculateProgress()}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-blue-200 mt-2">
+              {salesMonth >= metaMensal
+                ? "Parabéns! Você atingiu sua meta mensal! 🚀"
+                : `Faltam ${formatCurrency(
+                    metaMensal - salesMonth
+                  )} para atingir sua meta.`}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="mb-6">
         <MuralAvisos />

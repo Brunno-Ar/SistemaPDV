@@ -75,6 +75,7 @@ export default function VenderClient() {
     clearCart,
     finalizarVenda,
     handleNewSale,
+    lastPaymentMethod,
   } = usePOS();
 
   // Atalhos de Teclado (Mantidos aqui pois dependem de refs e window events)
@@ -105,7 +106,7 @@ export default function VenderClient() {
     return (
       <SaleCompletedScreen
         total={lastSaleTotal}
-        paymentMethod={metodoPagamento}
+        paymentMethod={lastPaymentMethod}
         onNewSale={handleNewSale}
       />
     );
@@ -128,8 +129,8 @@ export default function VenderClient() {
           <AlertDialogHeader>
             <AlertDialogTitle>Caixa Fechado</AlertDialogTitle>
             <AlertDialogDescription>
-              Por favor, abra o caixa no Dashboard para iniciar as vendas.
-              Todas as operações de venda estão bloqueadas até a abertura do caixa.
+              Por favor, abra o caixa no Dashboard para iniciar as vendas. Todas
+              as operações de venda estão bloqueadas até a abertura do caixa.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

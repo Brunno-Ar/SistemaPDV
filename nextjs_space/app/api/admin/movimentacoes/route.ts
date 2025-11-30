@@ -96,7 +96,44 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 3. Unificar e Padronizar
+    // 3. Buscar Movimentações de Caixa (Se o tipo for TODOS ou OUTROS)
+    let cashMovements: any[] = [];
+    if (!type || type === "TODOS" || type !== "VENDA") {
+      cashMovements = await prisma.movimentacaoCaixa.findMany({
+        where: {
+          caixa: {
+            empresaId,
+          },
+          dataHora: startDate && endDate ? dateFilter : undefined,
+        },
+        include: {
+          usuario: {
+            select: { name: true, email: true },
+          },
+        },
+        orderBy: { dataHora: "desc" },
+      });
+    }
+
+    // 4. Buscar Fechamentos de Caixa
+    let closedCaixas: any[] = [];
+    if (!type || type === "TODOS" || type !== "VENDA") {
+      closedCaixas = await prisma.caixa.findMany({
+        where: {
+          empresaId,
+          status: "FECHADO",
+          dataFechamento: startDate && endDate ? dateFilter : undefined,
+        },
+        include: {
+          usuario: {
+            select: { name: true, email: true },
+          },
+        },
+        orderBy: { dataFechamento: "desc" },
+      });
+    }
+
+    // 5. Unificar e Padronizar
     const unifiedTimeline = [
       ...sales.map((sale) => ({
         id: sale.id,
@@ -121,6 +158,28 @@ export async function GET(request: NextRequest) {
         productName: mov.produto.nome,
         quantity: mov.quantidade,
         reason: mov.motivo,
+      })),
+      ...cashMovements.map((mov) => ({
+        id: mov.id,
+        type: mov.tipo, // ABERTURA, SANGRIA, SUPRIMENTO
+        date: mov.dataHora,
+        user: mov.usuario?.name || "Desconhecido",
+        productName: "Movimentação de Caixa", // Placeholder
+        quantity: 1,
+        totalValue: Number(mov.valor),
+        reason: mov.descricao,
+      })),
+      ...closedCaixas.map((caixa) => ({
+        id: caixa.id,
+        type: "FECHAMENTO",
+        date: caixa.dataFechamento,
+        user: caixa.usuario?.name || "Desconhecido",
+        productName: "Fechamento de Caixa",
+        quantity: 1,
+        totalValue: Number(caixa.saldoFinal),
+        reason: `Saldo Final: R$ ${Number(caixa.saldoFinal).toFixed(
+          2
+        )} | Quebra: R$ ${Number(caixa.quebraDeCaixa).toFixed(2)}`,
       })),
     ];
 

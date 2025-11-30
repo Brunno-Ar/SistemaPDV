@@ -174,6 +174,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // 7. Meta Mensal
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { metaMensal: true },
+    });
+
     return NextResponse.json({
       salesToday: Number(salesTodayAgg._sum.valorTotal || 0),
       salesMonth: Number(salesMonthAgg._sum.valorTotal || 0),
@@ -184,6 +190,7 @@ export async function GET(request: NextRequest) {
       })),
       weeklySales,
       avisos,
+      metaMensal: Number(user?.metaMensal || 0),
     });
   } catch (error) {
     console.error("Erro ao buscar analytics do funcionário:", error);
