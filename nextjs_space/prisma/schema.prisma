@@ -45,6 +45,11 @@ enum TipoMovimentacao {
   VENDA
 }
 
+enum TipoMovimentacaoCaixa {
+  SANGRIA
+  SUPRIMENTO
+}
+
 // Models
 model Account {
   id                String  @id @default(cuid())
@@ -90,6 +95,7 @@ model User {
   sessions      Session[]
   sales         Sale[]
   movimentacoes MovimentacaoEstoque[]
+  movimentacoesCaixa MovimentacaoCaixa[]
   caixas        Caixa[]
   avisosEnviados   Aviso[] @relation("Remetente")
   avisosRecebidos  Aviso[] @relation("Destinatario")
@@ -266,9 +272,27 @@ model Caixa {
 
   usuario User    @relation(fields: [usuarioId], references: [id])
   empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  movimentacoes MovimentacaoCaixa[]
 
   @@index([usuarioId])
   @@index([empresaId])
   @@index([status])
   @@map("caixas")
+}
+
+model MovimentacaoCaixa {
+  id          String                @id @default(cuid())
+  caixaId     String                @map("caixa_id")
+  usuarioId   String                @map("usuario_id")
+  tipo        TipoMovimentacaoCaixa
+  valor       Decimal               @db.Decimal(10, 2)
+  descricao   String?
+  dataHora    DateTime              @default(now()) @map("data_hora")
+
+  caixa   Caixa @relation(fields: [caixaId], references: [id], onDelete: Cascade)
+  usuario User  @relation(fields: [usuarioId], references: [id])
+
+  @@index([caixaId])
+  @@index([usuarioId])
+  @@map("movimentacoes_caixa")
 }

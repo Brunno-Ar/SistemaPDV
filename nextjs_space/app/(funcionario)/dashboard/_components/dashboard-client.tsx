@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { MuralAvisos } from "@/components/mural-avisos";
+import { MeuCaixa } from "./meu-caixa";
 
 interface DashboardData {
   salesToday: number;
@@ -102,6 +103,9 @@ export default function DashboardClient() {
         </h1>
         <p className="text-gray-500 dark:text-gray-400">{formattedDate}</p>
       </div>
+
+      {/* Caixa Widget - Top Priority */}
+      <MeuCaixa />
 
       {/* KPI Grid */}
       <div className="grid gap-4 md:grid-cols-3">
