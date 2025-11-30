@@ -27,6 +27,12 @@ export interface Analytics {
     total: number;
     valor: number;
   }>;
+  financialTimeline: Array<{
+    date: string;
+    faturamento: number;
+    custo: number;
+    lucro: number;
+  }>;
 }
 
 export interface RecentSale {
