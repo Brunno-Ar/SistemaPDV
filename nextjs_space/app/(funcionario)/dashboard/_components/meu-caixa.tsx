@@ -27,15 +27,39 @@ import {
   Unlock,
   ArrowUpCircle,
   ArrowDownCircle,
-  RotateCcw
+  RotateCcw,
+  History
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+interface Movimentacao {
+  id: string;
+  tipo: "SANGRIA" | "SUPRIMENTO" | "ABERTURA";
+  valor: number;
+  descricao: string;
+  dataHora: string;
+}
 
 interface CaixaStatus {
   id: string;
   status: "ABERTO" | "FECHADO";
   saldoInicial: number;
   dataAbertura: string;
+  movimentacoes: Movimentacao[];
 }
 
 export function MeuCaixa() {
@@ -70,12 +94,20 @@ export function MeuCaixa() {
     try {
       const payload: any = { action };
 
+      // Sanitizar input (substituir vírgula por ponto, se houver)
+      const cleanValue = inputValue.replace(',', '.');
+      const numericValue = parseFloat(cleanValue);
+
+      if (isNaN(numericValue)) {
+        throw new Error("Valor inválido. Digite um número.");
+      }
+
       if (action === "abrir") {
-        payload.saldoInicial = parseFloat(inputValue);
+        payload.saldoInicial = numericValue;
       } else if (action === "fechar") {
-        payload.valorInformado = parseFloat(inputValue);
+        payload.valorInformado = numericValue;
       } else {
-        payload.valor = parseFloat(inputValue);
+        payload.valor = numericValue;
         payload.descricao = description;
       }
 
@@ -105,6 +137,18 @@ export function MeuCaixa() {
       // Por enquanto apenas atualiza a UI.
 
     } catch (error: any) {
+      // Se o erro for "Caixa já aberto", atualiza o status para desbloquear a UI
+      if (error.message && error.message.includes("já possui um caixa aberto")) {
+        toast({
+          title: "Atenção",
+          description: "Detectamos que seu caixa já está aberto. Atualizando...",
+          variant: "default",
+        });
+        setDialogOpen(null);
+        fetchStatus();
+        return;
+      }
+
       toast({
         title: "Erro",
         description: error.message,
@@ -164,7 +208,7 @@ export function MeuCaixa() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(null)}>Cancelar</Button>
-                <Button onClick={() => handleAction("abrir")} disabled={processing}>
+                <Button onClick={() => handleAction("abrir")} disabled={processing || !inputValue}>
                   {processing ? "Abrindo..." : "Confirmar Abertura"}
                 </Button>
               </DialogFooter>
@@ -322,6 +366,67 @@ export function MeuCaixa() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </div>
+
+        {/* Movimentações (Accordion for History) */}
+        <div className="w-full mt-4 pt-4 border-t dark:border-zinc-800">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="movimentacoes" className="border-none">
+              <AccordionTrigger className="py-2 hover:no-underline">
+                <div className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">
+                  <History className="h-4 w-4" />
+                  Ver Histórico de Movimentações
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="rounded-md border dark:border-zinc-800 mt-2">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Horário</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {caixa.movimentacoes && caixa.movimentacoes.length > 0 ? (
+                        caixa.movimentacoes.map((mov) => (
+                          <TableRow key={mov.id}>
+                            <TableCell>
+                              {new Date(mov.dataHora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  mov.tipo === "SUPRIMENTO" || mov.tipo === "ABERTURA" ? "default" : "destructive"
+                                }
+                                className={
+                                  mov.tipo === "ABERTURA" ? "bg-blue-500 hover:bg-blue-600" : ""
+                                }
+                              >
+                                {mov.tipo}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-gray-500">{mov.descricao || "-"}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(mov.valor))}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-muted-foreground">
+                            Nenhuma movimentação registrada.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </CardContent>
     </Card>

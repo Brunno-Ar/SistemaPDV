@@ -48,6 +48,7 @@ enum TipoMovimentacao {
 enum TipoMovimentacaoCaixa {
   SANGRIA
   SUPRIMENTO
+  ABERTURA
 }
 
 // Models

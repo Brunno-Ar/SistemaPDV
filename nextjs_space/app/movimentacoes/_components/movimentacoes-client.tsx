@@ -13,6 +13,8 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowRightLeft,
+  DollarSign,
+  ArrowUpCircle,
 } from "lucide-react";
 import {
   Card,
@@ -64,7 +66,11 @@ interface UnifiedMovement {
     | "ENTRADA"
     | "AJUSTE_QUEBRA"
     | "AJUSTE_INVENTARIO"
-    | "DEVOLUCAO";
+    | "DEVOLUCAO"
+    | "ABERTURA"
+    | "SANGRIA"
+    | "SUPRIMENTO"
+    | "FECHAMENTO";
   date: string;
   user: string;
   // Fields for Sales
@@ -155,6 +161,14 @@ export default function MovimentacoesClient({
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case "AJUSTE_INVENTARIO":
         return <Wrench className="h-5 w-5 text-gray-500" />;
+      case "ABERTURA":
+        return <DollarSign className="h-5 w-5 text-blue-500" />;
+      case "SANGRIA":
+        return <ArrowUpCircle className="h-5 w-5 text-red-500" />;
+      case "SUPRIMENTO":
+        return <ArrowDownCircle className="h-5 w-5 text-green-500" />;
+      case "FECHAMENTO":
+        return <DollarSign className="h-5 w-5 text-purple-500" />;
       default:
         return <Wrench className="h-5 w-5 text-gray-500" />;
     }
@@ -172,6 +186,14 @@ export default function MovimentacoesClient({
         return "Ajuste Manual";
       case "DEVOLUCAO":
         return "Devolução";
+      case "ABERTURA":
+        return "Abertura de Caixa";
+      case "SANGRIA":
+        return "Sangria de Caixa";
+      case "SUPRIMENTO":
+        return "Suprimento de Caixa";
+      case "FECHAMENTO":
+        return "Fechamento de Caixa";
       default:
         return type;
     }
@@ -533,14 +555,33 @@ export default function MovimentacoesClient({
                       <span className="font-medium text-gray-900 dark:text-gray-100">
                         {mov.productName}
                       </span>
-                      <Badge
-                        variant={
-                          mov.type === "ENTRADA" ? "default" : "destructive"
-                        }
-                      >
-                        {mov.type === "ENTRADA" ? "+" : "-"}
-                        {Math.abs(mov.quantity || 0)}
-                      </Badge>
+                      {[
+                        "ABERTURA",
+                        "SANGRIA",
+                        "SUPRIMENTO",
+                        "FECHAMENTO",
+                      ].includes(mov.type) ? (
+                        <span
+                          className={`font-bold ${
+                            ["ABERTURA", "SUPRIMENTO"].includes(mov.type)
+                              ? "text-green-600 dark:text-green-400"
+                              : mov.type === "SANGRIA"
+                              ? "text-red-600 dark:text-red-400"
+                              : "text-purple-600 dark:text-purple-400"
+                          }`}
+                        >
+                          {formatCurrency(mov.totalValue || 0)}
+                        </span>
+                      ) : (
+                        <Badge
+                          variant={
+                            mov.type === "ENTRADA" ? "default" : "destructive"
+                          }
+                        >
+                          {mov.type === "ENTRADA" ? "+" : "-"}
+                          {Math.abs(mov.quantity || 0)}
+                        </Badge>
+                      )}
                     </div>
                     {mov.reason && (
                       <p className="text-sm text-gray-500 dark:text-gray-400 italic max-w-md text-right">
