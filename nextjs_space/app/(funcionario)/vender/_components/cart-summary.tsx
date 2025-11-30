@@ -19,6 +19,9 @@ interface CartSummaryProps {
   onUpdateDiscount: (productId: string, discount: number) => void;
   paymentMethod: string;
   onPaymentMethodChange: (method: string) => void;
+  valorRecebido?: string;
+  setValorRecebido?: (value: string) => void;
+  troco?: number | null;
   onFinalize: () => void;
   onClear: () => void;
   isOffline: boolean;
@@ -35,6 +38,9 @@ export function CartSummary({
   onUpdateDiscount,
   paymentMethod,
   onPaymentMethodChange,
+  valorRecebido,
+  setValorRecebido,
+  troco,
   onFinalize,
   onClear,
   isOffline,
@@ -195,6 +201,48 @@ export function CartSummary({
               )}
             </div>
 
+            {paymentMethod === "dinheiro" &&
+              setValorRecebido &&
+              valorRecebido !== undefined && (
+                <div className="space-y-3 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                  <div className="space-y-1">
+                    <label className="text-xs sm:text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Valor Recebido (R$)
+                    </label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      autoFocus
+                      placeholder="0,00"
+                      value={valorRecebido}
+                      onChange={(e) => {
+                        // Apenas permitir números e vírgula/ponto
+                        const value = e.target.value;
+                        if (/^[\d,.]*$/.test(value)) {
+                          setValorRecebido(value);
+                        }
+                      }}
+                      className="bg-white dark:bg-zinc-900 border-blue-200 dark:border-blue-800 focus-visible:ring-blue-500"
+                    />
+                  </div>
+
+                  {troco !== null && troco !== undefined && (
+                    <div className="flex justify-between items-center pt-2 border-t border-blue-200 dark:border-blue-800">
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Troco:
+                      </span>
+                      <span
+                        className={`text-lg font-bold ${
+                          troco < 0 ? "text-red-500" : "text-blue-600 dark:text-blue-400"
+                        }`}
+                      >
+                        R$ {troco.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
             <div className="border-t pt-4 dark:border-zinc-800">
               <div className="flex justify-between items-center text-base sm:text-lg font-bold">
                 <span>Total:</span>
@@ -208,8 +256,16 @@ export function CartSummary({
               <InteractiveHoverButton
                 id="btn-finalizar-venda"
                 onClick={onFinalize}
-                className="w-full bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base border-green-600"
-                disabled={finalizing || isOffline}
+                className="w-full bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base border-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={
+                  finalizing ||
+                  isOffline ||
+                  (paymentMethod === "dinheiro" &&
+                    (valorRecebido === "" ||
+                      (parseFloat(
+                        (valorRecebido || "0").toString().replace(",", ".")
+                      ) < total)))
+                }
               >
                 <span className="flex items-center justify-center gap-2">
                   <DollarSign className="h-4 w-4" />

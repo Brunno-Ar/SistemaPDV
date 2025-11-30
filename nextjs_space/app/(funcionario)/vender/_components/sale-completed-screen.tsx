@@ -114,12 +114,16 @@ interface SaleCompletedScreenProps {
   total: number;
   paymentMethod: string;
   onNewSale: () => void;
+  valorRecebido?: number | null;
+  troco?: number | null;
 }
 
 const SaleCompletedScreen = ({
   total,
   paymentMethod,
   onNewSale,
+  valorRecebido,
+  troco,
 }: SaleCompletedScreenProps) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [showContent, setShowContent] = useState(false);
@@ -247,6 +251,31 @@ const SaleCompletedScreen = ({
                       </p>
                     </div>
                   </div>
+
+                  {paymentMethod === "dinheiro" &&
+                    valorRecebido !== null &&
+                    valorRecebido !== undefined && (
+                      <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-dashed border-gray-200 dark:border-zinc-700">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Valor Recebido
+                          </p>
+                          <p className="text-base font-semibold text-gray-700 dark:text-gray-300">
+                            R$ {valorRecebido.toFixed(2)}
+                          </p>
+                        </div>
+                        {troco !== null && troco !== undefined && (
+                          <div className="text-right">
+                            <p className="text-xs text-blue-500 font-medium">
+                              Troco
+                            </p>
+                            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                              R$ {troco.toFixed(2)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                 </div>
               </motion.div>
 

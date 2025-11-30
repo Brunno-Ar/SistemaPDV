@@ -76,6 +76,10 @@ export default function VenderClient() {
     finalizarVenda,
     handleNewSale,
     lastPaymentMethod,
+    valorRecebido,
+    setValorRecebido,
+    lastValorRecebido,
+    lastTroco,
   } = usePOS();
 
   // Atalhos de Teclado (Mantidos aqui pois dependem de refs e window events)
@@ -108,6 +112,8 @@ export default function VenderClient() {
         total={lastSaleTotal}
         paymentMethod={lastPaymentMethod}
         onNewSale={handleNewSale}
+        valorRecebido={lastValorRecebido}
+        troco={lastTroco}
       />
     );
   }
@@ -186,6 +192,13 @@ export default function VenderClient() {
           onUpdateDiscount={updateCartItemDesconto}
           paymentMethod={metodoPagamento}
           onPaymentMethodChange={setMetodoPagamento}
+          valorRecebido={valorRecebido}
+          setValorRecebido={setValorRecebido}
+          troco={
+            valorRecebido !== "" && metodoPagamento === "dinheiro"
+              ? (parseFloat(valorRecebido.replace(",", ".")) - total)
+              : null
+          }
           onFinalize={finalizarVenda}
           onClear={clearCart}
           isOffline={isOffline}

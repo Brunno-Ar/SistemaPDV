@@ -23,12 +23,15 @@ export function usePOS() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [metodoPagamento, setMetodoPagamento] = useState("");
+  const [valorRecebido, setValorRecebido] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [finalizing, setFinalizing] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
   const [lastSaleTotal, setLastSaleTotal] = useState(0);
   const [lastPaymentMethod, setLastPaymentMethod] = useState("");
+  const [lastValorRecebido, setLastValorRecebido] = useState<number | null>(null);
+  const [lastTroco, setLastTroco] = useState<number | null>(null);
   const [isOffline, setIsOffline] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -71,6 +74,10 @@ export function usePOS() {
 
   useEffect(() => {
     localStorage.setItem("pdv_payment_method", metodoPagamento);
+    // Limpar valor recebido se mudar método de pagamento (exceto se for para dinheiro, que inicia vazio)
+    if (metodoPagamento !== "dinheiro") {
+      setValorRecebido("");
+    }
   }, [metodoPagamento]);
 
   // Busca com Debounce
@@ -254,6 +261,7 @@ export function usePOS() {
   const clearCart = () => {
     setCart([]);
     setMetodoPagamento("");
+    setValorRecebido("");
     localStorage.removeItem("pdv_cart");
     localStorage.removeItem("pdv_payment_method");
   };
@@ -288,6 +296,24 @@ export function usePOS() {
       return;
     }
 
+    const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
+    let trocoCalculado: number | null = null;
+    let valorRecebidoNum: number | null = null;
+
+    if (metodoPagamento === "dinheiro") {
+      valorRecebidoNum = parseFloat(valorRecebido.replace(",", "."));
+
+      if (isNaN(valorRecebidoNum) || valorRecebidoNum < total) {
+        toast({
+          title: "Valor recebido insuficiente",
+          description: "O valor recebido deve ser maior ou igual ao total da venda.",
+          variant: "destructive",
+        });
+        return;
+      }
+      trocoCalculado = valorRecebidoNum - total;
+    }
+
     setFinalizing(true);
     setPaymentError(false);
 
@@ -303,6 +329,8 @@ export function usePOS() {
             descontoAplicado: item.descontoAplicado,
           })),
           metodoPagamento,
+          valorRecebido: metodoPagamento === "dinheiro" ? valorRecebidoNum : null,
+          troco: trocoCalculado,
         }),
       });
 
@@ -311,9 +339,11 @@ export function usePOS() {
       if (!response.ok)
         throw new Error(data.error || "Erro ao finalizar venda");
 
-      const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
       setLastSaleTotal(total);
-      setLastPaymentMethod(metodoPagamento); // Salvar método para tela de sucesso
+      setLastPaymentMethod(metodoPagamento);
+      setLastValorRecebido(valorRecebidoNum);
+      setLastTroco(trocoCalculado);
+
       setShowSuccessScreen(true);
       clearCart();
       fetchProducts();
@@ -357,6 +387,10 @@ export function usePOS() {
     clearCart,
     finalizarVenda,
     handleNewSale,
-    lastPaymentMethod, // Exportar o estado
+    lastPaymentMethod,
+    valorRecebido,
+    setValorRecebido,
+    lastValorRecebido,
+    lastTroco,
   };
 }

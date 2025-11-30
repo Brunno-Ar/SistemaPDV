@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, metodoPagamento } = body;
+    const { items, metodoPagamento, valorRecebido, troco } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -151,6 +151,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validação específica para pagamento em dinheiro
+    if (metodoPagamento === "dinheiro") {
+      if (valorRecebido === undefined || valorRecebido === null) {
+        return NextResponse.json(
+          { error: "Valor recebido é obrigatório para pagamento em dinheiro" },
+          { status: 400 }
+        );
+      }
+      if (Number(valorRecebido) < valorTotal) {
+        return NextResponse.json(
+          { error: "Valor recebido insuficiente para cobrir o total da venda" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Verificar estoque e buscar produtos (apenas da empresa do usuário)
     const productIds = items.map((item: any) => item.productId);
     const products = await prisma.product.findMany({
@@ -197,6 +213,8 @@ export async function POST(request: NextRequest) {
             empresaId: empresaId,
             valorTotal: valorTotal,
             metodoPagamento: metodoPagamento,
+            valorRecebido: metodoPagamento === "dinheiro" ? valorRecebido : null,
+            troco: metodoPagamento === "dinheiro" ? troco : null,
           },
         });
 
