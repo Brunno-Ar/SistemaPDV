@@ -37,6 +37,13 @@ export async function GET(
             caixas: true,
           },
         },
+        caixas: {
+          take: 30,
+          orderBy: { dataAbertura: "desc" },
+          include: {
+            movimentacoes: true,
+          },
+        },
       },
     });
 
