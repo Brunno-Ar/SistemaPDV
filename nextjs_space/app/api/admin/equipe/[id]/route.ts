@@ -70,10 +70,17 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({
-      ...funcionario,
-      totalVendasMes: vendasMes._sum.valorTotal || 0,
-    });
+    return NextResponse.json(
+      {
+        ...funcionario,
+        totalVendasMes: vendasMes._sum.valorTotal || 0,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Erro ao buscar detalhes do funcionário:", error);
     return NextResponse.json(
@@ -103,7 +110,7 @@ export async function PUT(
     const funcionario = await prisma.user.update({
       where: { id: params.id },
       data: {
-        metaMensal: Number(metaMensal),
+        metaMensal: Number(String(metaMensal).replace(",", ".")),
       },
     });
 

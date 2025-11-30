@@ -72,51 +72,53 @@ export default function MinhaContaPage() {
       </div>
 
       {/* Meta e Progresso */}
-      <Card className="bg-gradient-to-br from-blue-600 to-blue-700 border-none shadow-lg rounded-xl text-white overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-        <CardContent className="p-6 relative z-10">
-          <div className="flex justify-between items-end mb-4">
-            <div>
-              <p className="text-blue-100 text-sm font-medium mb-1">
-                Vendas no Mês
-              </p>
-              <h2 className="text-3xl font-bold">
-                {formatCurrency(salesMonth)}
-              </h2>
+      {session?.user?.role !== "admin" && session?.user?.role !== "master" && (
+        <Card className="bg-gradient-to-br from-blue-600 to-blue-700 border-none shadow-lg rounded-xl text-white overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+          <CardContent className="p-6 relative z-10">
+            <div className="flex justify-between items-end mb-4">
+              <div>
+                <p className="text-blue-100 text-sm font-medium mb-1">
+                  Vendas no Mês
+                </p>
+                <h2 className="text-3xl font-bold">
+                  {formatCurrency(salesMonth)}
+                </h2>
+              </div>
+              <div className="text-right">
+                <p className="text-blue-100 text-sm font-medium mb-1">
+                  Meta Mensal
+                </p>
+                <p className="text-xl font-semibold">
+                  {formatCurrency(metaMensal)}
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-blue-100 text-sm font-medium mb-1">
-                Meta Mensal
-              </p>
-              <p className="text-xl font-semibold">
-                {formatCurrency(metaMensal)}
-              </p>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs font-medium text-blue-100">
-              <span>Progresso</span>
-              <span>
-                {((salesMonth / (metaMensal || 1)) * 100).toFixed(1)}%
-              </span>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-medium text-blue-100">
+                <span>Progresso</span>
+                <span>
+                  {((salesMonth / (metaMensal || 1)) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="h-3 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
+                <div
+                  className="h-full bg-white rounded-full transition-all duration-1000 ease-out"
+                  style={{ width: `${calculateProgress()}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-blue-200 mt-2">
+                {salesMonth >= metaMensal
+                  ? "Parabéns! Você atingiu sua meta mensal! 🚀"
+                  : `Faltam ${formatCurrency(
+                      metaMensal - salesMonth
+                    )} para atingir sua meta.`}
+              </p>
             </div>
-            <div className="h-3 bg-black/20 rounded-full overflow-hidden backdrop-blur-sm">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-1000 ease-out"
-                style={{ width: `${calculateProgress()}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-blue-200 mt-2">
-              {salesMonth >= metaMensal
-                ? "Parabéns! Você atingiu sua meta mensal! 🚀"
-                : `Faltam ${formatCurrency(
-                    metaMensal - salesMonth
-                  )} para atingir sua meta.`}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="mb-6">
         <MuralAvisos />

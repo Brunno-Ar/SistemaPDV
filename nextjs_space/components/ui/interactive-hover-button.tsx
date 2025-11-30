@@ -29,7 +29,9 @@ const InteractiveHoverButton = React.forwardRef<
       <div className="absolute top-0 left-0 z-10 flex h-full w-full items-center justify-center text-primary-foreground opacity-0 transition-all duration-300 group-hover:opacity-100">
         <span>{content}</span>
       </div>
-      <div className="absolute left-[20%] top-[40%] h-2 w-2 scale-[1] rounded-lg bg-primary opacity-0 transition-all duration-300 group-hover:left-[0%] group-hover:top-[0%] group-hover:h-full group-hover:w-full group-hover:scale-[1.8] group-hover:bg-primary group-hover:opacity-100"></div>
+      {!props.disabled && (
+        <div className="absolute left-[20%] top-[40%] h-2 w-2 scale-[1] rounded-lg bg-primary opacity-0 transition-all duration-300 group-hover:left-[0%] group-hover:top-[0%] group-hover:h-full group-hover:w-full group-hover:scale-[1.8] group-hover:bg-primary group-hover:opacity-100"></div>
+      )}
     </button>
   );
 });

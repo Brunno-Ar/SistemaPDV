@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -124,7 +119,9 @@ export default function FuncionarioDetalhes({
 
   const fetchFuncionario = async () => {
     try {
-      const response = await fetch(`/api/admin/equipe/${funcionarioId}`);
+      const response = await fetch(
+        `/api/admin/equipe/${funcionarioId}?t=${new Date().getTime()}`
+      );
       if (!response.ok) throw new Error("Erro ao carregar funcionário");
       const data = await response.json();
       setFuncionario(data);
@@ -147,7 +144,7 @@ export default function FuncionarioDetalhes({
       const response = await fetch(`/api/admin/equipe/${funcionarioId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metaMensal: meta }),
+        body: JSON.stringify({ metaMensal: meta.replace(",", ".") }),
       });
 
       if (!response.ok) throw new Error("Erro ao atualizar meta");
@@ -216,11 +213,7 @@ export default function FuncionarioDetalhes({
         </Badge>
       );
     }
-    return (
-      <Badge variant="destructive">
-        {formatCurrency(val)}
-      </Badge>
-    );
+    return <Badge variant="destructive">{formatCurrency(val)}</Badge>;
   };
 
   if (loading) {
@@ -289,6 +282,7 @@ export default function FuncionarioDetalhes({
               <span className="text-lg font-bold">R$</span>
               <Input
                 type="number"
+                step="0.01"
                 value={meta}
                 onChange={(e) => setMeta(e.target.value)}
                 className="h-8 w-32"
@@ -445,7 +439,10 @@ export default function FuncionarioDetalhes({
                                             <TableCell>
                                               {formatCurrency(mov.valor)}
                                             </TableCell>
-                                            <TableCell className="max-w-[150px] truncate" title={mov.descricao}>
+                                            <TableCell
+                                              className="max-w-[150px] truncate"
+                                              title={mov.descricao}
+                                            >
                                               {mov.descricao || "-"}
                                             </TableCell>
                                           </TableRow>

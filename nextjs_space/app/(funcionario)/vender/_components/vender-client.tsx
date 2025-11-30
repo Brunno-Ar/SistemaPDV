@@ -144,7 +144,7 @@ export default function VenderClient() {
       {finalizing && (
         <div className="fixed inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-xl border dark:border-zinc-800 flex flex-col items-center gap-4">
-            <MessageLoading />
+            <MessageLoading showText={false} />
             <p className="font-medium text-lg text-gray-700 dark:text-gray-300">
               Processando Venda...
             </p>

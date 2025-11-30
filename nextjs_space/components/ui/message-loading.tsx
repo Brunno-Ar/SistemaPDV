@@ -1,6 +1,21 @@
-export function MessageLoading() {
+import { cn } from "@/lib/utils";
+
+interface MessageLoadingProps {
+  className?: string;
+  showText?: boolean;
+}
+
+export function MessageLoading({
+  className,
+  showText = true,
+}: MessageLoadingProps) {
   return (
-    <div className="flex flex-col items-center justify-center space-y-2">
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center space-y-2",
+        className
+      )}
+    >
       <svg
         width="48"
         height="48"
@@ -41,9 +56,11 @@ export function MessageLoading() {
           />
         </circle>
       </svg>
-      <p className="text-sm text-muted-foreground animate-pulse">
-        Carregando...
-      </p>
+      {showText && (
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Carregando...
+        </p>
+      )}
     </div>
   );
 }
