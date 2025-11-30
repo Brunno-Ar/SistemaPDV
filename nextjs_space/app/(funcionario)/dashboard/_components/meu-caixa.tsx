@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +24,7 @@ import {
   RotateCcw,
   History,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -81,7 +78,12 @@ interface DetalhesConferencia {
   };
 }
 
+import { useSession } from "next-auth/react";
+
+// ... (existing imports)
+
 export function MeuCaixa() {
+  const { data: session } = useSession();
   const [caixa, setCaixa] = useState<CaixaStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
@@ -98,8 +100,11 @@ export function MeuCaixa() {
   const [justificativa, setJustificativa] = useState("");
 
   // Estado Conferência
-  const [etapaFechamento, setEtapaFechamento] = useState<"contagem" | "resultado">("contagem");
-  const [resultadoConferencia, setResultadoConferencia] = useState<DetalhesConferencia | null>(null);
+  const [etapaFechamento, setEtapaFechamento] = useState<
+    "contagem" | "resultado"
+  >("contagem");
+  const [resultadoConferencia, setResultadoConferencia] =
+    useState<DetalhesConferencia | null>(null);
   const [temDivergencia, setTemDivergencia] = useState(false);
 
   const router = useRouter();
@@ -138,28 +143,58 @@ export function MeuCaixa() {
       const payload: any = { action };
 
       if (action === "abrir") {
-        const cleanValue = inputValue.replace(',', '.');
+        if (!session?.user?.empresaId && session?.user?.role !== "master") {
+          toast({
+            title: "Erro de Permissão",
+            description: "Seu usuário não está vinculado a uma empresa.",
+            variant: "destructive",
+          });
+          setProcessing(false);
+          return;
+        }
+
+        const cleanValue = inputValue.replace(",", ".");
         const numericValue = parseFloat(cleanValue);
         if (isNaN(numericValue)) throw new Error("Valor inválido.");
         payload.saldoInicial = numericValue;
-      }
-      else if (action === "sangria" || action === "suprimento") {
-        const cleanValue = inputValue.replace(',', '.');
+      } else if (action === "sangria" || action === "suprimento") {
+        const cleanValue = inputValue.replace(",", ".");
         const numericValue = parseFloat(cleanValue);
         if (isNaN(numericValue)) throw new Error("Valor inválido.");
         payload.valor = numericValue;
         payload.descricao = description;
-      }
-      else if (action === "conferir") {
-        payload.valorInformadoDinheiro = parseFloat(valorDinheiro.replace(',', '.') || "0");
-        payload.valorInformadoPix = parseFloat(valorPix.replace(',', '.') || "0");
-        payload.valorInformadoCartao = parseFloat(valorCartao.replace(',', '.') || "0");
-      }
-      else if (action === "fechar") {
-        payload.valorInformadoDinheiro = parseFloat(valorDinheiro.replace(',', '.') || "0");
-        payload.valorInformadoPix = parseFloat(valorPix.replace(',', '.') || "0");
-        payload.valorInformadoCartao = parseFloat(valorCartao.replace(',', '.') || "0");
+      } else if (action === "conferir") {
+        payload.valorInformadoDinheiro = parseFloat(
+          valorDinheiro.replace(",", ".") || "0"
+        );
+        payload.valorInformadoPix = parseFloat(
+          valorPix.replace(",", ".") || "0"
+        );
+        payload.valorInformadoCartao = parseFloat(
+          valorCartao.replace(",", ".") || "0"
+        );
+      } else if (action === "fechar") {
+        payload.valorInformadoDinheiro = parseFloat(
+          valorDinheiro.replace(",", ".") || "0"
+        );
+        payload.valorInformadoPix = parseFloat(
+          valorPix.replace(",", ".") || "0"
+        );
+        payload.valorInformadoCartao = parseFloat(
+          valorCartao.replace(",", ".") || "0"
+        );
         payload.justificativa = justificativa;
+
+        // Client-side validation for divergence
+        if (temDivergencia && !justificativa.trim()) {
+          toast({
+            title: "Erro",
+            description: "Justificativa é obrigatória quando há divergência.",
+            variant: "destructive",
+          });
+          setProcessing(false);
+          return;
+        }
       }
 
       const res = await fetch("/api/caixa", {
@@ -183,9 +218,13 @@ export function MeuCaixa() {
       }
 
       toast({
-        title: action === "fechar" && data.divergencia ? "Fechado com Divergência" : "Sucesso",
+        title:
+          action === "fechar" && data.divergencia
+            ? "Fechado com Divergência"
+            : "Sucesso",
         description: data.message,
-        variant: action === "fechar" && data.divergencia ? "destructive" : "default",
+        variant:
+          action === "fechar" && data.divergencia ? "destructive" : "default",
       });
 
       setDialogOpen(null);
@@ -193,12 +232,15 @@ export function MeuCaixa() {
       setDescription("");
       resetFechamento();
       fetchStatus();
-
     } catch (error: any) {
-      if (error.message && error.message.includes("já possui um caixa aberto")) {
+      if (
+        error.message &&
+        error.message.includes("já possui um caixa aberto")
+      ) {
         toast({
           title: "Atenção",
-          description: "Detectamos que seu caixa já está aberto. Atualizando...",
+          description:
+            "Detectamos que seu caixa já está aberto. Atualizando...",
           variant: "default",
         });
         setDialogOpen(null);
@@ -219,7 +261,10 @@ export function MeuCaixa() {
   };
 
   const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(val);
   };
 
   if (loading) return null;
@@ -243,9 +288,15 @@ export function MeuCaixa() {
             </div>
           </div>
 
-          <Dialog open={dialogOpen === "abrir"} onOpenChange={(o) => setDialogOpen(o ? "abrir" : null)}>
+          <Dialog
+            open={dialogOpen === "abrir"}
+            onOpenChange={(o) => setDialogOpen(o ? "abrir" : null)}
+          >
             <DialogTrigger asChild>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto">
+              <Button
+                size="lg"
+                className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+              >
                 Abrir Caixa
               </Button>
             </DialogTrigger>
@@ -270,8 +321,13 @@ export function MeuCaixa() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setDialogOpen(null)}>Cancelar</Button>
-                <Button onClick={() => handleAction("abrir")} disabled={processing || !inputValue}>
+                <Button variant="outline" onClick={() => setDialogOpen(null)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => handleAction("abrir")}
+                  disabled={processing || !inputValue}
+                >
                   {processing ? "Abrindo..." : "Confirmar Abertura"}
                 </Button>
               </DialogFooter>
@@ -295,25 +351,38 @@ export function MeuCaixa() {
               <h3 className="text-lg font-bold text-green-700 dark:text-green-300">
                 Caixa Aberto
               </h3>
-              <Badge variant="outline" className="text-green-700 border-green-200 bg-green-100">
+              <Badge
+                variant="outline"
+                className="text-green-700 border-green-200 bg-green-100"
+              >
                 ID: {caixa.id.slice(-4)}
               </Badge>
             </div>
             <p className="text-sm text-green-600/80 dark:text-green-400/80">
-              Aberto às {new Date(caixa.dataAbertura).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              Aberto às{" "}
+              {new Date(caixa.dataAbertura).toLocaleTimeString("pt-BR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
           {/* SUPRIMENTO */}
-          <Dialog open={dialogOpen === "suprimento"} onOpenChange={(o) => {
-            setDialogOpen(o ? "suprimento" : null);
-            setInputValue("");
-            setDescription("");
-          }}>
+          <Dialog
+            open={dialogOpen === "suprimento"}
+            onOpenChange={(o) => {
+              setDialogOpen(o ? "suprimento" : null);
+              setInputValue("");
+              setDescription("");
+            }}
+          >
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-green-200 hover:bg-green-100 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/50">
+              <Button
+                variant="outline"
+                className="border-green-200 hover:bg-green-100 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/50"
+              >
                 <ArrowUpCircle className="mr-2 h-4 w-4" />
                 Suprimento
               </Button>
@@ -345,7 +414,10 @@ export function MeuCaixa() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={() => handleAction("suprimento")} disabled={processing}>
+                <Button
+                  onClick={() => handleAction("suprimento")}
+                  disabled={processing}
+                >
                   Confirmar
                 </Button>
               </DialogFooter>
@@ -353,13 +425,19 @@ export function MeuCaixa() {
           </Dialog>
 
           {/* SANGRIA */}
-          <Dialog open={dialogOpen === "sangria"} onOpenChange={(o) => {
-            setDialogOpen(o ? "sangria" : null);
-            setInputValue("");
-            setDescription("");
-          }}>
+          <Dialog
+            open={dialogOpen === "sangria"}
+            onOpenChange={(o) => {
+              setDialogOpen(o ? "sangria" : null);
+              setInputValue("");
+              setDescription("");
+            }}
+          >
             <DialogTrigger asChild>
-              <Button variant="outline" className="border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:hover:bg-red-900/30">
+              <Button
+                variant="outline"
+                className="border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:hover:bg-red-900/30"
+              >
                 <ArrowDownCircle className="mr-2 h-4 w-4" />
                 Sangria
               </Button>
@@ -391,7 +469,11 @@ export function MeuCaixa() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="destructive" onClick={() => handleAction("sangria")} disabled={processing}>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleAction("sangria")}
+                  disabled={processing}
+                >
                   Confirmar Retirada
                 </Button>
               </DialogFooter>
@@ -399,12 +481,18 @@ export function MeuCaixa() {
           </Dialog>
 
           {/* FECHAR CAIXA */}
-          <Dialog open={dialogOpen === "fechar"} onOpenChange={(o) => {
-            setDialogOpen(o ? "fechar" : null);
-            resetFechamento();
-          }}>
+          <Dialog
+            open={dialogOpen === "fechar"}
+            onOpenChange={(o) => {
+              setDialogOpen(o ? "fechar" : null);
+              resetFechamento();
+            }}
+          >
             <DialogTrigger asChild>
-              <Button variant="default" className="bg-green-600 hover:bg-green-700 text-white ml-2">
+              <Button
+                variant="default"
+                className="bg-green-600 hover:bg-green-700 text-white ml-2"
+              >
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Fechar Caixa
               </Button>
@@ -465,9 +553,12 @@ export function MeuCaixa() {
                     <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-md border border-red-200 dark:border-red-900 flex items-start gap-3">
                       <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
                       <div>
-                        <h4 className="font-semibold text-red-700 dark:text-red-400">Divergência Encontrada</h4>
+                        <h4 className="font-semibold text-red-700 dark:text-red-400">
+                          Divergência Encontrada
+                        </h4>
                         <p className="text-sm text-red-600/90 dark:text-red-400/90">
-                          Os valores informados não batem com o sistema. Verifique os detalhes abaixo.
+                          Os valores informados não batem com o sistema.
+                          Verifique os detalhes abaixo.
                         </p>
                       </div>
                     </div>
@@ -475,7 +566,9 @@ export function MeuCaixa() {
                     <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-md border border-green-200 dark:border-green-900 flex items-start gap-3">
                       <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
                       <div>
-                        <h4 className="font-semibold text-green-700 dark:text-green-400">Valores Corretos!</h4>
+                        <h4 className="font-semibold text-green-700 dark:text-green-400">
+                          Valores Corretos!
+                        </h4>
                         <p className="text-sm text-green-600/90 dark:text-green-400/90">
                           O fechamento bateu exatamente com o sistema.
                         </p>
@@ -494,19 +587,44 @@ export function MeuCaixa() {
                     </TableHeader>
                     <TableBody>
                       {[
-                        { label: "Dinheiro", inf: resultadoConferencia.informado.dinheiro, sys: resultadoConferencia.esperado.dinheiro, diff: resultadoConferencia.diferenca.dinheiro },
-                        { label: "Pix", inf: resultadoConferencia.informado.pix, sys: resultadoConferencia.esperado.pix, diff: resultadoConferencia.diferenca.pix },
-                        { label: "Cartão", inf: resultadoConferencia.informado.cartao, sys: resultadoConferencia.esperado.cartao, diff: resultadoConferencia.diferenca.cartao },
+                        {
+                          label: "Dinheiro",
+                          inf: resultadoConferencia.informado.dinheiro,
+                          sys: resultadoConferencia.esperado.dinheiro,
+                          diff: resultadoConferencia.diferenca.dinheiro,
+                        },
+                        {
+                          label: "Pix",
+                          inf: resultadoConferencia.informado.pix,
+                          sys: resultadoConferencia.esperado.pix,
+                          diff: resultadoConferencia.diferenca.pix,
+                        },
+                        {
+                          label: "Cartão",
+                          inf: resultadoConferencia.informado.cartao,
+                          sys: resultadoConferencia.esperado.cartao,
+                          diff: resultadoConferencia.diferenca.cartao,
+                        },
                       ].map((row) => (
                         <TableRow key={row.label}>
-                          <TableCell className="font-medium">{row.label}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(row.inf)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(row.sys)}</TableCell>
-                          <TableCell className={`text-right font-bold ${
-                            Math.abs(row.diff) > 0.009
-                              ? row.diff > 0 ? "text-blue-600" : "text-red-600"
-                              : "text-green-600"
-                          }`}>
+                          <TableCell className="font-medium">
+                            {row.label}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(row.inf)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(row.sys)}
+                          </TableCell>
+                          <TableCell
+                            className={`text-right font-bold ${
+                              Math.abs(row.diff) > 0.009
+                                ? row.diff > 0
+                                  ? "text-blue-600"
+                                  : "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
                             {formatCurrency(row.diff)}
                           </TableCell>
                         </TableRow>
@@ -515,14 +633,24 @@ export function MeuCaixa() {
                   </Table>
 
                   <div className="grid gap-2">
-                    <Label className={temDivergencia ? "text-red-600 font-bold" : ""}>
+                    <Label
+                      className={temDivergencia ? "text-red-600 font-bold" : ""}
+                    >
                       Justificativa {temDivergencia && "(Obrigatório)"}
                     </Label>
                     <Textarea
-                      placeholder={temDivergencia ? "Explique a diferença encontrada..." : "Observações opcionais..."}
+                      placeholder={
+                        temDivergencia
+                          ? "Explique a diferença encontrada..."
+                          : "Observações opcionais..."
+                      }
                       value={justificativa}
                       onChange={(e) => setJustificativa(e.target.value)}
-                      className={temDivergencia && !justificativa ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      className={
+                        temDivergencia && !justificativa
+                          ? "border-red-500 focus-visible:ring-red-500"
+                          : ""
+                      }
                     />
                   </div>
                 </div>
@@ -531,20 +659,39 @@ export function MeuCaixa() {
               <DialogFooter>
                 {etapaFechamento === "contagem" ? (
                   <>
-                    <Button variant="outline" onClick={() => setDialogOpen(null)}>Cancelar</Button>
-                    <Button onClick={() => handleAction("conferir")} disabled={processing}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setDialogOpen(null)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={() => handleAction("conferir")}
+                      disabled={processing}
+                    >
                       {processing ? "Conferindo..." : "Conferir Valores"}
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Button variant="outline" onClick={() => setEtapaFechamento("contagem")}>Voltar</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setEtapaFechamento("contagem")}
+                    >
+                      Voltar
+                    </Button>
                     <Button
                       variant={temDivergencia ? "destructive" : "default"}
                       onClick={() => handleAction("fechar")}
-                      disabled={processing || (temDivergencia && !justificativa.trim())}
+                      disabled={
+                        processing || (temDivergencia && !justificativa.trim())
+                      }
                     >
-                      {processing ? "Finalizando..." : (temDivergencia ? "Finalizar com Divergência" : "Finalizar Fechamento")}
+                      {processing
+                        ? "Finalizando..."
+                        : temDivergencia
+                        ? "Finalizar com Divergência"
+                        : "Finalizar Fechamento"}
                     </Button>
                   </>
                 )}
@@ -579,29 +726,45 @@ export function MeuCaixa() {
                         caixa.movimentacoes.map((mov) => (
                           <TableRow key={mov.id}>
                             <TableCell>
-                              {new Date(mov.dataHora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(mov.dataHora).toLocaleTimeString(
+                                "pt-BR",
+                                { hour: "2-digit", minute: "2-digit" }
+                              )}
                             </TableCell>
                             <TableCell>
                               <Badge
                                 variant={
-                                  mov.tipo === "SUPRIMENTO" || mov.tipo === "ABERTURA" ? "default" : "destructive"
+                                  mov.tipo === "SUPRIMENTO" ||
+                                  mov.tipo === "ABERTURA"
+                                    ? "default"
+                                    : "destructive"
                                 }
                                 className={
-                                  mov.tipo === "ABERTURA" ? "bg-blue-500 hover:bg-blue-600" : ""
+                                  mov.tipo === "ABERTURA"
+                                    ? "bg-blue-500 hover:bg-blue-600"
+                                    : ""
                                 }
                               >
                                 {mov.tipo}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-gray-500">{mov.descricao || "-"}</TableCell>
+                            <TableCell className="text-gray-500">
+                              {mov.descricao || "-"}
+                            </TableCell>
                             <TableCell className="text-right font-medium">
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(mov.valor))}
+                              {new Intl.NumberFormat("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              }).format(Number(mov.valor))}
                             </TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          <TableCell
+                            colSpan={4}
+                            className="text-center text-muted-foreground"
+                          >
                             Nenhuma movimentação registrada.
                           </TableCell>
                         </TableRow>

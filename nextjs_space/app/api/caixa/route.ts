@@ -52,7 +52,8 @@ async function calcularValoresEsperados(userId: string, caixaAberto: any) {
   const saldoInicial = Number(caixaAberto.saldoInicial);
 
   // Money in Drawer = Initial + Sales(Money) + Supply - Bleed
-  const saldoTeoricoDinheiro = saldoInicial + vendasDinheiro + totalSuprimentos - totalSangrias;
+  const saldoTeoricoDinheiro =
+    saldoInicial + vendasDinheiro + totalSuprimentos - totalSangrias;
 
   // Digital Balances (just Sales)
   const saldoTeoricoPix = vendasPix;
@@ -67,7 +68,7 @@ async function calcularValoresEsperados(userId: string, caixaAberto: any) {
     saldoTeoricoDinheiro,
     saldoTeoricoPix,
     saldoTeoricoCartao,
-    totalVendas: vendasDinheiro + vendasPix + vendasCartao
+    totalVendas: vendasDinheiro + vendasPix + vendasCartao,
   };
 }
 
@@ -126,11 +127,18 @@ export async function POST(request: NextRequest) {
       valorInformadoDinheiro,
       valorInformadoPix,
       valorInformadoCartao,
-      justificativa
+      justificativa,
     } = body;
 
     // === ABRIR CAIXA ===
     if (action === "abrir") {
+      console.log(
+        "Tentando abrir caixa. User:",
+        session.user.id,
+        "Empresa:",
+        session.user.empresaId
+      );
+
       const caixaExistente = await prisma.caixa.findFirst({
         where: {
           usuarioId: session.user.id,
@@ -251,14 +259,21 @@ export async function POST(request: NextRequest) {
       const infPix = Number(valorInformadoPix ?? 0);
       const infCartao = Number(valorInformadoCartao ?? 0);
 
-      const dados = await calcularValoresEsperados(session.user.id, caixaAberto);
+      const dados = await calcularValoresEsperados(
+        session.user.id,
+        caixaAberto
+      );
 
       const difDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
       const difPix = infPix - dados.saldoTeoricoPix;
       const difCartao = infCartao - dados.saldoTeoricoCartao;
 
       const totalDivergencia = difDinheiro + difPix + difCartao;
-      const temDivergencia = Math.abs(totalDivergencia) > 0.009 || Math.abs(difDinheiro) > 0.009 || Math.abs(difPix) > 0.009 || Math.abs(difCartao) > 0.009;
+      const temDivergencia =
+        Math.abs(totalDivergencia) > 0.009 ||
+        Math.abs(difDinheiro) > 0.009 ||
+        Math.abs(difPix) > 0.009 ||
+        Math.abs(difCartao) > 0.009;
 
       return NextResponse.json({
         success: true,
@@ -278,9 +293,9 @@ export async function POST(request: NextRequest) {
             dinheiro: difDinheiro,
             pix: difPix,
             cartao: difCartao,
-            total: totalDivergencia
-          }
-        }
+            total: totalDivergencia,
+          },
+        },
       });
     }
 
@@ -291,19 +306,29 @@ export async function POST(request: NextRequest) {
       const infPix = Number(valorInformadoPix ?? 0);
       const infCartao = Number(valorInformadoCartao ?? 0);
 
-      const dados = await calcularValoresEsperados(session.user.id, caixaAberto);
+      const dados = await calcularValoresEsperados(
+        session.user.id,
+        caixaAberto
+      );
 
       const difDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
       const difPix = infPix - dados.saldoTeoricoPix;
       const difCartao = infCartao - dados.saldoTeoricoCartao;
 
       const totalDivergencia = difDinheiro + difPix + difCartao;
-      const temDivergencia = Math.abs(totalDivergencia) > 0.009 || Math.abs(difDinheiro) > 0.009 || Math.abs(difPix) > 0.009 || Math.abs(difCartao) > 0.009;
+      const temDivergencia =
+        Math.abs(totalDivergencia) > 0.009 ||
+        Math.abs(difDinheiro) > 0.009 ||
+        Math.abs(difPix) > 0.009 ||
+        Math.abs(difCartao) > 0.009;
 
       // Backend Validation: Divergence requires Justification
       if (temDivergencia && (!justificativa || justificativa.trim() === "")) {
         return NextResponse.json(
-          { error: "Justificativa é obrigatória quando há divergência de valores." },
+          {
+            error:
+              "Justificativa é obrigatória quando há divergência de valores.",
+          },
           { status: 400 }
         );
       }
@@ -328,12 +353,14 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: temDivergencia ? "Caixa fechado com divergência." : "Caixa fechado com sucesso!",
+        message: temDivergencia
+          ? "Caixa fechado com divergência."
+          : "Caixa fechado com sucesso!",
         caixa: caixaFechado,
         divergencia: temDivergencia,
         detalhes: {
-          diferencaTotal: totalDivergencia
-        }
+          diferencaTotal: totalDivergencia,
+        },
       });
     }
 
