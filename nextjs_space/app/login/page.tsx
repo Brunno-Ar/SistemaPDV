@@ -55,8 +55,10 @@ export default function LoginPage() {
         // Redirecionar baseado no role
         if (session?.user?.role === "master") {
           router.push("/master");
+        } else if (session?.user?.role === "admin") {
+          router.push("/admin");
         } else {
-          router.push("/vender");
+          router.push("/dashboard");
         }
       }
     } catch (error) {
