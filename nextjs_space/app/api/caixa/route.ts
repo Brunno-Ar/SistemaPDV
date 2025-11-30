@@ -98,6 +98,52 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    if (caixaAberto) {
+      // Buscar vendas em dinheiro realizadas após a abertura do caixa
+      const vendas = await prisma.sale.findMany({
+        where: {
+          userId: session.user.id,
+          metodoPagamento: "dinheiro",
+          dataHora: {
+            gte: caixaAberto.dataAbertura,
+          },
+        },
+        orderBy: {
+          dataHora: "desc",
+        },
+      });
+
+      // Unificar movimentações e vendas
+      const movimentosUnificados = [
+        ...caixaAberto.movimentacoes.map((m) => ({
+          id: m.id,
+          tipo: m.tipo,
+          valor: Number(m.valor),
+          descricao: m.descricao,
+          dataHora: m.dataHora,
+        })),
+        ...vendas.map((v) => ({
+          id: v.id,
+          tipo: "VENDA",
+          valor: Number(v.valorTotal),
+          descricao: v.troco
+            ? `Venda (Troco: R$ ${Number(v.troco).toFixed(2)})`
+            : "Venda",
+          dataHora: v.dataHora,
+        })),
+      ].sort(
+        (a, b) =>
+          new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()
+      );
+
+      return NextResponse.json({
+        caixaAberto: {
+          ...caixaAberto,
+          movimentacoes: movimentosUnificados,
+        },
+      });
+    }
+
     return NextResponse.json({ caixaAberto });
   } catch (error) {
     console.error("Erro ao buscar caixa:", error);

@@ -77,6 +77,8 @@ interface UnifiedMovement {
   totalValue?: number;
   items?: MovementItem[];
   paymentMethod?: string;
+  amountPaid?: number;
+  change?: number;
   // Fields for Stock Movements
   productName?: string;
   quantity?: number;
@@ -507,11 +509,25 @@ export default function MovimentacoesClient({
                               </span>
                             </div>
                           ))}
-                          <div className="mt-2 pt-2 border-t dark:border-zinc-700 flex justify-between text-sm font-medium text-gray-900 dark:text-gray-100">
-                            <span>Forma de Pagamento</span>
-                            <span className="capitalize">
-                              {mov.paymentMethod}
-                            </span>
+                          <div className="mt-2 pt-2 border-t dark:border-zinc-700 space-y-1">
+                            <div className="flex justify-between text-sm font-medium text-gray-900 dark:text-gray-100">
+                              <span>Forma de Pagamento</span>
+                              <span className="capitalize">
+                                {mov.paymentMethod}
+                              </span>
+                            </div>
+                            {mov.amountPaid !== undefined && (
+                              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                                <span>Valor Pago</span>
+                                <span>{formatCurrency(mov.amountPaid)}</span>
+                              </div>
+                            )}
+                            {mov.change !== undefined && (
+                              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                                <span>Troco</span>
+                                <span>{formatCurrency(mov.change)}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

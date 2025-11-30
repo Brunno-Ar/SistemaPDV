@@ -141,6 +141,8 @@ export async function GET(request: NextRequest) {
         date: sale.dataHora,
         user: sale.user?.name || "Desconhecido",
         totalValue: Number(sale.valorTotal),
+        amountPaid: sale.valorRecebido ? Number(sale.valorRecebido) : undefined,
+        change: sale.troco ? Number(sale.troco) : undefined,
         items: sale.saleItems.map((item: any) => ({
           productName: item.product.nome,
           quantity: item.quantidade,

@@ -21,6 +21,7 @@ async function descontarLotesFEFO(
   lotesUsados: string[];
   quantidadeTotal: number;
   custoTotalBaixado: number;
+  quantidadeRestante: number;
 }> {
   // 1. Buscar lotes ordenados por validade (FEFO)
   const lotes = await tx.lote.findMany({
@@ -62,17 +63,12 @@ async function descontarLotesFEFO(
     lotesUsados.push(`${lote.numeroLote} (${quantidadeADescontar} un)`);
   }
 
-  // 4. Verificar se conseguiu descontar tudo
-  if (quantidadeRestante > 0) {
-    throw new Error(
-      `Estoque insuficiente nos lotes cadastrados. Faltam ${quantidadeRestante} unidades. Verifique se há lotes cadastrados para este produto.`
-    );
-  }
-
+  // Não lança erro se faltar lote, apenas retorna o restante para tratamento
   return {
     lotesUsados,
     quantidadeTotal: quantidadeNecessaria,
     custoTotalBaixado,
+    quantidadeRestante,
   };
 }
 
@@ -89,6 +85,21 @@ export async function POST(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se o caixa está aberto
+    const caixaAberto = await prisma.caixa.findFirst({
+      where: {
+        usuarioId: session.user.id,
+        status: "ABERTO",
+      },
+    });
+
+    if (!caixaAberto) {
+      return NextResponse.json(
+        { error: "Caixa fechado. Abra o caixa para realizar vendas." },
         { status: 400 }
       );
     }
@@ -113,10 +124,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar e calcular valor total baseado nos itens (preço * quantidade - desconto)
+    // Validar e calcular valor total baseados nos itens
     let valorTotal = 0;
     for (const item of items) {
-      // Validar campos obrigatórios
       if (!item.productId || !item.quantidade || !item.precoUnitario) {
         return NextResponse.json(
           {
@@ -127,7 +137,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validar valores numéricos
       if (item.quantidade <= 0 || item.precoUnitario < 0) {
         return NextResponse.json(
           {
@@ -143,15 +152,13 @@ export async function POST(request: NextRequest) {
       valorTotal += itemTotal;
     }
 
-    // Validar valor total
-    if (valorTotal <= 0) {
+    if (valorTotal < 0) {
       return NextResponse.json(
-        { error: "Valor total da venda deve ser maior que zero" },
+        { error: "Valor total da venda não pode ser negativo" },
         { status: 400 }
       );
     }
 
-    // Validação específica para pagamento em dinheiro
     if (metodoPagamento === "dinheiro") {
       if (valorRecebido === undefined || valorRecebido === null) {
         return NextResponse.json(
@@ -167,7 +174,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verificar estoque e buscar produtos (apenas da empresa do usuário)
     const productIds = items.map((item: any) => item.productId);
     const products = await prisma.product.findMany({
       where: {
@@ -183,7 +189,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar se há estoque suficiente para todos os itens
     for (const item of items) {
       const product = products.find((p: any) => p.id === item.productId);
       if (!product) {
@@ -203,57 +208,55 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Criar a transação de venda com lógica FEFO
     const result = await prisma.$transaction(
       async (tx: any) => {
-        // Criar a venda
         const sale = await tx.sale.create({
           data: {
             userId: session.user.id,
             empresaId: empresaId,
             valorTotal: valorTotal,
             metodoPagamento: metodoPagamento,
-            valorRecebido: metodoPagamento === "dinheiro" ? valorRecebido : null,
+            valorRecebido:
+              metodoPagamento === "dinheiro" ? valorRecebido : null,
             troco: metodoPagamento === "dinheiro" ? troco : null,
           },
         });
 
-        // Criar os itens da venda, aplicar FEFO e atualizar estoque
         for (const item of items) {
           const product = products.find((p: any) => p.id === item.productId)!;
           const descontoAplicado = item.descontoAplicado || 0;
           const subtotal =
             item.quantidade * item.precoUnitario - descontoAplicado;
 
-          // *** APLICAR LÓGICA FEFO PRIMEIRO ***
-          // Para saber o custo real dos lotes que serão consumidos
-          const { lotesUsados, custoTotalBaixado } = await descontarLotesFEFO(
-            tx,
-            item.productId,
-            item.quantidade
-          );
+          // *** APLICAR LÓGICA FEFO ***
+          const { lotesUsados, custoTotalBaixado, quantidadeRestante } =
+            await descontarLotesFEFO(tx, item.productId, item.quantidade);
 
-          // Calcular custo unitário médio real desta venda
-          // Se por algum motivo o custoTotal for 0 (ex: lotes sem custo cadastrado), usa o custo do produto como fallback
+          // Se sobrar quantidade (sem lote), usamos o preço de compra do produto como custo
+          let custoFinal = custoTotalBaixado;
+          if (quantidadeRestante > 0) {
+            const custoFallback = Number(product.precoCompra) || 0;
+            custoFinal += quantidadeRestante * custoFallback;
+            lotesUsados.push(`Sem Lote (${quantidadeRestante} un)`);
+          }
+
           const custoUnitarioReal =
-            custoTotalBaixado > 0
-              ? custoTotalBaixado / item.quantidade
+            custoFinal > 0
+              ? custoFinal / item.quantidade
               : Number(product.precoCompra);
 
-          // Criar item da venda com o CUSTO REAL
           await tx.saleItem.create({
             data: {
               saleId: sale.id,
               productId: item.productId,
               quantidade: item.quantidade,
               precoUnitario: item.precoUnitario,
-              custoUnitario: custoUnitarioReal, // AGORA SIM: Custo preciso baseado nos lotes
+              custoUnitario: custoUnitarioReal,
               descontoAplicado: descontoAplicado,
               subtotal: subtotal,
             },
           });
 
-          // Atualizar estoque do produto (decremento atômico)
           await tx.product.update({
             where: { id: item.productId },
             data: {
@@ -263,14 +266,13 @@ export async function POST(request: NextRequest) {
             },
           });
 
-          // Criar movimentação de estoque com informação dos lotes
           await tx.movimentacaoEstoque.create({
             data: {
               produtoId: item.productId,
               usuarioId: session.user.id,
               empresaId: empresaId,
               tipo: "VENDA",
-              quantidade: -item.quantidade, // Negativo porque é saída
+              quantidade: -item.quantidade,
               motivo: `Venda #${sale.id.substring(
                 0,
                 8
@@ -282,8 +284,8 @@ export async function POST(request: NextRequest) {
         return sale;
       },
       {
-        maxWait: 5000, // Tempo máximo de espera para iniciar a transação
-        timeout: 20000, // Tempo máximo para execução da transação (20s)
+        maxWait: 5000,
+        timeout: 20000,
       }
     );
 
