@@ -53,6 +53,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         // Permitir acesso às rotas de auth
         if (
+          req.nextUrl.pathname === "/" ||
           req.nextUrl.pathname.startsWith("/api/auth") ||
           req.nextUrl.pathname.startsWith("/login") ||
           req.nextUrl.pathname.startsWith("/signup") ||
