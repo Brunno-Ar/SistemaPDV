@@ -131,25 +131,30 @@ export async function POST(request: NextRequest) {
       }
 
       // 1. Calcular vendas em DINHEIRO do usuário desde a abertura
-      const vendasDinheiro = await prisma.sale.aggregate({
+      // Refatorado para usar findMany + reduce para evitar erros de agregação
+      const vendasDinheiro = await prisma.sale.findMany({
         where: {
           userId: session.user.id,
           dataHora: { gte: caixaAberto.dataAbertura },
           metodoPagamento: 'dinheiro'
         },
-        _sum: {
+        select: {
           valorTotal: true
         }
       })
-      const totalVendasDinheiro = Number(vendasDinheiro._sum.valorTotal || 0)
+
+      const totalVendasDinheiro = vendasDinheiro.reduce((acc, venda) => {
+        return acc + Number(venda.valorTotal || 0)
+      }, 0)
 
       // 2. Calcular Movimentações (Sangrias e Suprimentos)
-      const movimentacoes = await prisma.movimentacaoCaixa.groupBy({
-        by: ['tipo'],
+      // Refatorado para usar findMany + reduce
+      const movimentacoes = await prisma.movimentacaoCaixa.findMany({
         where: {
           caixaId: caixaAberto.id
         },
-        _sum: {
+        select: {
+          tipo: true,
           valor: true
         }
       })
@@ -158,10 +163,11 @@ export async function POST(request: NextRequest) {
       let totalSuprimentos = 0
 
       movimentacoes.forEach(mov => {
+        const valor = Number(mov.valor || 0)
         if (mov.tipo === TipoMovimentacaoCaixa.SANGRIA) {
-          totalSangrias = Number(mov._sum.valor || 0)
+          totalSangrias += valor
         } else if (mov.tipo === TipoMovimentacaoCaixa.SUPRIMENTO) {
-          totalSuprimentos = Number(mov._sum.valor || 0)
+          totalSuprimentos += valor
         }
       })
 
