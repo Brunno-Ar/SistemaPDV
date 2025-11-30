@@ -2,9 +2,74 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { TipoMovimentacaoCaixa } from "@prisma/client";
+import { TipoMovimentacaoCaixa, MetodoPagamento } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+
+// Helper function to calculate expected values
+async function calcularValoresEsperados(userId: string, caixaAberto: any) {
+  // 1. Fetch Sales aggregated by payment method since opening
+  const vendas = await prisma.sale.groupBy({
+    by: ["metodoPagamento"],
+    where: {
+      userId: userId,
+      dataHora: { gte: caixaAberto.dataAbertura },
+    },
+    _sum: {
+      valorTotal: true,
+    },
+  });
+
+  const getTotal = (metodo: MetodoPagamento) => {
+    const found = vendas.find((v) => v.metodoPagamento === metodo);
+    return Number(found?._sum.valorTotal || 0);
+  };
+
+  const vendasDinheiro = getTotal("dinheiro");
+  const vendasPix = getTotal("pix");
+  const vendasCredito = getTotal("credito");
+  const vendasDebito = getTotal("debito");
+  const vendasCartao = vendasCredito + vendasDebito;
+
+  // 2. Calculate Movements (Sangrias and Suprimentos)
+  const todasMovimentacoes = await prisma.movimentacaoCaixa.findMany({
+    where: { caixaId: caixaAberto.id },
+  });
+
+  let totalSangrias = 0;
+  let totalSuprimentos = 0;
+
+  todasMovimentacoes.forEach((mov) => {
+    const valor = Number(mov.valor || 0);
+    if (mov.tipo === TipoMovimentacaoCaixa.SANGRIA) {
+      totalSangrias += valor;
+    } else if (mov.tipo === TipoMovimentacaoCaixa.SUPRIMENTO) {
+      totalSuprimentos += valor;
+    }
+  });
+
+  // 3. Calculate Theoretical Balances
+  const saldoInicial = Number(caixaAberto.saldoInicial);
+
+  // Money in Drawer = Initial + Sales(Money) + Supply - Bleed
+  const saldoTeoricoDinheiro = saldoInicial + vendasDinheiro + totalSuprimentos - totalSangrias;
+
+  // Digital Balances (just Sales)
+  const saldoTeoricoPix = vendasPix;
+  const saldoTeoricoCartao = vendasCartao;
+
+  return {
+    vendasDinheiro,
+    vendasPix,
+    vendasCartao,
+    totalSangrias,
+    totalSuprimentos,
+    saldoTeoricoDinheiro,
+    saldoTeoricoPix,
+    saldoTeoricoCartao,
+    totalVendas: vendasDinheiro + vendasPix + vendasCartao
+  };
+}
 
 // GET - Buscar caixa aberto do usuário e status
 export async function GET(request: NextRequest) {
@@ -52,7 +117,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, saldoInicial, valor, descricao, valorInformado } = body;
+    const {
+      action,
+      saldoInicial,
+      valor,
+      descricao,
+      // Novos campos de fechamento
+      valorInformadoDinheiro,
+      valorInformadoPix,
+      valorInformadoCartao,
+      justificativa
+    } = body;
 
     // === ABRIR CAIXA ===
     if (action === "abrir") {
@@ -70,7 +145,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validar Saldo Inicial
       const saldoNum = Number(saldoInicial);
       if (
         saldoInicial === undefined ||
@@ -91,7 +165,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Transaction to create Caixa AND Initial Movement
       const result = await prisma.$transaction(async (tx) => {
         const novoCaixa = await tx.caixa.create({
           data: {
@@ -122,7 +195,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Para as próximas ações, precisamos do caixa aberto
+    // Para ações que exigem caixa aberto
     const caixaAberto = await prisma.caixa.findFirst({
       where: {
         usuarioId: session.user.id,
@@ -171,67 +244,83 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // === CONFERIR (NOVA AÇÃO) ===
+    if (action === "conferir") {
+      // Validate inputs (allow 0)
+      const infDinheiro = Number(valorInformadoDinheiro ?? 0);
+      const infPix = Number(valorInformadoPix ?? 0);
+      const infCartao = Number(valorInformadoCartao ?? 0);
+
+      const dados = await calcularValoresEsperados(session.user.id, caixaAberto);
+
+      const difDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
+      const difPix = infPix - dados.saldoTeoricoPix;
+      const difCartao = infCartao - dados.saldoTeoricoCartao;
+
+      const totalDivergencia = difDinheiro + difPix + difCartao;
+      const temDivergencia = Math.abs(totalDivergencia) > 0.009 || Math.abs(difDinheiro) > 0.009 || Math.abs(difPix) > 0.009 || Math.abs(difCartao) > 0.009;
+
+      return NextResponse.json({
+        success: true,
+        temDivergencia,
+        detalhes: {
+          esperado: {
+            dinheiro: dados.saldoTeoricoDinheiro,
+            pix: dados.saldoTeoricoPix,
+            cartao: dados.saldoTeoricoCartao,
+          },
+          informado: {
+            dinheiro: infDinheiro,
+            pix: infPix,
+            cartao: infCartao,
+          },
+          diferenca: {
+            dinheiro: difDinheiro,
+            pix: difPix,
+            cartao: difCartao,
+            total: totalDivergencia
+          }
+        }
+      });
+    }
+
     // === FECHAR CAIXA ===
     if (action === "fechar") {
-      const valorInfoNum = Number(valorInformado);
-      if (
-        valorInformado === undefined ||
-        valorInformado === null ||
-        isNaN(valorInfoNum) ||
-        valorInfoNum < 0
-      ) {
+      // Inputs
+      const infDinheiro = Number(valorInformadoDinheiro ?? 0);
+      const infPix = Number(valorInformadoPix ?? 0);
+      const infCartao = Number(valorInformadoCartao ?? 0);
+
+      const dados = await calcularValoresEsperados(session.user.id, caixaAberto);
+
+      const difDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
+      const difPix = infPix - dados.saldoTeoricoPix;
+      const difCartao = infCartao - dados.saldoTeoricoCartao;
+
+      const totalDivergencia = difDinheiro + difPix + difCartao;
+      const temDivergencia = Math.abs(totalDivergencia) > 0.009 || Math.abs(difDinheiro) > 0.009 || Math.abs(difPix) > 0.009 || Math.abs(difCartao) > 0.009;
+
+      // Backend Validation: Divergence requires Justification
+      if (temDivergencia && (!justificativa || justificativa.trim() === "")) {
         return NextResponse.json(
-          { error: "Valor informado inválido." },
+          { error: "Justificativa é obrigatória quando há divergência de valores." },
           { status: 400 }
         );
       }
 
-      // 1. Calcular vendas em DINHEIRO do usuário desde a abertura
-      const vendasDinheiro = await prisma.sale.aggregate({
-        where: {
-          userId: session.user.id,
-          dataHora: { gte: caixaAberto.dataAbertura },
-          metodoPagamento: "dinheiro" as any,
-        },
-        _sum: {
-          valorTotal: true,
-        },
-      });
-      const totalVendasDinheiro = Number(vendasDinheiro._sum.valorTotal || 0);
+      // Total Final (Sum of informed values)
+      const saldoFinal = infDinheiro + infPix + infCartao;
 
-      // 2. Calcular Movimentações (Sangrias e Suprimentos)
-      const todasMovimentacoes = await prisma.movimentacaoCaixa.findMany({
-        where: { caixaId: caixaAberto.id },
-      });
-
-      let totalSangrias = 0;
-      let totalSuprimentos = 0;
-
-      todasMovimentacoes.forEach((mov) => {
-        const valor = Number(mov.valor || 0);
-        if (mov.tipo === TipoMovimentacaoCaixa.SANGRIA) {
-          totalSangrias += valor;
-        } else if (mov.tipo === TipoMovimentacaoCaixa.SUPRIMENTO) {
-          totalSuprimentos += valor;
-        }
-      });
-
-      // 3. Calcular Saldo Teórico
-      // SaldoTeorico = SaldoInicial + VendasDinheiro + Suprimentos - Sangrias
-      const saldoInicial = Number(caixaAberto.saldoInicial);
-      const saldoTeorico =
-        saldoInicial + totalVendasDinheiro + totalSuprimentos - totalSangrias;
-
-      // 4. Calcular Quebra
-      const valorFinalInformado = Number(valorInformado);
-      const quebraDeCaixa = valorFinalInformado - saldoTeorico;
-
-      // 5. Atualizar Caixa
+      // Update Caixa
       const caixaFechado = await prisma.caixa.update({
         where: { id: caixaAberto.id },
         data: {
-          saldoFinal: valorFinalInformado,
-          quebraDeCaixa: quebraDeCaixa,
+          saldoFinal: saldoFinal,
+          valorInformadoDinheiro: infDinheiro,
+          valorInformadoPix: infPix,
+          valorInformadoCartao: infCartao,
+          justificativa: justificativa,
+          quebraDeCaixa: totalDivergencia, // Total monetário da divergência
           status: "FECHADO",
           dataFechamento: new Date(),
         },
@@ -239,17 +328,12 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: "Caixa fechado com sucesso!",
+        message: temDivergencia ? "Caixa fechado com divergência." : "Caixa fechado com sucesso!",
         caixa: caixaFechado,
+        divergencia: temDivergencia,
         detalhes: {
-          saldoInicial,
-          totalVendasDinheiro,
-          totalSuprimentos,
-          totalSangrias,
-          saldoTeorico,
-          valorInformado: valorFinalInformado,
-          quebraDeCaixa,
-        },
+          diferencaTotal: totalDivergencia
+        }
       });
     }
 
