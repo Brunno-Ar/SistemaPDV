@@ -54,7 +54,7 @@ export function ProductTable({
               <TableHead className="text-gray-700 dark:text-gray-300">
                 Estoque Total
               </TableHead>
-              <TableHead className="text-gray-700 dark:text-gray-300">
+              <TableHead className="text-center text-gray-700 dark:text-gray-300">
                 Lotes
               </TableHead>
               <TableHead className="text-right text-gray-700 dark:text-gray-300">
@@ -134,15 +134,17 @@ export function ProductTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <InteractiveHoverButton
-                      className="h-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-200 dark:border-blue-800 min-w-[120px]"
-                      onClick={() => onManageLots(product)}
-                    >
-                      <span className="flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
-                        Ver Lotes
-                      </span>
-                    </InteractiveHoverButton>
+                    <div className="flex justify-center">
+                      <InteractiveHoverButton
+                        className="flex items-center justify-center h-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 border-blue-200 dark:border-blue-800 min-w-[120px]"
+                        onClick={() => onManageLots(product)}
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          <Layers className="h-4 w-4" />
+                          Ver Lotes
+                        </span>
+                      </InteractiveHoverButton>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-1">

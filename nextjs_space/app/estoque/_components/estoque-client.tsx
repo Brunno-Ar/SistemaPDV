@@ -148,7 +148,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         actions={
           <InteractiveHoverButton
             onClick={() => handleOpenDialog()}
-            className="bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+            className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
           >
             <span className="flex items-center gap-2">
               <Plus className="h-4 w-4" />

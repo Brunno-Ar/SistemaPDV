@@ -580,25 +580,25 @@ export default function EmpresasClient() {
                   </td>
                   <td className="px-6 py-4 align-middle text-center">
                     {empresa.status === "ATIVO" && !inadimplente && (
-                      <span className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border border-green-200 dark:border-green-800">
+                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border border-green-200 dark:border-green-800">
                         <span className="size-2 inline-block bg-green-500 rounded-full"></span>
                         Ativa
                       </span>
                     )}
                     {empresa.status === "PENDENTE" && (
-                      <span className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
+                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
                         <span className="size-2 inline-block bg-yellow-500 rounded-full"></span>
                         Pendente
                       </span>
                     )}
                     {inadimplente && (
-                      <span className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border border-red-200 dark:border-red-800">
+                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border border-red-200 dark:border-red-800">
                         <span className="size-2 inline-block bg-red-500 rounded-full"></span>
                         Inadimplente
                       </span>
                     )}
                     {empresa.status === "PAUSADO" && (
-                      <span className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
                         <span className="size-2 inline-block bg-gray-500 rounded-full"></span>
                         Pausada
                       </span>
@@ -610,7 +610,7 @@ export default function EmpresasClient() {
                   <td className="px-6 py-4 text-right align-middle">
                     <div className="flex items-center justify-end gap-2">
                       <InteractiveHoverButton
-                        className="w-10 min-w-10 px-0 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        className="w-10 min-w-10 px-0 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center justify-center"
                         title="Detalhes"
                         onClick={() =>
                           router.push(`/master/empresas/${empresa.id}`)
@@ -621,7 +621,7 @@ export default function EmpresasClient() {
 
                       {empresa.status === "PENDENTE" && (
                         <InteractiveHoverButton
-                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200"
+                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200 flex items-center justify-center"
                           title="Aprovar Cadastro"
                           onClick={() => handleAction("aprovar", empresa.id)}
                         >
@@ -632,14 +632,14 @@ export default function EmpresasClient() {
                       {empresa.status === "ATIVO" && (
                         <>
                           <InteractiveHoverButton
-                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200"
+                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200 flex items-center justify-center"
                             title="Renovar Plano"
                             onClick={() => handleAction("renovar", empresa.id)}
                           >
                             <RotateCw className="h-5 w-5" />
                           </InteractiveHoverButton>
                           <InteractiveHoverButton
-                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-yellow-600 border-yellow-200"
+                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-yellow-600 border-yellow-200 flex items-center justify-center"
                             title="Pausar"
                             onClick={() => handleAction("pausar", empresa.id)}
                           >
@@ -650,7 +650,7 @@ export default function EmpresasClient() {
 
                       {empresa.status === "PAUSADO" && (
                         <InteractiveHoverButton
-                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200"
+                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200 flex items-center justify-center"
                           title="Reativar"
                           onClick={() => handleAction("reativar", empresa.id)}
                         >
@@ -661,7 +661,7 @@ export default function EmpresasClient() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <InteractiveHoverButton
-                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200"
+                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200 flex items-center justify-center"
                             title="Mais Opções"
                           >
                             <MoreVertical className="h-5 w-5" />
