@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "../(landing)/_components/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { DotScreenShader } from "@/components/DotScreenShader";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -73,7 +74,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-white overflow-hidden">
       {/* Left Side - Art/Visual */}
-      <div className="hidden lg:flex w-1/2 bg-gray-50 dark:bg-zinc-900 relative overflow-hidden items-center justify-center">
+      <div className="hidden lg:flex w-1/2 bg-white dark:bg-black relative overflow-hidden items-center justify-center">
         <div className="absolute top-8 left-8 z-20">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -83,23 +84,12 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 dark:from-blue-900/40 dark:to-purple-900/40 z-0"></div>
+        {/* Background Shader */}
+        <div className="absolute inset-0 z-0">
+          <DotScreenShader />
+        </div>
 
-        {/* Animated Shapes */}
-        <motion.div
-          animate={{
-            rotate: 360,
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl"
-        />
-
-        <div className="relative z-10 max-w-lg text-center p-12">
+        <div className="relative z-10 max-w-lg text-center p-12 pointer-events-none">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
