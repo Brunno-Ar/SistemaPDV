@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mail";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,15 @@ export async function POST(request: NextRequest) {
     if (!email || !password || !nome || !nomeEmpresa) {
       return NextResponse.json(
         { error: "Email, senha, nome e nome da empresa são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Formato de email inválido" },
         { status: 400 }
       );
     }
@@ -79,10 +90,19 @@ export async function POST(request: NextRequest) {
 
     console.log("Transação concluída com sucesso");
 
+    // Enviar email de verificação
+    try {
+      const verificationToken = await generateVerificationToken(email);
+      await sendVerificationEmail(email, verificationToken.token);
+    } catch (emailError) {
+      console.error("Erro ao enviar email de verificação:", emailError);
+      // Não falhar o cadastro se o email falhar, mas logar o erro
+    }
+
     return NextResponse.json({
       success: true,
       message:
-        "Cadastro realizado com sucesso! Aguarde a aprovação do administrador para acessar o sistema.",
+        "Cadastro realizado com sucesso! Verifique seu email para ativar sua conta e aguarde a aprovação do administrador.",
       empresa: {
         id: result.empresa.id,
         nome: result.empresa.nome,

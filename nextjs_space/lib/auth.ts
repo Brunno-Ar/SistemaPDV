@@ -101,6 +101,7 @@ export const authOptions: AuthOptions = {
         token.vencimentoPlano = (
           user as any
         ).empresa?.vencimentoPlano?.toISOString();
+        token.mustChangePassword = (user as any).mustChangePassword;
         token.lastActivity = Date.now();
       }
 
@@ -118,6 +119,7 @@ export const authOptions: AuthOptions = {
         session.user.empresaId = token.empresaId as string;
         session.user.empresaNome = token.empresaNome as string;
         session.user.vencimentoPlano = token.vencimentoPlano as string;
+        (session.user as any).mustChangePassword = token.mustChangePassword;
         session.lastActivity = token.lastActivity as number;
       }
       return session;

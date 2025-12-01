@@ -209,7 +209,7 @@ export default function LoginPage() {
                   Senha
                 </label>
                 <Link
-                  href="#"
+                  href="/forgot-password"
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
                   Esqueceu a senha?

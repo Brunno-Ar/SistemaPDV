@@ -91,6 +91,7 @@ model User {
   empresaId     String?   @map("empresa_id")
   createdAt     DateTime  @default(now()) @map("created_at")
   metaMensal    Decimal   @default(0) @map("meta_mensal") @db.Decimal(10, 2)
+  mustChangePassword Boolean @default(false) @map("must_change_password")
 
   accounts      Account[]
   sessions      Session[]

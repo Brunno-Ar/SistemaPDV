@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { InactivityMonitor } from "@/components/inactivity-monitor";
+import { PasswordChangeAlert } from "@/components/PasswordChangeAlert";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <InactivityMonitor />
+          <PasswordChangeAlert />
           {children}
         </Providers>
       </body>
