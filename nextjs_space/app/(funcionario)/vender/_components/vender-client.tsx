@@ -23,7 +23,7 @@ export default function VenderClient() {
   useEffect(() => {
     async function checkCaixa() {
       try {
-        const res = await fetch("/api/caixa");
+        const res = await fetch("/api/caixa", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           // Se não tiver caixa aberto, ou data for null, bloqueia

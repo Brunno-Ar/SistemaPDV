@@ -91,7 +91,7 @@ export function MeuCaixa() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch("/api/caixa");
+      const res = await fetch("/api/caixa", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setCaixa(data.caixaAberto || null);
@@ -113,7 +113,7 @@ export function MeuCaixa() {
       const payload: any = { action };
 
       if (action === "abrir") {
-        if (!session?.user?.empresaId && session?.user?.role !== "master") {
+        if (!session?.user?.empresaId) {
           toast({
             title: "Erro de Permissão",
             description: "Seu usuário não está vinculado a uma empresa.",
@@ -155,7 +155,8 @@ export function MeuCaixa() {
       setDialogOpen(null);
       setInputValue("");
       setDescription("");
-      fetchStatus();
+      await fetchStatus();
+      router.refresh();
     } catch (error: any) {
       if (
         error.message &&
@@ -433,9 +434,10 @@ export function MeuCaixa() {
           <FechamentoCaixaDialog
             open={dialogOpen === "fechar"}
             onOpenChange={(open) => !open && setDialogOpen(null)}
-            onSuccess={() => {
+            onSuccess={async () => {
               setDialogOpen(null);
-              fetchStatus();
+              await fetchStatus();
+              router.refresh();
             }}
           />
         </div>
