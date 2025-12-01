@@ -72,9 +72,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-white overflow-hidden">
-      {/* Left Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-24 relative z-10">
-        <div className="absolute top-8 left-8">
+      {/* Left Side - Art/Visual */}
+      <div className="hidden lg:flex w-1/2 bg-gray-50 dark:bg-zinc-900 relative overflow-hidden items-center justify-center">
+        <div className="absolute top-8 left-8 z-20">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
               <span className="text-white font-bold text-xl">F</span>
@@ -83,7 +83,100 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="absolute top-8 right-8 lg:hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 dark:from-blue-900/40 dark:to-purple-900/40 z-0"></div>
+
+        {/* Animated Shapes */}
+        <motion.div
+          animate={{
+            rotate: 360,
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+          className="absolute w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl"
+        />
+
+        <div className="relative z-10 max-w-lg text-center p-12">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+          >
+            <h2 className="text-5xl font-bold mb-6 text-gray-900 dark:text-white tracking-tight">
+              Gerencie seu varejo com{" "}
+              <span className="text-blue-600">inteligência.</span>
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+              Junte-se a milhares de lojistas que transformaram suas operações
+              com o Flow PDV.
+            </p>
+          </motion.div>
+
+          {/* Abstract UI Elements */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+            className="mt-12 relative h-64 w-full bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden p-6"
+          >
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                <ArrowRight className="rotate-[-45deg]" />
+              </div>
+              <div className="text-left">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Receita Total
+                </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  R$ 124.500,00
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full w-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "70%" }}
+                  transition={{ delay: 0.8, duration: 1 }}
+                  className="h-full bg-blue-600 rounded-full"
+                />
+              </div>
+              <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full w-3/4 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "50%" }}
+                  transition={{ delay: 1, duration: 1 }}
+                  className="h-full bg-purple-500 rounded-full"
+                />
+              </div>
+              <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full w-1/2 overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "80%" }}
+                  transition={{ delay: 1.2, duration: 1 }}
+                  className="h-full bg-green-500 rounded-full"
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-24 relative z-10">
+        <div className="absolute top-8 left-8 lg:hidden">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+              <span className="text-white font-bold text-xl">F</span>
+            </div>
+            <span className="text-xl font-bold tracking-tight">Flow PDV</span>
+          </Link>
+        </div>
+
+        <div className="absolute top-8 right-8">
           <ThemeToggle />
         </div>
 
@@ -191,94 +284,6 @@ export default function LoginPage() {
             </p>
           </div>
         </motion.div>
-      </div>
-
-      {/* Right Side - Art/Visual */}
-      <div className="hidden lg:flex w-1/2 bg-gray-50 dark:bg-zinc-900 relative overflow-hidden items-center justify-center">
-        <div className="absolute top-8 right-8 z-20">
-          <ThemeToggle />
-        </div>
-
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 dark:from-blue-900/40 dark:to-purple-900/40 z-0"></div>
-
-        {/* Animated Shapes */}
-        <motion.div
-          animate={{
-            rotate: 360,
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-3xl"
-        />
-
-        <div className="relative z-10 max-w-lg text-center p-12">
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-          >
-            <h2 className="text-5xl font-bold mb-6 text-gray-900 dark:text-white tracking-tight">
-              Gerencie seu varejo com{" "}
-              <span className="text-blue-600">inteligência.</span>
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-              Junte-se a milhares de lojistas que transformaram suas operações
-              com o Flow PDV.
-            </p>
-          </motion.div>
-
-          {/* Abstract UI Elements */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="mt-12 relative h-64 w-full bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl border border-gray-100 dark:border-zinc-800 overflow-hidden p-6"
-          >
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
-                <ArrowRight className="rotate-[-45deg]" />
-              </div>
-              <div className="text-left">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Receita Total
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  R$ 124.500,00
-                </div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full w-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "70%" }}
-                  transition={{ delay: 0.8, duration: 1 }}
-                  className="h-full bg-blue-600 rounded-full"
-                />
-              </div>
-              <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full w-3/4 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "50%" }}
-                  transition={{ delay: 1, duration: 1 }}
-                  className="h-full bg-purple-500 rounded-full"
-                />
-              </div>
-              <div className="h-2 bg-gray-100 dark:bg-zinc-800 rounded-full w-1/2 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "80%" }}
-                  transition={{ delay: 1.2, duration: 1 }}
-                  className="h-full bg-green-500 rounded-full"
-                />
-              </div>
-            </div>
-          </motion.div>
-        </div>
       </div>
     </div>
   );
