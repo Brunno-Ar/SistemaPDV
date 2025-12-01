@@ -169,10 +169,12 @@ async function main() {
     console.log("📦 Seeding sample products...");
     for (const produto of produtos) {
       // Verificar se o produto já existe
-      const existingProduct = await prisma.product.findFirst({
+      const existingProduct = await prisma.product.findUnique({
         where: {
-          sku: produto.sku,
-          empresaId: empresa.id,
+          sku_empresaId: {
+            sku: produto.sku,
+            empresaId: empresa.id,
+          },
         },
       });
 
