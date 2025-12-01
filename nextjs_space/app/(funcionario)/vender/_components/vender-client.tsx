@@ -124,7 +124,7 @@ export default function VenderClient() {
   const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
 
   return (
-    <div className="space-y-6 lg:grid lg:grid-cols-5 lg:gap-6 lg:space-y-0 relative">
+    <div className="h-[calc(100vh-6rem)] bg-[#eff2f6] dark:bg-[#101922] p-4 lg:p-6 rounded-3xl overflow-hidden flex flex-col">
       <ClosedRegisterAlert
         open={caixaFechado}
         onRedirect={() => router.push("/dashboard")}
@@ -141,55 +141,63 @@ export default function VenderClient() {
         </div>
       )}
 
-      <div className="lg:col-span-3 space-y-6">
-        <PageHeader
-          title="Ponto de Venda"
-          description={
-            isOffline
-              ? "Modo Offline Ativo"
-              : "Selecione os produtos para venda"
-          }
-          actions={
-            isOffline && (
-              <Badge variant="destructive" className="animate-pulse">
-                Sem Conexão
-              </Badge>
-            )
-          }
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full overflow-hidden">
+        {/* Left Column: Products (60%) */}
+        <div className="lg:col-span-3 flex flex-col h-full overflow-hidden min-h-0">
+          <div className="flex-none">
+            <PageHeader
+              title="Ponto de Venda"
+              description={
+                isOffline
+                  ? "Modo Offline Ativo"
+                  : "Selecione os produtos para venda"
+              }
+              actions={
+                isOffline && (
+                  <Badge variant="destructive" className="animate-pulse">
+                    Sem Conexão
+                  </Badge>
+                )
+              }
+            />
+          </div>
 
-        <ProductGrid
-          products={filteredProducts}
-          onAddToCart={addToCart}
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          searchInputRef={searchInputRef}
-        />
-      </div>
+          <div className="flex-1 min-h-0 mt-6">
+            <ProductGrid
+              products={filteredProducts}
+              onAddToCart={addToCart}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchInputRef={searchInputRef}
+            />
+          </div>
+        </div>
 
-      <div className="lg:col-span-2">
-        <CartSummary
-          cart={cart}
-          onUpdateQuantity={updateCartItemQuantity}
-          onRemove={removeFromCart}
-          onUpdateDiscount={updateCartItemDesconto}
-          paymentMethod={metodoPagamento}
-          onPaymentMethodChange={setMetodoPagamento}
-          valorRecebido={valorRecebido}
-          setValorRecebido={setValorRecebido}
-          troco={
-            valorRecebido !== "" && metodoPagamento === "dinheiro"
-              ? parseCurrency(valorRecebido) - total
-              : null
-          }
-          onFinalize={finalizarVenda}
-          onClear={clearCart}
-          isOffline={isOffline}
-          finalizing={finalizing}
-          paymentError={paymentError}
-          setPaymentError={setPaymentError}
-          total={total}
-        />
+        {/* Right Column: Cart (40%) */}
+        <div className="lg:col-span-2 h-full min-h-0 lg:sticky lg:top-0">
+          <CartSummary
+            cart={cart}
+            onUpdateQuantity={updateCartItemQuantity}
+            onRemove={removeFromCart}
+            onUpdateDiscount={updateCartItemDesconto}
+            paymentMethod={metodoPagamento}
+            onPaymentMethodChange={setMetodoPagamento}
+            valorRecebido={valorRecebido}
+            setValorRecebido={setValorRecebido}
+            troco={
+              valorRecebido !== "" && metodoPagamento === "dinheiro"
+                ? parseCurrency(valorRecebido) - total
+                : null
+            }
+            onFinalize={finalizarVenda}
+            onClear={clearCart}
+            isOffline={isOffline}
+            finalizing={finalizing}
+            paymentError={paymentError}
+            setPaymentError={setPaymentError}
+            total={total}
+          />
+        </div>
       </div>
     </div>
   );

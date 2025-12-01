@@ -61,6 +61,8 @@ const config: Config = {
           "5": "var(--chart-5)",
         },
         "cta-bg": "var(--cta-bg)",
+        "background-light": "#e2e8f0",
+        "card-light": "#ffffff",
       },
       keyframes: {
         "accordion-down": {

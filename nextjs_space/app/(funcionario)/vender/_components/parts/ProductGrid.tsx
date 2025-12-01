@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Package } from "lucide-react";
 import Image from "next/image";
 import { Product } from "@/hooks/use-pos";
+import { useState } from "react";
 
 interface ProductGridProps {
   products: Product[];
@@ -46,77 +47,91 @@ export function ProductGrid({
   onSearchChange,
   searchInputRef,
 }: ProductGridProps) {
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+
+  const handleProductClick = (product: Product) => {
+    onAddToCart(product);
+    setLastAddedId(product.id);
+    setTimeout(() => setLastAddedId(null), 300);
+  };
+
   return (
-    <Card>
-      <CardHeader className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            ref={searchInputRef}
-            placeholder="Buscar produtos... (F2)"
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
+    <div className="flex flex-col h-full gap-6">
+      <div className="relative flex-none">
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+        <Input
+          ref={searchInputRef}
+          placeholder="Buscar produtos... (F2)"
+          value={searchTerm}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="h-14 pl-12 rounded-xl shadow-sm bg-white dark:bg-[#182635] border-gray-100 dark:border-gray-700 text-base focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+        />
+      </div>
+
+      <div className="flex-1 overflow-y-auto pr-2">
         {products.length === 0 ? (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-12">
-            <Package className="h-12 sm:h-16 w-12 sm:w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-            <p className="text-base sm:text-lg font-medium">
-              Nenhum produto encontrado
-            </p>
-            <p className="text-xs sm:text-sm mt-2">
+          <div className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+            <div className="bg-white dark:bg-[#182635] p-6 rounded-full shadow-sm mb-4">
+              <Package className="h-10 w-10 text-gray-300 dark:text-gray-600" />
+            </div>
+            <p className="text-lg font-medium">Nenhum produto encontrado</p>
+            <p className="text-sm mt-1 opacity-70">
               {searchTerm
                 ? "Tente buscar com outros termos"
                 : "Cadastre produtos no estoque para começar"}
             </p>
           </div>
         ) : (
-          <div className="grid-responsive">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 pb-4">
             {products.map((product) => (
-              <Card
+              <div
                 key={product.id}
-                className="cursor-pointer hover:shadow-md transition-shadow border border-gray-200 dark:border-zinc-800 hover:border-primary overflow-hidden"
-                onClick={() => onAddToCart(product)}
+                className={`group relative bg-white dark:bg-[#182635] rounded-xl border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-primary/50 transition-all duration-200 cursor-pointer overflow-hidden hover:scale-[1.02] ${
+                  lastAddedId === product.id
+                    ? "ring-2 ring-green-500 scale-95 border-green-500"
+                    : ""
+                }`}
+                onClick={() => handleProductClick(product)}
               >
-                <div className="relative w-full aspect-video bg-gray-100 dark:bg-zinc-800">
+                <div className="aspect-square relative bg-gray-50 dark:bg-zinc-800/50">
                   <ProductImage
                     imagemUrl={product.imagemUrl}
                     nome={product.nome}
                   />
+                  <Badge
+                    variant={
+                      product.estoqueAtual > 0 ? "secondary" : "destructive"
+                    }
+                    className={`absolute top-2 right-2 text-[10px] h-5 px-1.5 backdrop-blur-sm ${
+                      product.estoqueAtual > 0
+                        ? "bg-white/90 text-gray-700 dark:bg-black/50 dark:text-gray-200"
+                        : ""
+                    }`}
+                  >
+                    {product.estoqueAtual > 0
+                      ? `${product.estoqueAtual} un.`
+                      : "Sem estoque"}
+                  </Badge>
                 </div>
-                <CardContent className="p-3 sm:p-4">
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-xs sm:text-sm line-clamp-2">
-                      {product.nome}
-                    </h3>
-                    <div className="flex justify-between items-center gap-2">
-                      <span className="text-base sm:text-lg font-bold text-green-600 dark:text-green-400">
-                        R$ {product.precoVenda.toFixed(2)}
-                      </span>
-                      <Badge
-                        variant={
-                          product.estoqueAtual > 0 ? "default" : "destructive"
-                        }
-                        className="text-xs"
-                      >
-                        {product.estoqueAtual > 0
-                          ? `${product.estoqueAtual} un.`
-                          : "Sem estoque"}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      SKU: {product.sku}
-                    </div>
+
+                <div className="p-3 space-y-1">
+                  <h3 className="font-bold text-sm text-gray-800 dark:text-gray-200 line-clamp-2 leading-tight min-h-[2.5rem]">
+                    {product.nome}
+                  </h3>
+                  <div className="pt-1 flex items-center justify-between">
+                    <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      R$ {product.precoVenda.toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+                      {product.sku}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
