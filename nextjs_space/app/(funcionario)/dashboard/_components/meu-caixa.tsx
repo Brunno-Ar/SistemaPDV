@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import { formatCurrency, parseCurrency } from "@/lib/utils";
 import {
   Lock,
   Unlock,
@@ -122,14 +123,13 @@ export function MeuCaixa() {
           return;
         }
 
-        const cleanValue = inputValue.replace(",", ".");
-        const numericValue = parseFloat(cleanValue);
-        if (isNaN(numericValue)) throw new Error("Valor inválido.");
+        const numericValue = parseCurrency(inputValue);
+        // Saldo inicial pode ser 0
         payload.saldoInicial = numericValue;
       } else if (action === "sangria" || action === "suprimento") {
-        const cleanValue = inputValue.replace(",", ".");
-        const numericValue = parseFloat(cleanValue);
-        if (isNaN(numericValue)) throw new Error("Valor inválido.");
+        const numericValue = parseCurrency(inputValue);
+        if (numericValue <= 0)
+          throw new Error("Valor deve ser maior que zero.");
         payload.valor = numericValue;
         payload.descricao = description;
       }
@@ -182,13 +182,6 @@ export function MeuCaixa() {
     }
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(val);
-  };
-
   if (loading) return null;
 
   // Renderização: Caixa Fechado
@@ -212,7 +205,13 @@ export function MeuCaixa() {
 
           <Dialog
             open={dialogOpen === "abrir"}
-            onOpenChange={(o) => setDialogOpen(o ? "abrir" : null)}
+            onOpenChange={(o) => {
+              if (!o) {
+                setInputValue("");
+                setDescription("");
+              }
+              setDialogOpen(o ? "abrir" : null);
+            }}
           >
             <DialogTrigger asChild>
               <Button
@@ -314,7 +313,13 @@ export function MeuCaixa() {
         <div className="flex flex-col sm:flex-row gap-2 mb-6">
           <Dialog
             open={dialogOpen === "suprimento"}
-            onOpenChange={(o) => setDialogOpen(o ? "suprimento" : null)}
+            onOpenChange={(o) => {
+              if (!o) {
+                setInputValue("");
+                setDescription("");
+              }
+              setDialogOpen(o ? "suprimento" : null);
+            }}
           >
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -364,7 +369,13 @@ export function MeuCaixa() {
 
           <Dialog
             open={dialogOpen === "sangria"}
-            onOpenChange={(o) => setDialogOpen(o ? "sangria" : null)}
+            onOpenChange={(o) => {
+              if (!o) {
+                setInputValue("");
+                setDescription("");
+              }
+              setDialogOpen(o ? "sangria" : null);
+            }}
           >
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">

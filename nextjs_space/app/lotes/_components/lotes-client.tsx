@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { MessageLoading } from "@/components/ui/message-loading";
+import { parseCurrency } from "@/lib/utils";
 
 interface Product {
   id: string;
@@ -111,8 +112,8 @@ export default function LotesClient() {
 
   // Cálculo automático do Custo Unitário
   useEffect(() => {
-    const qtd = parseFloat(formData.quantidade);
-    const total = parseFloat(formData.valorTotalLote);
+    const qtd = parseCurrency(formData.quantidade);
+    const total = parseCurrency(formData.valorTotalLote);
 
     if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
       const unitario = total / qtd;
@@ -264,7 +265,7 @@ export default function LotesClient() {
         numeroLote: formData.numeroLote,
         dataValidade: semValidade ? null : formData.dataValidade,
         quantidade,
-        precoCompra: parseFloat(formData.precoCompra) || 0,
+        precoCompra: parseCurrency(formData.precoCompra) || 0,
         dataCompra: formData.dataCompra || null,
       };
 

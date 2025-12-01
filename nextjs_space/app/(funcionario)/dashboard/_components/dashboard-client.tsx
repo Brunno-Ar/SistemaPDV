@@ -28,6 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { MuralAvisos } from "@/components/mural-avisos";
 import { MeuCaixa } from "./meu-caixa";
+import { formatCurrency } from "@/lib/utils";
 
 interface DashboardData {
   salesToday: number;
@@ -71,13 +72,6 @@ export default function DashboardClient() {
     }
     fetchData();
   }, []);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
 
   const currentDate = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",

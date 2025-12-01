@@ -50,6 +50,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
 
 interface MovementItem {
   productName: string;
@@ -145,13 +146,6 @@ export default function MovimentacoesClient({
 
     return matchesUser || matchesProduct;
   });
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
 
   const getIcon = (type: string) => {
     switch (type) {

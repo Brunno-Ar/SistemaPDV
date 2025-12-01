@@ -1,4 +1,5 @@
 import { DollarSign, ShoppingBag } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface MasterStatsProps {
   faturamentoTotal: number;
@@ -13,13 +14,6 @@ export function MasterStats({
   empresasAtivas,
   totalProdutos,
 }: MasterStatsProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* Faturamento Total */}

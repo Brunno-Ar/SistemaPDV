@@ -6,6 +6,7 @@ import { Clock, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MuralAvisos } from "@/components/mural-avisos";
+import { formatCurrency } from "@/lib/utils";
 
 interface Sale {
   id: string;
@@ -38,13 +39,6 @@ export default function MinhaContaPage() {
     }
     fetchSales();
   }, []);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
 
   const calculateProgress = () => {
     if (metaMensal === 0) return 0;

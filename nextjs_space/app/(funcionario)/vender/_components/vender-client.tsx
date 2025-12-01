@@ -12,6 +12,7 @@ import {
   SaleSuccessScreen,
   ClosedRegisterAlert,
 } from "./parts";
+import { parseCurrency } from "@/lib/utils";
 
 export default function VenderClient() {
   const router = useRouter();
@@ -178,7 +179,7 @@ export default function VenderClient() {
           setValorRecebido={setValorRecebido}
           troco={
             valorRecebido !== "" && metodoPagamento === "dinheiro"
-              ? (parseFloat(valorRecebido.replace(",", ".")) - total)
+              ? parseCurrency(valorRecebido) - total
               : null
           }
           onFinalize={finalizarVenda}

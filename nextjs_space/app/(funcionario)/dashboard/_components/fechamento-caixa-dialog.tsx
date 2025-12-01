@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
+import { formatCurrency, parseCurrency } from "@/lib/utils";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import {
   Table,
@@ -87,25 +88,14 @@ export function FechamentoCaixaDialog({
     onOpenChange(newOpen);
   };
 
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(val);
-  };
-
   const handleAction = async (action: "conferir" | "fechar") => {
     setProcessing(true);
     try {
       const payload: any = { action };
 
-      payload.valorInformadoDinheiro = parseFloat(
-        valorDinheiro.replace(",", ".") || "0"
-      );
-      payload.valorInformadoPix = parseFloat(valorPix.replace(",", ".") || "0");
-      payload.valorInformadoCartao = parseFloat(
-        valorCartao.replace(",", ".") || "0"
-      );
+      payload.valorInformadoDinheiro = parseCurrency(valorDinheiro);
+      payload.valorInformadoPix = parseCurrency(valorPix);
+      payload.valorInformadoCartao = parseCurrency(valorCartao);
 
       if (action === "fechar") {
         payload.justificativa = justificativa;

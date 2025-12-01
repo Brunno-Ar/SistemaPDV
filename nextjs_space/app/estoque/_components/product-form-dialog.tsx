@@ -19,6 +19,7 @@ import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button
 import { Plus, Package } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
+import { parseCurrency } from "@/lib/utils";
 
 interface Category {
   id: string;
@@ -119,8 +120,8 @@ export function ProductFormDialog({
 
   // Cálculo automático do Custo Unitário (Estoque Inicial)
   useEffect(() => {
-    const qtd = parseFloat(formData.loteInicial);
-    const total = parseFloat(formData.valorTotalLoteInicial);
+    const qtd = parseCurrency(formData.loteInicial);
+    const total = parseCurrency(formData.valorTotalLoteInicial);
 
     if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
       const unitario = total / qtd;
@@ -177,8 +178,8 @@ export function ProductFormDialog({
       return;
     }
 
-    const precoVenda = parseFloat(formData.precoVenda);
-    const precoCompra = parseFloat(formData.precoCompra) || 0;
+    const precoVenda = parseCurrency(formData.precoVenda);
+    const precoCompra = parseCurrency(formData.precoCompra) || 0;
     const estoqueAtual = formData.estoqueAtual
       ? parseInt(formData.estoqueAtual)
       : 0;

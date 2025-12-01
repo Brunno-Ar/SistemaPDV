@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
+import { parseCurrency } from "@/lib/utils";
 
 interface Lote {
   id: string;
@@ -122,7 +123,7 @@ export function LotManagerDialog({
           dataValidade: newLoteData.dataValidade || null,
           quantidade: parseInt(newLoteData.quantidade),
           precoCompra: newLoteData.precoCompra
-            ? parseFloat(newLoteData.precoCompra)
+            ? parseCurrency(newLoteData.precoCompra)
             : 0,
           dataCompra: newLoteData.dataCompra || null,
         }),

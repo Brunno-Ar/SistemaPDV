@@ -11,6 +11,7 @@ import {
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { ShoppingCart, Trash2, Plus, Minus, DollarSign } from "lucide-react";
 import { CartItem } from "@/hooks/use-pos";
+import { parseCurrency } from "@/lib/utils";
 
 interface CartSummaryProps {
   cart: CartItem[];
@@ -142,7 +143,7 @@ export function CartSummary({
                         onChange={(e) =>
                           onUpdateDiscount(
                             item.product.id,
-                            parseFloat(e.target.value) || 0
+                            parseCurrency(e.target.value)
                           )
                         }
                         className="h-7 text-xs"
@@ -233,7 +234,9 @@ export function CartSummary({
                       </span>
                       <span
                         className={`text-lg font-bold ${
-                          troco < 0 ? "text-red-500" : "text-blue-600 dark:text-blue-400"
+                          troco < 0
+                            ? "text-red-500"
+                            : "text-blue-600 dark:text-blue-400"
                         }`}
                       >
                         R$ {troco.toFixed(2)}
@@ -262,9 +265,7 @@ export function CartSummary({
                   isOffline ||
                   (paymentMethod === "dinheiro" &&
                     (valorRecebido === "" ||
-                      (parseFloat(
-                        (valorRecebido || "0").toString().replace(",", ".")
-                      ) < total)))
+                      parseCurrency(valorRecebido || "0") < total))
                 }
               >
                 <span className="flex items-center justify-center gap-2">

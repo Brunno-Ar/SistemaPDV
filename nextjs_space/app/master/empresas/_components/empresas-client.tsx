@@ -16,6 +16,7 @@ import {
   AvisoDialog,
 } from "./parts";
 import { Empresa } from "./parts/types";
+import { formatCurrency } from "@/lib/utils";
 
 export default function EmpresasClient() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -298,13 +299,6 @@ export default function EmpresasClient() {
   const formatDate = (date: string | null) => {
     if (!date) return "-";
     return new Date(date).toLocaleDateString("pt-BR");
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
   };
 
   const isInadimplente = (empresa: Empresa) => {
