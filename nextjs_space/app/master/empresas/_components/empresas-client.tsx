@@ -2,68 +2,22 @@
 
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Search,
-  Plus,
-  MoreVertical,
-  CheckCircle,
-  PauseCircle,
-  RotateCw,
-  Trash2,
-  Eye,
-  Eraser,
-  MessageSquare,
-  Key,
-  ChevronDown,
-} from "lucide-react";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-interface Empresa {
-  id: string;
-  nome: string;
-  status: "PENDENTE" | "ATIVO" | "PAUSADO";
-  vencimentoPlano: string | null;
-  createdAt: string;
-  faturamentoTotal: number;
-  _count: {
-    users: number;
-    products: number;
-    sales: number;
-  };
-}
+  CompaniesToolbar,
+  CompaniesTable,
+  CreateCompanyDialog,
+  DeleteCompanyAlert,
+  ClearDataAlert,
+  ResetPasswordDialog,
+  SuccessPasswordDialog,
+  AvisoDialog,
+} from "./parts";
+import { Empresa } from "./parts/types";
 
 export default function EmpresasClient() {
-  const router = useRouter();
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -89,6 +43,11 @@ export default function EmpresasClient() {
   const [submitting, setSubmitting] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // --- Lógica de Limpeza de Dados ---
+  const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
+  const [clearDataConfirmText, setClearDataConfirmText] = useState("");
+  const [empresaToClear, setEmpresaToClear] = useState<Empresa | null>(null);
 
   useEffect(() => {
     fetchEmpresas();
@@ -263,12 +222,6 @@ export default function EmpresasClient() {
     }
   };
 
-  const handleOpenDeleteDialog = (empresa: Empresa) => {
-    setEmpresaToDelete(empresa);
-    setDeleteConfirmText("");
-    setDeleteDialogOpen(true);
-  };
-
   const handleConfirmDelete = async () => {
     if (!empresaToDelete) return;
 
@@ -302,17 +255,6 @@ export default function EmpresasClient() {
         variant: "destructive",
       });
     }
-  };
-
-  // --- Lógica de Limpeza de Dados ---
-  const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
-  const [clearDataConfirmText, setClearDataConfirmText] = useState("");
-  const [empresaToClear, setEmpresaToClear] = useState<Empresa | null>(null);
-
-  const handleOpenClearDataDialog = (empresa: Empresa) => {
-    setEmpresaToClear(empresa);
-    setClearDataConfirmText("");
-    setClearDataDialogOpen(true);
   };
 
   const handleConfirmClearData = async () => {
@@ -407,527 +349,94 @@ export default function EmpresasClient() {
               </span>
             </InteractiveHoverButton>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Criar Nova Empresa</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="nomeEmpresa">Nome da Empresa</Label>
-                <Input
-                  id="nomeEmpresa"
-                  value={formData.nomeEmpresa}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nomeEmpresa: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="adminNome">Nome do Admin</Label>
-                <Input
-                  id="adminNome"
-                  value={formData.adminNome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, adminNome: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="adminEmail">Email do Admin</Label>
-                <Input
-                  id="adminEmail"
-                  type="email"
-                  value={formData.adminEmail}
-                  onChange={(e) =>
-                    setFormData({ ...formData, adminEmail: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="adminSenha">Senha do Admin</Label>
-                <Input
-                  id="adminSenha"
-                  type="password"
-                  value={formData.adminSenha}
-                  onChange={(e) =>
-                    setFormData({ ...formData, adminSenha: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <InteractiveHoverButton
-                type="submit"
-                className="w-full bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
-                disabled={submitting}
-              >
-                {submitting ? "Criando..." : "Criar Empresa"}
-              </InteractiveHoverButton>
-            </form>
-          </DialogContent>
+          <CreateCompanyDialog
+            open={dialogOpen}
+            onOpenChange={handleDialogChange}
+            onSubmit={handleSubmit}
+            formData={formData}
+            setFormData={setFormData}
+            submitting={submitting}
+          />
         </Dialog>
       </header>
 
       {/* Search and Filters Section */}
-      <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm mb-6">
-        <div className="flex flex-col md:flex-row items-center gap-4">
-          {/* SearchBar */}
-          <div className="w-full md:flex-1">
-            <label className="flex flex-col w-full">
-              <div className="flex w-full flex-1 items-stretch rounded-lg h-14">
-                <div className="text-gray-500 dark:text-gray-400 flex bg-gray-50 dark:bg-zinc-800 items-center justify-center px-4 rounded-l-lg border border-gray-300 dark:border-zinc-700 border-r-0">
-                  <Search className="h-5 w-5" />
-                </div>
-                <input
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 h-14 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 text-base font-normal leading-normal"
-                  placeholder="Buscar por nome..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </label>
-          </div>
-          {/* Chips */}
-          <div className="flex gap-2 flex-wrap items-center justify-center md:justify-end">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mr-2 hidden md:block">
-              Filtros:
-            </p>
-            {["Todos", "Pendente", "Ativa", "Inadimplente", "Pausada"].map(
-              (status) => {
-                let activeClass =
-                  "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"; // Default (Todos)
-                if (status === "Pendente")
-                  activeClass =
-                    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-                if (status === "Ativa")
-                  activeClass =
-                    "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-                if (status === "Inadimplente")
-                  activeClass =
-                    "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-                if (status === "Pausada")
-                  activeClass =
-                    "bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200";
-
-                return (
-                  <button
-                    key={status}
-                    onClick={() => setFilterStatus(status)}
-                    className={`flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full px-4 text-sm font-medium transition-colors ${
-                      filterStatus === status
-                        ? activeClass
-                        : "bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-400"
-                    }`}
-                  >
-                    {status}
-                    {filterStatus === status && (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </button>
-                );
-              }
-            )}
-          </div>
-        </div>
-      </div>
+      <CompaniesToolbar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+      />
 
       {/* Data Table */}
-      <div className="overflow-x-auto bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
-        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-zinc-800/50">
-            <tr>
-              <th className="px-6 py-3" scope="col">
-                Empresa
-              </th>
-              <th className="px-6 py-3" scope="col">
-                Data de Cadastro
-              </th>
-              <th className="px-6 py-3" scope="col">
-                Faturamento
-              </th>
-              <th className="px-6 py-3 text-center" scope="col">
-                Status
-              </th>
-              <th className="px-6 py-3" scope="col">
-                Vencimento
-              </th>
-              <th className="px-6 py-3 text-right" scope="col">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredEmpresas.map((empresa) => {
-              const inadimplente = isInadimplente(empresa);
-              return (
-                <tr
-                  key={empresa.id}
-                  className="bg-white dark:bg-zinc-900 border-b dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
-                >
-                  <th
-                    className="px-6 py-4 font-bold text-gray-900 dark:text-white whitespace-nowrap align-middle"
-                    scope="row"
-                  >
-                    {empresa.nome}
-                  </th>
-                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 align-middle">
-                    {formatDate(empresa.createdAt)}
-                  </td>
-                  <td className="px-6 py-4 font-bold text-green-600 dark:text-green-400 align-middle">
-                    {formatCurrency(empresa.faturamentoTotal)}
-                  </td>
-                  <td className="px-6 py-4 align-middle text-center">
-                    {empresa.status === "ATIVO" && !inadimplente && (
-                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 border border-green-200 dark:border-green-800">
-                        <span className="size-2 inline-block bg-green-500 rounded-full"></span>
-                        Ativa
-                      </span>
-                    )}
-                    {empresa.status === "PENDENTE" && (
-                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800">
-                        <span className="size-2 inline-block bg-yellow-500 rounded-full"></span>
-                        Pendente
-                      </span>
-                    )}
-                    {inadimplente && (
-                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 border border-red-200 dark:border-red-800">
-                        <span className="size-2 inline-block bg-red-500 rounded-full"></span>
-                        Inadimplente
-                      </span>
-                    )}
-                    {empresa.status === "PAUSADO" && (
-                      <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                        <span className="size-2 inline-block bg-gray-500 rounded-full"></span>
-                        Pausada
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 align-middle">
-                    {formatDate(empresa.vencimentoPlano)}
-                  </td>
-                  <td className="px-6 py-4 text-right align-middle">
-                    <div className="flex items-center justify-end gap-2">
-                      <InteractiveHoverButton
-                        className="w-10 min-w-10 px-0 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center justify-center"
-                        title="Detalhes"
-                        onClick={() =>
-                          router.push(`/master/empresas/${empresa.id}`)
-                        }
-                      >
-                        <Eye className="h-5 w-5" />
-                      </InteractiveHoverButton>
+      <CompaniesTable
+        empresas={filteredEmpresas}
+        onAction={handleAction}
+        onDelete={(empresa) => {
+          setEmpresaToDelete(empresa);
+          setDeleteConfirmText("");
+          setDeleteDialogOpen(true);
+        }}
+        onClearData={(empresa) => {
+          setEmpresaToClear(empresa);
+          setClearDataConfirmText("");
+          setClearDataDialogOpen(true);
+        }}
+        onResetPassword={(empresa) => {
+          setEmpresaToReset(empresa);
+          setResetPasswordDialogOpen(true);
+        }}
+        onSendAviso={(empresa) => {
+          setSelectedEmpresa(empresa);
+          setAvisoDialogOpen(true);
+        }}
+        formatDate={formatDate}
+        formatCurrency={formatCurrency}
+        isInadimplente={isInadimplente}
+      />
 
-                      {empresa.status === "PENDENTE" && (
-                        <InteractiveHoverButton
-                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200 flex items-center justify-center"
-                          title="Aprovar Cadastro"
-                          onClick={() => handleAction("aprovar", empresa.id)}
-                        >
-                          <CheckCircle className="h-5 w-5" />
-                        </InteractiveHoverButton>
-                      )}
+      {/* Dialogs */}
+      <AvisoDialog
+        open={avisoDialogOpen}
+        onOpenChange={setAvisoDialogOpen}
+        selectedEmpresa={selectedEmpresa}
+        avisoData={avisoData}
+        setAvisoData={setAvisoData}
+        handleCriarAviso={handleCriarAviso}
+      />
 
-                      {empresa.status === "ATIVO" && (
-                        <>
-                          <InteractiveHoverButton
-                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200 flex items-center justify-center"
-                            title="Renovar Plano"
-                            onClick={() => handleAction("renovar", empresa.id)}
-                          >
-                            <RotateCw className="h-5 w-5" />
-                          </InteractiveHoverButton>
-                          <InteractiveHoverButton
-                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-yellow-600 border-yellow-200 flex items-center justify-center"
-                            title="Pausar"
-                            onClick={() => handleAction("pausar", empresa.id)}
-                          >
-                            <PauseCircle className="h-5 w-5" />
-                          </InteractiveHoverButton>
-                        </>
-                      )}
+      <DeleteCompanyAlert
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        empresaToDelete={empresaToDelete}
+        setEmpresaToDelete={setEmpresaToDelete}
+        deleteConfirmText={deleteConfirmText}
+        setDeleteConfirmText={setDeleteConfirmText}
+        handleConfirmDelete={handleConfirmDelete}
+      />
 
-                      {empresa.status === "PAUSADO" && (
-                        <InteractiveHoverButton
-                          className="w-10 min-w-10 px-0 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800 border-green-200 flex items-center justify-center"
-                          title="Reativar"
-                          onClick={() => handleAction("reativar", empresa.id)}
-                        >
-                          <CheckCircle className="h-5 w-5" />
-                        </InteractiveHoverButton>
-                      )}
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <InteractiveHoverButton
-                            className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200 flex items-center justify-center"
-                            title="Mais Opções"
-                          >
-                            <MoreVertical className="h-5 w-5" />
-                          </InteractiveHoverButton>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setEmpresaToReset(empresa);
-                              setResetPasswordDialogOpen(true);
-                            }}
-                          >
-                            <Key className="mr-2 h-4 w-4" /> Resetar Senha
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedEmpresa(empresa);
-                              setAvisoDialogOpen(true);
-                            }}
-                          >
-                            <MessageSquare className="mr-2 h-4 w-4" /> Enviar
-                            Aviso
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-orange-600 focus:text-orange-600"
-                            onClick={() => handleOpenClearDataDialog(empresa)}
-                          >
-                            <Eraser className="mr-2 h-4 w-4" /> Limpar Dados
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => handleOpenDeleteDialog(empresa)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Empresa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Dialogs (Invisíveis até serem ativados) */}
-      <Dialog open={avisoDialogOpen} onOpenChange={setAvisoDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Criar Aviso para: {selectedEmpresa?.nome}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="mensagem">Mensagem</Label>
-              <Textarea
-                id="mensagem"
-                value={avisoData.mensagem}
-                onChange={(e) =>
-                  setAvisoData({ ...avisoData, mensagem: e.target.value })
-                }
-                placeholder="Digite o aviso..."
-                rows={4}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="importante"
-                checked={avisoData.importante}
-                onChange={(e) =>
-                  setAvisoData({ ...avisoData, importante: e.target.checked })
-                }
-              />
-              <Label htmlFor="importante">Marcar como importante</Label>
-            </div>
-            <InteractiveHoverButton
-              onClick={handleCriarAviso}
-              className="w-full bg-primary text-primary-foreground border-primary hover:bg-primary/90"
-            >
-              Criar Aviso
-            </InteractiveHoverButton>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <p>
-                Esta ação é{" "}
-                <strong className="text-red-600">IRREVERSÍVEL</strong> e
-                excluirá permanentemente a empresa{" "}
-                <strong className="text-black">{empresaToDelete?.nome}</strong>{" "}
-                e todos os dados relacionados.
-              </p>
-              <div className="space-y-2 pt-2">
-                <p className="font-semibold">
-                  Digite{" "}
-                  <span className="text-red-600 font-mono">
-                    {empresaToDelete?.nome}
-                  </span>{" "}
-                  abaixo para confirmar:
-                </p>
-                <Input
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="Digite o nome da empresa"
-                  className="font-mono"
-                />
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <InteractiveHoverButton
-              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
-              onClick={() => {
-                setDeleteConfirmText("");
-                setEmpresaToDelete(null);
-                setDeleteDialogOpen(false);
-              }}
-            >
-              Cancelar
-            </InteractiveHoverButton>
-            <InteractiveHoverButton
-              onClick={handleConfirmDelete}
-              disabled={deleteConfirmText !== empresaToDelete?.nome}
-              className="bg-red-600 hover:bg-red-700 text-white border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Excluir Permanentemente
-            </InteractiveHoverButton>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
+      <ClearDataAlert
         open={clearDataDialogOpen}
         onOpenChange={setClearDataDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Limpar Dados de Teste?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4">
-              <div className="bg-orange-50 border border-orange-200 rounded p-3 text-orange-800 text-sm">
-                ⚠️ <strong>Atenção:</strong> Esta ação é ideal para zerar uma
-                conta após testes.
-              </div>
-              <p>
-                Você está prestes a apagar <strong>TODAS</strong> as
-                movimentações da empresa{" "}
-                <strong className="text-black">{empresaToClear?.nome}</strong>.
-              </p>
-              <div className="space-y-2 pt-2">
-                <p className="font-semibold text-sm">
-                  Digite{" "}
-                  <span className="text-red-600 font-mono">LIMPAR DADOS</span>{" "}
-                  abaixo para confirmar:
-                </p>
-                <Input
-                  value={clearDataConfirmText}
-                  onChange={(e) =>
-                    setClearDataConfirmText(e.target.value.toUpperCase())
-                  }
-                  placeholder="LIMPAR DADOS"
-                  className="font-mono uppercase"
-                />
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <InteractiveHoverButton
-              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
-              onClick={() => {
-                setClearDataConfirmText("");
-                setEmpresaToClear(null);
-                setClearDataDialogOpen(false);
-              }}
-            >
-              Cancelar
-            </InteractiveHoverButton>
-            <InteractiveHoverButton
-              onClick={handleConfirmClearData}
-              disabled={clearDataConfirmText !== "LIMPAR DADOS"}
-              className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Limpar Tudo
-            </InteractiveHoverButton>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        empresaToClear={empresaToClear}
+        setEmpresaToClear={setEmpresaToClear}
+        clearDataConfirmText={clearDataConfirmText}
+        setClearDataConfirmText={setClearDataConfirmText}
+        handleConfirmClearData={handleConfirmClearData}
+      />
 
-      <AlertDialog
+      <ResetPasswordDialog
         open={resetPasswordDialogOpen}
         onOpenChange={setResetPasswordDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Resetar Senha do Administrador?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você está prestes a resetar a senha do admin da empresa{" "}
-              <strong className="text-black">{empresaToReset?.nome}</strong>. A
-              senha temporária será definida como{" "}
-              <strong className="text-black">Mudar123</strong>. O usuário
-              precisará alterá-la no próximo login.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <InteractiveHoverButton
-              className="bg-white hover:bg-gray-50 text-gray-700 border-gray-200"
-              onClick={() => {
-                setResetPasswordDialogOpen(false);
-                setEmpresaToReset(null);
-              }}
-            >
-              Cancelar
-            </InteractiveHoverButton>
-            <InteractiveHoverButton
-              onClick={confirmResetSenha}
-              className="bg-orange-600 hover:bg-orange-700 text-white border-orange-600"
-            >
-              Confirmar Reset
-            </InteractiveHoverButton>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog
+        empresaToReset={empresaToReset}
+        setEmpresaToReset={setEmpresaToReset}
+        confirmResetSenha={confirmResetSenha}
+      />
+
+      <SuccessPasswordDialog
         open={successPasswordDialogOpen}
         onOpenChange={setSuccessPasswordDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-green-600 flex items-center gap-2">
-              <CheckCircle className="h-6 w-6" />
-              Senha Resetada com Sucesso!
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-4 pt-2">
-              <p className="text-base text-gray-700">
-                A senha do administrador foi redefinida para:
-              </p>
-              <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 text-center">
-                <span className="text-2xl font-mono font-bold text-slate-900 dark:text-white tracking-wider select-all">
-                  Mudar123
-                </span>
-              </div>
-              <p className="text-sm text-gray-500">
-                Copie esta senha e envie para o administrador. Ele deverá
-                alterá-la no próximo login.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <InteractiveHoverButton
-              onClick={() => setSuccessPasswordDialogOpen(false)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white border-green-600"
-            >
-              Entendido
-            </InteractiveHoverButton>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      />
     </div>
   );
 }

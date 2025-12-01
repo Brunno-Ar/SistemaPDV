@@ -4,20 +4,14 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MessageLoading } from "@/components/ui/message-loading";
-import SaleCompletedScreen from "./sale-completed-screen";
 import { usePOS } from "@/hooks/use-pos";
-import { ProductGrid } from "./product-grid";
-import { CartSummary } from "./cart-summary";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
+import {
+  ProductGrid,
+  CartSummary,
+  SaleSuccessScreen,
+  ClosedRegisterAlert,
+} from "./parts";
 
 export default function VenderClient() {
   const router = useRouter();
@@ -108,7 +102,7 @@ export default function VenderClient() {
 
   if (showSuccessScreen) {
     return (
-      <SaleCompletedScreen
+      <SaleSuccessScreen
         total={lastSaleTotal}
         paymentMethod={lastPaymentMethod}
         onNewSale={handleNewSale}
@@ -130,22 +124,10 @@ export default function VenderClient() {
 
   return (
     <div className="space-y-6 lg:grid lg:grid-cols-5 lg:gap-6 lg:space-y-0 relative">
-      <AlertDialog open={caixaFechado}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Caixa Fechado</AlertDialogTitle>
-            <AlertDialogDescription>
-              Por favor, abra o caixa no Dashboard para iniciar as vendas. Todas
-              as operações de venda estão bloqueadas até a abertura do caixa.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => router.push("/dashboard")}>
-              Ir para Dashboard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ClosedRegisterAlert
+        open={caixaFechado}
+        onRedirect={() => router.push("/dashboard")}
+      />
 
       {finalizing && (
         <div className="fixed inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center">

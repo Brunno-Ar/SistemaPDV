@@ -3,9 +3,7 @@
 import { PageHeader } from "@/components/ui/page-header";
 import { MessageLoading } from "@/components/ui/message-loading";
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard";
-import { DashboardStats } from "./dashboard-stats";
-import { StockAlerts } from "./stock-alerts";
-import { QuickAccess } from "./quick-access";
+import { StatsCards, StockAlerts, QuickAccess } from "./parts";
 
 export default function DashboardClient() {
   const { produtosEstoqueBaixo, lotesVencimentoProximo, stats, loading } =
@@ -28,7 +26,7 @@ export default function DashboardClient() {
         lotesVencimentoProximo={lotesVencimentoProximo}
       />
 
-      <DashboardStats stats={stats} />
+      <StatsCards stats={stats} />
 
       <QuickAccess />
     </div>
