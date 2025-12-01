@@ -193,6 +193,7 @@ export default function FuncionarioDetalhes({
         formatCurrency={formatCurrency}
       />
 
+      {/* Tabela de Auditoria de Caixa */}
       <CashAuditTable
         caixas={funcionario.caixas}
         formatCurrency={formatCurrency}
