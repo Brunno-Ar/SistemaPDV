@@ -178,8 +178,6 @@ export default function EmpresaDetalheClient({
         </div>
       </div>
 
-      {/* ... (rest of the component) */}
-
       {/* Info Card */}
       <Card>
         <CardHeader>
