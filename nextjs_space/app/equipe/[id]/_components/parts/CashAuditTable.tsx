@@ -92,7 +92,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                               </span>
                             </div>
                           ) : (
-                            <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                            <Badge className="bg-blue-600 hover:bg-blue-700 text-white">
                               Em Aberto
                             </Badge>
                           )}
