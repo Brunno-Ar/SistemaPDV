@@ -80,13 +80,23 @@ export function useProducts({ companyId }: UseProductsProps = {}) {
       let url = `/api/admin/products/${productId}`;
       if (companyId) url += `?companyId=${companyId}`;
       const response = await fetch(url, { method: "DELETE" });
-      if (!response.ok) throw new Error("Erro ao excluir");
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Erro ao excluir");
+      }
+
+      // Optimistic update
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+
       toast({ title: "Sucesso", description: "Produto excluído" });
+
+      // Background re-fetch to ensure consistency
       fetchProducts();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erro",
-        description: "Erro ao excluir produto",
+        description: error.message || "Erro ao excluir produto",
         variant: "destructive",
       });
     }

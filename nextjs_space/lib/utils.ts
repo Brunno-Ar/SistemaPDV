@@ -24,16 +24,18 @@ export function formatCurrency(value: number): string {
 
 export function parseCurrency(value: string): number {
   if (!value) return 0;
-  // Remove everything that is not a digit or a comma/dot
-  const cleanValue = value.replace(/[^\d.,]/g, "");
 
-  // If it has a comma, it might be using comma as decimal separator
-  // We assume pt-BR format where dot is thousands separator and comma is decimal
-  // Example: 1.000,00 -> 1000.00
-  // Example: 10,50 -> 10.50
+  // Remove everything that is not a digit, comma, dot, or minus sign
+  const cleanValue = value.replace(/[^\d.,-]/g, "");
 
-  // Replace dots with empty string (thousands separator)
-  // Replace comma with dot (decimal separator)
+  // Check if it's a standard float format (has dot, no comma) or just an integer
+  if (!cleanValue.includes(",")) {
+    const parsed = parseFloat(cleanValue);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  // If it has a comma, assume pt-BR format (1.000,00)
+  // Remove dots (thousands separators) and replace comma with dot
   const normalized = cleanValue.replace(/\./g, "").replace(",", ".");
 
   const parsed = parseFloat(normalized);

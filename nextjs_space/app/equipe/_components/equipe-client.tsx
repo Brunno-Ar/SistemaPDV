@@ -59,8 +59,8 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
     try {
       // 🔥 Incluir companyId se fornecido
       const url = companyId
-        ? `/api/admin/equipe?companyId=${companyId}`
-        : "/api/admin/equipe";
+        ? `/api/admin/equipe?companyId=${companyId}&t=${Date.now()}`
+        : `/api/admin/equipe?t=${Date.now()}`;
 
       const response = await fetch(url);
       if (!response.ok) throw new Error("Erro ao buscar usuários");

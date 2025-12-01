@@ -216,6 +216,30 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Check for sales
+    const hasSales = await prisma.sale.findFirst({
+      where: { userId: id },
+    });
+
+    if (hasSales) {
+      return NextResponse.json(
+        {
+          error: "Não é possível excluir funcionário com histórico de vendas.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Delete related records to avoid foreign key constraint errors
+    await prisma.movimentacaoEstoque.deleteMany({ where: { usuarioId: id } });
+    await prisma.movimentacaoCaixa.deleteMany({ where: { usuarioId: id } });
+    await prisma.caixa.deleteMany({ where: { usuarioId: id } });
+    await prisma.aviso.deleteMany({
+      where: {
+        OR: [{ remetenteId: id }, { destinatarioId: id }],
+      },
+    });
+
     await prisma.user.delete({
       where: { id },
     });

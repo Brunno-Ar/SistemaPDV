@@ -267,17 +267,20 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    const sold = await prisma.saleItem.findFirst({
+    // Delete associated sale items (WARNING: This alters historical sales data)
+    await prisma.saleItem.deleteMany({
       where: { productId: params.id },
     });
-    if (sold) {
-      return NextResponse.json(
-        {
-          error: "Não é possível excluir este produto pois ele já foi vendido.",
-        },
-        { status: 400 }
-      );
-    }
+    // Delete associated stock movements first
+    await prisma.movimentacaoEstoque.deleteMany({
+      where: { produtoId: params.id },
+    });
+
+    // Delete associated lots (explicitly, though cascade might handle it)
+    await prisma.lote.deleteMany({
+      where: { produtoId: params.id },
+    });
+
     await prisma.product.delete({ where: { id: params.id } });
     return NextResponse.json({ message: "Produto excluído com sucesso" });
   } catch (error) {

@@ -6,11 +6,8 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
-import {
-  EmployeeKPIs,
-  CashAuditTable,
-  EmployeeActions,
-} from "./parts";
+import { EmployeeKPIs, CashAuditTable, EmployeeActions } from "./parts";
+import { parseCurrency } from "@/lib/utils";
 
 interface FuncionarioDetalhesProps {
   funcionarioId: string;
@@ -89,7 +86,7 @@ export default function FuncionarioDetalhes({
       if (!response.ok) throw new Error("Erro ao carregar funcionário");
       const data = await response.json();
       setFuncionario(data);
-      setMeta(data.metaMensal || "0");
+      setMeta(String(data.metaMensal || "0"));
     } catch (error) {
       console.error(error);
       toast({
@@ -105,20 +102,32 @@ export default function FuncionarioDetalhes({
   const handleUpdateMeta = async () => {
     setSavingMeta(true);
     try {
+      // Use parseCurrency to handle both "1000,00" and "1000.00"
+      const numericMeta = parseCurrency(meta);
+
       const response = await fetch(`/api/admin/equipe/${funcionarioId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metaMensal: meta.replace(",", ".") }),
+        body: JSON.stringify({ metaMensal: numericMeta }),
       });
 
       if (!response.ok) throw new Error("Erro ao atualizar meta");
+
+      const updatedData = await response.json();
 
       toast({
         title: "Sucesso",
         description: "Meta mensal atualizada com sucesso!",
       });
-      fetchFuncionario();
+
+      setFuncionario((prev: any) => ({
+        ...prev,
+        metaMensal: updatedData.metaMensal,
+      }));
+      // Update local state with formatted string (pt-BR)
+      setMeta(Number(updatedData.metaMensal).toFixed(2).replace(".", ","));
     } catch (error) {
+      console.error(error);
       toast({
         title: "Erro",
         description: "Falha ao atualizar a meta.",
