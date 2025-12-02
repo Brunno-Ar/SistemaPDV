@@ -20,7 +20,7 @@ import { formatCurrency } from "@/lib/utils";
 
 export default function EmpresasClient() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true); // Removido pois não estava sendo usado na UI
   const [dialogOpen, setDialogOpen] = useState(false);
   const [avisoDialogOpen, setAvisoDialogOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
@@ -40,6 +40,8 @@ export default function EmpresasClient() {
     adminEmail: "",
     adminSenha: "",
     adminNome: "",
+    telefone: "",
+    diaVencimento: 10,
   });
   const [submitting, setSubmitting] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
@@ -69,7 +71,7 @@ export default function EmpresasClient() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -81,6 +83,8 @@ export default function EmpresasClient() {
         adminEmail: "",
         adminSenha: "",
         adminNome: "",
+        telefone: "",
+        diaVencimento: 10,
       });
     }
   };

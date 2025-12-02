@@ -95,7 +95,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nomeEmpresa, adminEmail, adminSenha, adminNome } = body;
+    const {
+      nomeEmpresa,
+      adminEmail,
+      adminSenha,
+      adminNome,
+      telefone,
+      diaVencimento,
+    } = body;
 
     // Validações
     if (!nomeEmpresa || !adminEmail || !adminSenha) {
@@ -123,6 +130,8 @@ export async function POST(request: NextRequest) {
       const empresa = await tx.empresa.create({
         data: {
           nome: nomeEmpresa,
+          telefone: telefone || null,
+          diaVencimento: diaVencimento ? parseInt(diaVencimento) : 10,
         },
       });
 

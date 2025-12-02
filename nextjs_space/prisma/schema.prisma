@@ -17,6 +17,7 @@ enum Role {
   master
   admin
   caixa
+  gerente
 }
 
 enum StatusEmpresa {
@@ -119,7 +120,8 @@ model Empresa {
   nome            String
   status          StatusEmpresa @default(PENDENTE)
   vencimentoPlano DateTime?     @map("vencimento_plano")
-  diaVencimento   Int           @default(1) @map("dia_vencimento")
+  diaVencimento   Int           @default(10) @map("dia_vencimento")
+  telefone        String?
   createdAt       DateTime      @default(now()) @map("created_at")
   dataCriacao     DateTime      @default(now()) @map("data_criacao") // Redundante mas solicitado
 

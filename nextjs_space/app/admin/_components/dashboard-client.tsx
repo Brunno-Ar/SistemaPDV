@@ -21,12 +21,14 @@ export default function DashboardClient() {
     <div className="space-y-6">
       <PageHeader title="Dashboard" description="Visão geral do sistema" />
 
+      {/* KPI Cards first as requested */}
+      <StatsCards stats={stats} />
+
       <StockAlerts
         produtosEstoqueBaixo={produtosEstoqueBaixo}
         lotesVencimentoProximo={lotesVencimentoProximo}
+        topLowStock={stats?.topLowStock}
       />
-
-      <StatsCards stats={stats} />
 
       <QuickAccess />
     </div>
