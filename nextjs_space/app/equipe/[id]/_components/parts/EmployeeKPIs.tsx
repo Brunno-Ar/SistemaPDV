@@ -27,21 +27,16 @@ export function EmployeeKPIs({
   formatCurrency,
 }: EmployeeKPIsProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
+    const value = e.target.value;
 
-    // Allow user to clear input
-    if (rawValue === "") {
-      setMeta("");
-      return;
-    }
+    // Remove everything that is not a digit
+    const digits = value.replace(/\D/g, "");
 
-    // Only allow digits, comma, dot
-    // Better strategy for currency input:
-    // Remove non-digits, divide by 100, format.
-    // This provides a "mask" feel.
+    // Convert to number (divide by 100 for cents)
+    const numberValue = Number(digits) / 100;
 
-    const digitsOnly = rawValue.replace(/\D/g, "");
-    const formatted = (Number(digitsOnly) / 100).toLocaleString("pt-BR", {
+    // Format back to PT-BR currency string
+    const formatted = numberValue.toLocaleString("pt-BR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });

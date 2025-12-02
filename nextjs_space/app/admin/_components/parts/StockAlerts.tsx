@@ -13,8 +13,8 @@ interface Product {
   id: string;
   nome: string;
   sku: string;
-  estoque_atual: number;
-  estoque_minimo: number;
+  estoque_atual?: number;
+  estoque_minimo?: number;
   deficit?: number;
   preco?: number;
   imagem_url?: string;
@@ -85,7 +85,9 @@ export function StockAlerts({
                   produto.estoque_minimo ?? produto.estoqueMinimo ?? 1;
 
                 const percentage =
-                  estoqueMinimo > 0 ? (estoqueAtual / estoqueMinimo) * 100 : 100;
+                  estoqueMinimo > 0
+                    ? (estoqueAtual / estoqueMinimo) * 100
+                    : 100;
                 const isCritical = percentage < 50;
 
                 return (
@@ -147,8 +149,8 @@ export function StockAlerts({
                   size="sm"
                   className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-yellow-900/30 p-0 h-auto"
                 >
-                   <span className="text-xs font-semibold mr-1">Ver Tudo</span>
-                   <ArrowRight className="h-3 w-3" />
+                  <span className="text-xs font-semibold mr-1">Ver Tudo</span>
+                  <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>
             </div>
@@ -170,7 +172,10 @@ export function StockAlerts({
                     className="flex items-center justify-between border-b border-yellow-100 dark:border-yellow-900/30 last:border-0 pb-2 last:pb-0"
                   >
                     <div className="space-y-0.5 max-w-[70%]">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1" title={lote.produto.nome}>
+                      <p
+                        className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1"
+                        title={lote.produto.nome}
+                      >
                         {lote.produto.nome}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">

@@ -43,10 +43,10 @@ export function UpdatePlanDialog({
     if (!date) return;
     setLoading(true);
 
-    const newDate = new Date(date);
-    // Force UTC midnight to avoid timezone shifts if needed, but local date is usually fine for "vencimento"
-    // Ideally we'd set time to end of day.
-    newDate.setHours(23, 59, 59, 999);
+    // Fix: Create date using local time components to avoid timezone shifts
+    // "2026-03-01" -> new Date(2026, 2, 1, 12, 0, 0) -> March 1st 12:00 Local
+    const [year, month, day] = date.split("-").map(Number);
+    const newDate = new Date(year, month - 1, day, 12, 0, 0);
 
     onUpdate({ date: newDate, diaVencimento });
     setLoading(false);
@@ -60,7 +60,9 @@ export function UpdatePlanDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="vencimento">Data Limite Atual (Renovação Manual)</Label>
+            <Label htmlFor="vencimento">
+              Data Limite Atual (Renovação Manual)
+            </Label>
             <Input
               id="vencimento"
               type="date"
@@ -74,7 +76,9 @@ export function UpdatePlanDialog({
           </div>
 
           <div>
-            <Label htmlFor="diaVencimento">Dia de Vencimento (Referência)</Label>
+            <Label htmlFor="diaVencimento">
+              Dia de Vencimento (Referência)
+            </Label>
             <Select
               value={String(diaVencimento)}
               onValueChange={(value) => setDiaVencimento(parseInt(value))}

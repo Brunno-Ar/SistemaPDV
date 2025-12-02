@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 // GET - Listar membros da equipe da empresa do admin
@@ -112,6 +113,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
+    const validRoles = Object.values(Role);
+    if (role && !validRoles.includes(role as Role)) {
+      // Fallback specific check for 'gerente' if it's missing from runtime enum but present in schema
+      if (role === "gerente") {
+        console.warn(
+          "Role 'gerente' requested but not found in Prisma Client Role enum. Client might be stale."
+        );
+      }
+      return NextResponse.json(
+        {
+          error: `Função inválida. Funções permitidas: ${validRoles.join(
+            ", "
+          )}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Extra validation for specific roles allowed to be created here
     if (role && role !== "caixa" && role !== "gerente") {
       return NextResponse.json(
         { error: "Função inválida. Use 'caixa' ou 'gerente'." },
@@ -141,7 +161,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         nome: nome || email.split("@")[0],
         name: nome || email.split("@")[0],
-        role: role || "caixa",
+        role: (role as Role) || Role.caixa,
         empresaId: empresaId,
       },
       select: {

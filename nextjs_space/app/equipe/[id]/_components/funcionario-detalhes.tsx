@@ -102,8 +102,22 @@ export default function FuncionarioDetalhes({
   const handleUpdateMeta = async () => {
     setSavingMeta(true);
     try {
-      // Use parseCurrency to handle both "1000,00" and "1000.00"
-      const numericMeta = parseCurrency(meta);
+      // Robust parsing for PT-BR currency
+      let numericMeta = 0;
+      if (meta) {
+        const cleanValue = meta.replace(/[^\d.,-]/g, "");
+        if (cleanValue.includes(",")) {
+          // PT-BR format: 1.000,00 -> 1000.00
+          numericMeta = parseFloat(
+            cleanValue.replace(/\./g, "").replace(",", ".")
+          );
+        } else {
+          // Plain number: 1000 -> 1000
+          numericMeta = parseFloat(cleanValue);
+        }
+      }
+
+      if (isNaN(numericMeta)) numericMeta = 0;
 
       const response = await fetch(`/api/admin/equipe/${funcionarioId}`, {
         method: "PUT",
@@ -124,8 +138,14 @@ export default function FuncionarioDetalhes({
         ...prev,
         metaMensal: updatedData.metaMensal,
       }));
-      // Update local state with formatted string (pt-BR)
-      setMeta(Number(updatedData.metaMensal).toFixed(2).replace(".", ","));
+
+      // Update local state with formatted string (pt-BR) including thousands separator
+      setMeta(
+        Number(updatedData.metaMensal).toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      );
     } catch (error) {
       console.error(error);
       toast({

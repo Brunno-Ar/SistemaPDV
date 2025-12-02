@@ -81,6 +81,7 @@ export const authOptions: AuthOptions = {
           role: user.role,
           empresaId: user.empresaId,
           empresaNome: user.empresa?.nome,
+          vencimentoPlano: user.empresa?.vencimentoPlano?.toISOString(),
         };
       },
     }),
@@ -100,9 +101,7 @@ export const authOptions: AuthOptions = {
         token.role = user.role;
         token.empresaId = user.empresaId;
         token.empresaNome = (user as any).empresaNome;
-        token.vencimentoPlano = (
-          user as any
-        ).empresa?.vencimentoPlano?.toISOString();
+        token.vencimentoPlano = (user as any).vencimentoPlano;
         token.mustChangePassword = (user as any).mustChangePassword;
         token.lastActivity = Date.now();
       }

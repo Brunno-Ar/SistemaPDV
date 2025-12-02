@@ -134,7 +134,6 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
       toast({
         title: "Erro",
         description: errorMessage,
-        description: error.message,
         variant: "destructive",
       });
     } finally {

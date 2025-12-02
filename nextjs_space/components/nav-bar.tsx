@@ -44,6 +44,7 @@ export function NavBar() {
   const role = session.user.role;
   const isMaster = role === "master";
   const isAdmin = role === "admin";
+  const isGerente = role === "gerente";
   const isCaixa = role === "caixa";
 
   // Navegação para MASTER
@@ -109,6 +110,40 @@ export function NavBar() {
     },
   ];
 
+  // Navegação para GERENTE
+  const gerenteNavItems = [
+    {
+      href: "/admin",
+      label: "Dashboard",
+      icon: Home,
+    },
+    {
+      href: "/vender",
+      label: "Vender",
+      icon: ShoppingCart,
+    },
+    {
+      href: "/estoque",
+      label: "Estoque",
+      icon: Package,
+    },
+    {
+      href: "/lotes",
+      label: "Lotes",
+      icon: Calendar,
+    },
+    {
+      href: "/relatorios",
+      label: "Relatórios",
+      icon: BarChart3,
+    },
+    {
+      href: "/minha-conta",
+      label: "Minha Conta",
+      icon: User,
+    },
+  ];
+
   // Navegação para CAIXA
   const caixaNavItems = [
     {
@@ -132,6 +167,8 @@ export function NavBar() {
     ? masterNavItems
     : isAdmin
     ? adminNavItems
+    : isGerente
+    ? gerenteNavItems
     : caixaNavItems;
 
   return (
@@ -206,6 +243,8 @@ export function NavBar() {
                   ? "Master"
                   : role === "admin"
                   ? "Admin"
+                  : role === "gerente"
+                  ? "Gerente"
                   : "Caixa"}
               </span>
             </div>
@@ -257,6 +296,8 @@ export function NavBar() {
                     ? "Master"
                     : role === "admin"
                     ? "Admin"
+                    : role === "gerente"
+                    ? "Gerente"
                     : "Caixa"}
                 </span>
               </div>
