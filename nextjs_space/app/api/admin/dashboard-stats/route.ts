@@ -11,10 +11,12 @@ export async function GET() {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
-        { error: "Acesso negado. Apenas administradores podem acessar." },
+        { error: "Acesso negado. Apenas administradores e gerentes." },
         { status: 403 }
       );
     }
@@ -41,7 +43,7 @@ export async function GET() {
       where: { empresaId },
     });
 
-    // Produtos com estoque baixo
+    // Produtos com estoque baixo (Count)
     const produtosEstoqueBaixo = await prisma.product.count({
       where: {
         empresaId,
@@ -50,6 +52,43 @@ export async function GET() {
         },
       },
     });
+
+    // Produtos com estoque baixo para o Dashboard (TODOS)
+    const topLowStock = await prisma.product.findMany({
+      where: {
+        empresaId,
+        estoqueMinimo: { gt: 0 }, // Ignora se minimo for 0
+        estoqueAtual: {
+          lt: prisma.product.fields.estoqueMinimo, // Menor que o mínimo
+        },
+      },
+      select: {
+        id: true,
+        nome: true,
+        sku: true,
+        estoqueAtual: true,
+        estoqueMinimo: true,
+        precoVenda: true,
+        imagemUrl: true,
+      },
+    });
+
+    // Ordenar por criticidade (percentual de estoque restante) e formatar
+    // Menor % = Mais crítico
+    const topLowStockSorted = topLowStock
+      .map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        sku: p.sku,
+        estoque_atual: p.estoqueAtual,
+        estoque_minimo: p.estoqueMinimo,
+        deficit: p.estoqueMinimo - p.estoqueAtual,
+        preco: Number(p.precoVenda),
+        imagem_url: p.imagemUrl,
+        criticidade: p.estoqueAtual / p.estoqueMinimo, // Usado apenas para ordenação interna
+      }))
+      .sort((a, b) => a.criticidade - b.criticidade);
+    // .slice(0, 5); // Removido limite para mostrar todos
 
     // Agregação otimizada para Hoje
     const statsHoje = await prisma.sale.aggregate({
@@ -128,6 +167,7 @@ export async function GET() {
       receitaSemana,
       lucroHoje,
       lucroSemana,
+      topLowStock: topLowStockSorted,
     });
   } catch (error) {
     console.error("Erro ao buscar estatísticas do dashboard:", error);

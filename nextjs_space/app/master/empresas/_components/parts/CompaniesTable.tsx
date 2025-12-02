@@ -10,13 +10,13 @@ import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button
 import {
   CheckCircle,
   PauseCircle,
-  RotateCw,
   Trash2,
   Eye,
   Eraser,
   MessageSquare,
   Key,
   MoreVertical,
+  Calendar,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Empresa } from "./types";
@@ -28,6 +28,7 @@ interface CompaniesTableProps {
   onClearData: (empresa: Empresa) => void;
   onResetPassword: (empresa: Empresa) => void;
   onSendAviso: (empresa: Empresa) => void;
+  onUpdatePlan: (empresa: Empresa) => void;
   formatDate: (date: string | null) => string;
   formatCurrency: (value: number) => string;
   isInadimplente: (empresa: Empresa) => boolean;
@@ -40,6 +41,7 @@ export function CompaniesTable({
   onClearData,
   onResetPassword,
   onSendAviso,
+  onUpdatePlan,
   formatDate,
   formatCurrency,
   isInadimplente,
@@ -146,10 +148,10 @@ export function CompaniesTable({
                       <>
                         <InteractiveHoverButton
                           className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200 flex items-center justify-center"
-                          title="Renovar Plano"
-                          onClick={() => onAction("renovar", empresa.id)}
+                          title="Renovar/Alterar Data"
+                          onClick={() => onUpdatePlan(empresa)}
                         >
-                          <RotateCw className="h-5 w-5" />
+                          <Calendar className="h-5 w-5" />
                         </InteractiveHoverButton>
                         <InteractiveHoverButton
                           className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-yellow-600 border-yellow-200 flex items-center justify-center"

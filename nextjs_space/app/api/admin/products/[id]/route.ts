@@ -34,7 +34,7 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master")
+      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         {
@@ -241,7 +241,7 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master")
+      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         {

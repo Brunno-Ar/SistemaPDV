@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { DollarSign, Inbox, Target } from "lucide-react";
 
 interface EmployeeKPIsProps {
-  funcionario: any;
+  funcionario: {
+    totalVendasMes: number | string;
+    _count: {
+      sales: number;
+      caixas: number;
+    };
+  };
   meta: string;
   setMeta: (value: string) => void;
   handleUpdateMeta: () => void;
@@ -20,6 +26,29 @@ export function EmployeeKPIs({
   savingMeta,
   formatCurrency,
 }: EmployeeKPIsProps) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+
+    // Allow user to clear input
+    if (rawValue === "") {
+      setMeta("");
+      return;
+    }
+
+    // Only allow digits, comma, dot
+    // Better strategy for currency input:
+    // Remove non-digits, divide by 100, format.
+    // This provides a "mask" feel.
+
+    const digitsOnly = rawValue.replace(/\D/g, "");
+    const formatted = (Number(digitsOnly) / 100).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    setMeta(formatted);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Card de Vendas */}
@@ -62,14 +91,8 @@ export function EmployeeKPIs({
             <Input
               type="text"
               value={meta}
-              onChange={(e) => setMeta(e.target.value)}
-              onBlur={() => {
-                // Format on blur
-                const val = parseFloat(meta.replace(",", "."));
-                if (!isNaN(val)) {
-                  setMeta(val.toFixed(2).replace(".", ","));
-                }
-              }}
+              onChange={handleChange}
+              placeholder="0,00"
               className="h-8 w-32"
             />
             <Button
@@ -83,12 +106,16 @@ export function EmployeeKPIs({
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             Progresso:{" "}
-            {Number(meta) > 0
-              ? (
-                  (Number(funcionario.totalVendasMes) / Number(meta)) *
-                  100
-                ).toFixed(1)
-              : 0}
+            {(() => {
+              const metaValue = parseFloat(
+                meta.replace(/\./g, "").replace(",", ".")
+              );
+              if (!metaValue || metaValue === 0) return 0;
+              return (
+                (Number(funcionario.totalVendasMes) / metaValue) *
+                100
+              ).toFixed(1);
+            })()}
             %
           </p>
         </CardContent>

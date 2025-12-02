@@ -19,7 +19,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, empresaId, userId, mensagem, importante } = body;
+    const {
+      action,
+      empresaId,
+      userId,
+      mensagem,
+      importante,
+      novoVencimento,
+      novoDiaVencimento,
+    } = body;
 
     // Validações
     if (!action) {
@@ -77,7 +85,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Nova data de vencimento = data atual do vencimento + 30 dias
-        const novoVencimento = empresa.vencimentoPlano
+        const novoVencimentoCalculado = empresa.vencimentoPlano
           ? new Date(
               empresa.vencimentoPlano.getTime() + 30 * 24 * 60 * 60 * 1000
             )
@@ -86,7 +94,7 @@ export async function POST(request: NextRequest) {
         const empresaRenovada = await prisma.empresa.update({
           where: { id: empresaId },
           data: {
-            vencimentoPlano: novoVencimento,
+            vencimentoPlano: novoVencimentoCalculado,
             status: "ATIVO", // Reativar se estiver pausado
           },
         });
@@ -95,6 +103,35 @@ export async function POST(request: NextRequest) {
           success: true,
           message: "Plano renovado com sucesso! (+30 dias)",
           empresa: empresaRenovada,
+        });
+
+      case "updateVencimento":
+        // Atualizar data de vencimento específica e dia de vencimento
+        if (!empresaId || !novoVencimento) {
+          return NextResponse.json(
+            { error: "empresaId e novoVencimento obrigatórios" },
+            { status: 400 }
+          );
+        }
+
+        const dataUpdate: any = {
+          vencimentoPlano: new Date(novoVencimento),
+          status: "ATIVO", // Reativa caso esteja pausado
+        };
+
+        if (novoDiaVencimento) {
+          dataUpdate.diaVencimento = Number(novoDiaVencimento);
+        }
+
+        const empresaAtualizadaData = await prisma.empresa.update({
+          where: { id: empresaId },
+          data: dataUpdate,
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: "Plano atualizado com sucesso!",
+          empresa: empresaAtualizadaData,
         });
 
       case "pausar":

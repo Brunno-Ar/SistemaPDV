@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master")
+      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
     ) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }

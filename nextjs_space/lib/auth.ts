@@ -57,7 +57,9 @@ export const authOptions: AuthOptions = {
 
           // 2. Empresa pausada/suspensa
           if (empresa.status === "PAUSADO") {
-            throw new Error("Conta suspensa. Entre em contato com o suporte.");
+            throw new Error(
+              "Acesso suspenso. Pagamento não identificado. Entre em contato com o suporte."
+            );
           }
 
           // 3. Mensalidade vencida (apenas para empresas ativas)

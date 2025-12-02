@@ -14,13 +14,14 @@ import {
   ResetPasswordDialog,
   SuccessPasswordDialog,
   AvisoDialog,
+  UpdatePlanDialog,
 } from "./parts";
 import { Empresa } from "./parts/types";
 import { formatCurrency } from "@/lib/utils";
 
 export default function EmpresasClient() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true); // Removido pois não estava sendo usado na UI
   const [dialogOpen, setDialogOpen] = useState(false);
   const [avisoDialogOpen, setAvisoDialogOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
@@ -31,6 +32,8 @@ export default function EmpresasClient() {
   const [successPasswordDialogOpen, setSuccessPasswordDialogOpen] =
     useState(false);
   const [empresaToReset, setEmpresaToReset] = useState<Empresa | null>(null);
+  const [updatePlanDialogOpen, setUpdatePlanDialogOpen] = useState(false);
+  const [empresaToUpdatePlan, setEmpresaToUpdatePlan] = useState<Empresa | null>(null);
   const [avisoData, setAvisoData] = useState({
     mensagem: "",
     importante: false,
@@ -40,6 +43,8 @@ export default function EmpresasClient() {
     adminEmail: "",
     adminSenha: "",
     adminNome: "",
+    telefone: "",
+    diaVencimento: 10,
   });
   const [submitting, setSubmitting] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
@@ -69,7 +74,7 @@ export default function EmpresasClient() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -81,6 +86,8 @@ export default function EmpresasClient() {
         adminEmail: "",
         adminSenha: "",
         adminNome: "",
+        telefone: "",
+        diaVencimento: 10,
       });
     }
   };
@@ -384,6 +391,10 @@ export default function EmpresasClient() {
           setSelectedEmpresa(empresa);
           setAvisoDialogOpen(true);
         }}
+        onUpdatePlan={(empresa) => {
+          setEmpresaToUpdatePlan(empresa);
+          setUpdatePlanDialogOpen(true);
+        }}
         formatDate={formatDate}
         formatCurrency={formatCurrency}
         isInadimplente={isInadimplente}
@@ -431,6 +442,52 @@ export default function EmpresasClient() {
         open={successPasswordDialogOpen}
         onOpenChange={setSuccessPasswordDialogOpen}
       />
+
+      {empresaToUpdatePlan && (
+        <UpdatePlanDialog
+          open={updatePlanDialogOpen}
+          onOpenChange={setUpdatePlanDialogOpen}
+          empresa={empresaToUpdatePlan}
+          onUpdate={async ({ date, diaVencimento }) => {
+            try {
+              const response = await fetch("/api/master/empresas/actions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "updateVencimento",
+                  empresaId: empresaToUpdatePlan.id,
+                  novoVencimento: date.toISOString(),
+                  novoDiaVencimento: diaVencimento,
+                }),
+              });
+
+              const data = await response.json();
+
+              if (!response.ok) {
+                throw new Error(data.error || "Erro ao atualizar plano");
+              }
+
+              toast({
+                title: "Sucesso",
+                description: data.message,
+              });
+
+              fetchEmpresas();
+              setUpdatePlanDialogOpen(false);
+              setEmpresaToUpdatePlan(null);
+            } catch (error) {
+              toast({
+                title: "Erro",
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "Erro ao atualizar plano",
+                variant: "destructive",
+              });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
