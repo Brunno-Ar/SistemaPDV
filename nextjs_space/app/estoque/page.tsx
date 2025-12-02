@@ -14,7 +14,7 @@ export default async function EstoquePage() {
   console.log("Estoque Page Session Role:", session.user.role);
 
   // Verificar se é Admin ou Master
-  if (session.user.role !== "admin" && session.user.role !== "master") {
+  if (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
     redirect("/vender");
   }
 

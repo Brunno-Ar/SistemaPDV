@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge";
-import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { AlertTriangle, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import {
@@ -14,9 +13,15 @@ interface Product {
   id: string;
   nome: string;
   sku: string;
-  estoqueAtual: number;
-  estoqueMinimo: number;
+  estoque_atual: number;
+  estoque_minimo: number;
+  deficit?: number;
+  preco?: number;
+  imagem_url?: string;
   criticidade?: number; // Optional as it comes from stats API now
+  // Fallback for legacy prop
+  estoqueAtual?: number;
+  estoqueMinimo?: number;
 }
 
 interface LoteVencimento {
@@ -73,10 +78,14 @@ export function StockAlerts({
           <CardContent>
             <div className="space-y-3">
               {displayProducts.map((produto) => {
+                // Normalize keys (handle both snake_case from API and camelCase from legacy props)
+                const estoqueAtual =
+                  produto.estoque_atual ?? produto.estoqueAtual ?? 0;
+                const estoqueMinimo =
+                  produto.estoque_minimo ?? produto.estoqueMinimo ?? 1;
+
                 const percentage =
-                  produto.estoqueMinimo > 0
-                    ? (produto.estoqueAtual / produto.estoqueMinimo) * 100
-                    : 100;
+                  estoqueMinimo > 0 ? (estoqueAtual / estoqueMinimo) * 100 : 100;
                 const isCritical = percentage < 50;
 
                 return (
@@ -85,12 +94,19 @@ export function StockAlerts({
                     className="flex items-center justify-between border-b border-red-100 dark:border-red-900/30 last:border-0 pb-2 last:pb-0"
                   >
                     <div className="space-y-0.5 max-w-[70%]">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1" title={produto.nome}>
+                      <p
+                        className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1"
+                        title={produto.nome}
+                      >
                         {produto.nome}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 flex gap-2">
-                        <span>Min: {produto.estoqueMinimo}</span>
-                        {/* <span>SKU: {produto.sku}</span> */}
+                        <span>Min: {estoqueMinimo}</span>
+                        {produto.deficit !== undefined && (
+                          <span className="text-red-500 font-medium">
+                            Falta: {produto.deficit}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <Badge
@@ -101,7 +117,7 @@ export function StockAlerts({
                           : "whitespace-nowrap"
                       }
                     >
-                      {produto.estoqueAtual} unid.
+                      {estoqueAtual} unid.
                     </Badge>
                   </div>
                 );

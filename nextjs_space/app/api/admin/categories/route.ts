@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master")
+      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         {

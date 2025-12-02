@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }
@@ -320,7 +320,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }
@@ -398,7 +398,7 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin") {
+    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }

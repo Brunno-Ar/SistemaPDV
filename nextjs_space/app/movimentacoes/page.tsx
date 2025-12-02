@@ -7,7 +7,7 @@ import MovimentacoesClient from "./_components/movimentacoes-client";
 export default async function MovimentacoesPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "admin") {
+  if (!session || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
     redirect("/vender");
   }
 

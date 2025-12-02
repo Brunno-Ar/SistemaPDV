@@ -66,17 +66,27 @@ export async function GET() {
       select: {
         id: true,
         nome: true,
+        sku: true,
         estoqueAtual: true,
         estoqueMinimo: true,
+        precoVenda: true,
+        imagemUrl: true,
       },
     });
 
-    // Ordenar por criticidade (percentual de estoque restante)
+    // Ordenar por criticidade (percentual de estoque restante) e formatar
     // Menor % = Mais crítico
     const topLowStockSorted = topLowStock
       .map((p) => ({
-        ...p,
-        criticidade: p.estoqueAtual / p.estoqueMinimo,
+        id: p.id,
+        nome: p.nome,
+        sku: p.sku,
+        estoque_atual: p.estoqueAtual,
+        estoque_minimo: p.estoqueMinimo,
+        deficit: p.estoqueMinimo - p.estoqueAtual,
+        preco: Number(p.precoVenda),
+        imagem_url: p.imagemUrl,
+        criticidade: p.estoqueAtual / p.estoqueMinimo, // Usado apenas para ordenação interna
       }))
       .sort((a, b) => a.criticidade - b.criticidade)
       .slice(0, 5);

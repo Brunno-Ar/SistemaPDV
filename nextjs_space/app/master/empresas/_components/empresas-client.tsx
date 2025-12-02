@@ -14,6 +14,7 @@ import {
   ResetPasswordDialog,
   SuccessPasswordDialog,
   AvisoDialog,
+  UpdatePlanDialog,
 } from "./parts";
 import { Empresa } from "./parts/types";
 import { formatCurrency } from "@/lib/utils";
@@ -31,6 +32,8 @@ export default function EmpresasClient() {
   const [successPasswordDialogOpen, setSuccessPasswordDialogOpen] =
     useState(false);
   const [empresaToReset, setEmpresaToReset] = useState<Empresa | null>(null);
+  const [updatePlanDialogOpen, setUpdatePlanDialogOpen] = useState(false);
+  const [empresaToUpdatePlan, setEmpresaToUpdatePlan] = useState<Empresa | null>(null);
   const [avisoData, setAvisoData] = useState({
     mensagem: "",
     importante: false,
@@ -388,6 +391,10 @@ export default function EmpresasClient() {
           setSelectedEmpresa(empresa);
           setAvisoDialogOpen(true);
         }}
+        onUpdatePlan={(empresa) => {
+          setEmpresaToUpdatePlan(empresa);
+          setUpdatePlanDialogOpen(true);
+        }}
         formatDate={formatDate}
         formatCurrency={formatCurrency}
         isInadimplente={isInadimplente}
@@ -435,6 +442,24 @@ export default function EmpresasClient() {
         open={successPasswordDialogOpen}
         onOpenChange={setSuccessPasswordDialogOpen}
       />
+
+      {empresaToUpdatePlan && (
+        <UpdatePlanDialog
+          open={updatePlanDialogOpen}
+          onOpenChange={setUpdatePlanDialogOpen}
+          empresa={empresaToUpdatePlan}
+          onUpdate={async (date) => {
+            try {
+              await handleAction("updateVencimento", empresaToUpdatePlan.id, date.toISOString());
+              setUpdatePlanDialogOpen(false);
+              setEmpresaToUpdatePlan(null);
+            } catch (error) {
+               // handleAction already shows toast on error, but re-throw if needed or specific handling
+               console.error(error);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

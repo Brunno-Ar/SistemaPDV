@@ -19,7 +19,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, empresaId, userId, mensagem, importante } = body;
+    const { action, empresaId, userId, mensagem, importante, novoVencimento } =
+      body;
 
     // Validações
     if (!action) {
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Nova data de vencimento = data atual do vencimento + 30 dias
-        const novoVencimento = empresa.vencimentoPlano
+        const novoVencimentoCalculado = empresa.vencimentoPlano
           ? new Date(
               empresa.vencimentoPlano.getTime() + 30 * 24 * 60 * 60 * 1000
             )
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
         const empresaRenovada = await prisma.empresa.update({
           where: { id: empresaId },
           data: {
-            vencimentoPlano: novoVencimento,
+            vencimentoPlano: novoVencimentoCalculado,
             status: "ATIVO", // Reativar se estiver pausado
           },
         });
@@ -95,6 +96,29 @@ export async function POST(request: NextRequest) {
           success: true,
           message: "Plano renovado com sucesso! (+30 dias)",
           empresa: empresaRenovada,
+        });
+
+      case "updateVencimento":
+        // Atualizar data de vencimento específica
+        if (!empresaId || !novoVencimento) {
+          return NextResponse.json(
+            { error: "empresaId e novoVencimento obrigatórios" },
+            { status: 400 }
+          );
+        }
+
+        const empresaAtualizadaData = await prisma.empresa.update({
+          where: { id: empresaId },
+          data: {
+            vencimentoPlano: new Date(novoVencimento),
+            status: "ATIVO", // Reativa caso esteja pausado
+          },
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: "Data de vencimento atualizada!",
+          empresa: empresaAtualizadaData,
         });
 
       case "pausar":

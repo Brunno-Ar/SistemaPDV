@@ -6,3 +6,4 @@ export { ClearDataAlert } from "./ClearDataAlert";
 export { ResetPasswordDialog } from "./ResetPasswordDialog";
 export { SuccessPasswordDialog } from "./SuccessPasswordDialog";
 export { AvisoDialog } from "./AvisoDialog";
+export { UpdatePlanDialog } from "./UpdatePlanDialog";
