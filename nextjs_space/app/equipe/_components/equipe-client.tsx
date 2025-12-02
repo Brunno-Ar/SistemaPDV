@@ -4,7 +4,6 @@ import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button
 import { useSession } from "next-auth/react";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
   Card,
@@ -23,6 +22,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Users, Mail, Calendar } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -48,6 +54,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
     email: "",
     senha: "",
     nome: "",
+    role: "caixa", // Default role
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -113,7 +120,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
 
       toast({
         title: "Sucesso!",
-        description: "Usuário caixa criado com sucesso",
+        description: `Usuário ${formData.role} criado com sucesso`,
       });
 
       // ✅ Fecha o dialog usando o handler que reseta o form
@@ -121,9 +128,12 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
 
       // ✅ Re-fetch após fechar
       fetchUsuarios();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro desconhecido";
       toast({
         title: "Erro",
+        description: errorMessage,
         description: error.message,
         variant: "destructive",
       });
@@ -148,6 +158,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
         email: "",
         senha: "",
         nome: "",
+        role: "caixa",
       });
     }
   };
@@ -168,15 +179,15 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
             <InteractiveHoverButton className="bg-cta-bg hover:bg-cta-bg/90 text-white border-cta-bg">
               <span className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Novo Usuário Caixa
+                Novo Usuário
               </span>
             </InteractiveHoverButton>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[450px]">
             <DialogHeader>
-              <DialogTitle>Criar Novo Usuário Caixa</DialogTitle>
+              <DialogTitle>Criar Novo Usuário</DialogTitle>
               <DialogDescription>
-                Preencha os dados do novo operador de caixa
+                Preencha os dados do novo membro da equipe
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
@@ -188,7 +199,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                   onChange={(e) =>
                     setFormData({ ...formData, nome: e.target.value })
                   }
-                  placeholder="Nome do operador"
+                  placeholder="Nome do usuário"
                 />
               </div>
               <div className="space-y-2">
@@ -203,6 +214,23 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                   placeholder="usuario@email.com"
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Função *</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, role: value })
+                  }
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Selecione a função" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="caixa">Caixa (Operacional)</SelectItem>
+                    <SelectItem value="gerente">Gerente (Gestão)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="senha">Senha *</Label>
@@ -270,6 +298,8 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
                               ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                              : usuario.role === "gerente"
+                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
                               : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                           }`}
                         >
@@ -277,6 +307,8 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                             ? "Admin"
                             : usuario.role === "master"
                             ? "Master"
+                            : usuario.role === "gerente"
+                            ? "Gerente"
                             : "Caixa"}
                         </span>
                       </CardDescription>
@@ -325,6 +357,8 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
                               ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                              : usuario.role === "gerente"
+                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
                               : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                           }`}
                         >
@@ -332,6 +366,8 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                             ? "Admin"
                             : usuario.role === "master"
                             ? "Master"
+                            : usuario.role === "gerente"
+                            ? "Gerente"
                             : "Caixa"}
                         </span>
                       </CardDescription>

@@ -107,10 +107,16 @@ export async function PUT(
 
     const { metaMensal } = await request.json();
 
+    // Fix: Remove points (thousands separator) and replace comma with dot
+    // If metaMensal is "1.000,00", it becomes "1000.00"
+    const metaString = String(metaMensal);
+    const cleanMeta = metaString.replace(/\./g, "").replace(",", ".");
+    const parsedMeta = parseFloat(cleanMeta);
+
     const funcionario = await prisma.user.update({
       where: { id: params.id },
       data: {
-        metaMensal: Number(String(metaMensal).replace(",", ".")),
+        metaMensal: isNaN(parsedMeta) ? 0 : parsedMeta,
       },
     });
 

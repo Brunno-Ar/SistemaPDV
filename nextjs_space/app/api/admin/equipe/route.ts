@@ -101,12 +101,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, senha, nome } = body;
+    const { email, senha, nome, role } = body;
 
     // Validações
     if (!email || !senha) {
       return NextResponse.json(
         { error: "Email e senha são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    // Validate role
+    if (role && role !== "caixa" && role !== "gerente") {
+      return NextResponse.json(
+        { error: "Função inválida. Use 'caixa' ou 'gerente'." },
         { status: 400 }
       );
     }
@@ -126,14 +134,14 @@ export async function POST(request: NextRequest) {
     // Hash da senha
     const hashedPassword = await bcrypt.hash(senha, 10);
 
-    // Criar usuário caixa
+    // Criar usuário
     const novoUsuario = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         nome: nome || email.split("@")[0],
         name: nome || email.split("@")[0],
-        role: "caixa",
+        role: role || "caixa",
         empresaId: empresaId,
       },
       select: {

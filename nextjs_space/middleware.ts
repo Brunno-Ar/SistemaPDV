@@ -13,16 +13,26 @@ export default withAuth(
       }
     }
 
-    // Rotas exclusivas do ADMIN (estoque, relatorios, equipe, movimentacoes, admin, lotes)
+    // Rotas exclusivas do ADMIN/GERENTE (estoque, relatorios, movimentacoes, admin, lotes)
     if (
       path.startsWith("/estoque") ||
       path.startsWith("/relatorios") ||
-      path.startsWith("/equipe") ||
       path.startsWith("/movimentacoes") ||
       path.startsWith("/estoque-baixo") ||
       path.startsWith("/admin") ||
       path.startsWith("/lotes")
     ) {
+      if (
+        token?.role !== "admin" &&
+        token?.role !== "master" &&
+        token?.role !== "gerente"
+      ) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
+    }
+
+    // Rotas EXCLUSIVAS DE ADMIN (equipe, configurações financeiras) - Gerente NÃO acessa
+    if (path.startsWith("/equipe")) {
       if (token?.role !== "admin" && token?.role !== "master") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
       }
@@ -38,11 +48,15 @@ export default withAuth(
       }
     }
 
-    // APIs exclusivas do ADMIN
+    // APIs exclusivas do ADMIN/GERENTE
     if (path.startsWith("/api/admin")) {
-      if (token?.role !== "admin" && token?.role !== "master") {
+      if (
+        token?.role !== "admin" &&
+        token?.role !== "master" &&
+        token?.role !== "gerente"
+      ) {
         return NextResponse.json(
-          { error: "Acesso negado. Apenas administradores." },
+          { error: "Acesso negado. Apenas administradores e gerentes." },
           { status: 403 }
         );
       }

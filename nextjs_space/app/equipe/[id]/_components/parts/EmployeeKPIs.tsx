@@ -4,7 +4,13 @@ import { Button } from "@/components/ui/button";
 import { DollarSign, Inbox, Target } from "lucide-react";
 
 interface EmployeeKPIsProps {
-  funcionario: any;
+  funcionario: {
+    totalVendasMes: number | string;
+    _count: {
+      sales: number;
+      caixas: number;
+    };
+  };
   meta: string;
   setMeta: (value: string) => void;
   handleUpdateMeta: () => void;
@@ -64,10 +70,17 @@ export function EmployeeKPIs({
               value={meta}
               onChange={(e) => setMeta(e.target.value)}
               onBlur={() => {
-                // Format on blur
-                const val = parseFloat(meta.replace(",", "."));
+                // Format on blur - pt-BR
+                const cleanValue = meta.replace(/\./g, "").replace(",", ".");
+                const val = parseFloat(cleanValue);
                 if (!isNaN(val)) {
-                  setMeta(val.toFixed(2).replace(".", ","));
+                  // Re-format to pt-BR string: "1.000,00"
+                  setMeta(
+                    new Intl.NumberFormat("pt-BR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(val)
+                  );
                 }
               }}
               className="h-8 w-32"

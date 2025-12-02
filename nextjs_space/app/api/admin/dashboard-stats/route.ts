@@ -11,10 +11,12 @@ export async function GET() {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
-        { error: "Acesso negado. Apenas administradores podem acessar." },
+        { error: "Acesso negado. Apenas administradores e gerentes." },
         { status: 403 }
       );
     }
@@ -41,7 +43,7 @@ export async function GET() {
       where: { empresaId },
     });
 
-    // Produtos com estoque baixo
+    // Produtos com estoque baixo (Count)
     const produtosEstoqueBaixo = await prisma.product.count({
       where: {
         empresaId,
@@ -50,6 +52,34 @@ export async function GET() {
         },
       },
     });
+
+    // Top 5 Produtos Críticos para o Dashboard
+    const topLowStock = await prisma.product.findMany({
+      where: {
+        empresaId,
+        estoqueMinimo: { gt: 0 }, // Ignora se minimo for 0
+        estoqueAtual: {
+          lt: prisma.product.fields.estoqueMinimo, // Menor que o mínimo
+        },
+        // TODO: Add filter for active products when status field exists
+      },
+      select: {
+        id: true,
+        nome: true,
+        estoqueAtual: true,
+        estoqueMinimo: true,
+      },
+    });
+
+    // Ordenar por criticidade (percentual de estoque restante)
+    // Menor % = Mais crítico
+    const topLowStockSorted = topLowStock
+      .map((p) => ({
+        ...p,
+        criticidade: p.estoqueAtual / p.estoqueMinimo,
+      }))
+      .sort((a, b) => a.criticidade - b.criticidade)
+      .slice(0, 5);
 
     // Agregação otimizada para Hoje
     const statsHoje = await prisma.sale.aggregate({
@@ -128,6 +158,7 @@ export async function GET() {
       receitaSemana,
       lucroHoje,
       lucroSemana,
+      topLowStock: topLowStockSorted,
     });
   } catch (error) {
     console.error("Erro ao buscar estatísticas do dashboard:", error);
