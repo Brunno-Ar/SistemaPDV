@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getFileUrl } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         nome: true,
+        sku: true,
         precoVenda: true,
         estoqueAtual: true,
         imagemUrl: true,
@@ -37,13 +39,24 @@ export async function GET(request: NextRequest) {
       take: 20,
     });
 
-    // Convert Decimal to number for JSON serialization if necessary
-    // Prisma usually handles this but sometimes it returns strings for Decimals.
-    // Let's map to be safe if precoVenda is Decimal.
-    const formattedProducts = products.map((p) => ({
-      ...p,
-      precoVenda: Number(p.precoVenda),
-    }));
+    const formattedProducts = await Promise.all(
+      products.map(async (p) => {
+        let signedUrl = null;
+        if (p.imagemUrl) {
+          try {
+            signedUrl = await getFileUrl(p.imagemUrl, 3600);
+          } catch (e) {
+            console.error(`Erro ao assinar URL para produto ${p.id}`, e);
+          }
+        }
+
+        return {
+          ...p,
+          precoVenda: Number(p.precoVenda),
+          imagemUrl: signedUrl || p.imagemUrl,
+        };
+      })
+    );
 
     return NextResponse.json(formattedProducts);
   } catch (error) {
