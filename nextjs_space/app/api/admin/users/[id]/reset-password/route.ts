@@ -17,6 +17,18 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Se não for master, garante que só reseta usuários da própria empresa
+    if (session.user.role !== "master") {
+      const targetUser = await prisma.user.findUnique({
+        where: { id: params.id },
+        select: { empresaId: true },
+      });
+
+      if (!targetUser || targetUser.empresaId !== session.user.empresaId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+    }
+
     const { newPassword } = await req.json();
 
     if (!newPassword) {

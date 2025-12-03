@@ -64,7 +64,7 @@ export const Sparkles = () => {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      particles.forEach((p, index) => {
+      particles.forEach((p) => {
         // Update position
         p.x += p.speedX;
         p.y += p.speedY;

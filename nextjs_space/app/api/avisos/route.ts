@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 // GET: Listar avisos do usuário logado
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 

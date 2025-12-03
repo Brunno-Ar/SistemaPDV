@@ -144,7 +144,7 @@ export async function PUT(
       }
     }
     // Update product and record movement in transaction
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Update product
       const product = await tx.product.update({
         where: { id: params.id },
@@ -267,21 +267,26 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    // Delete associated sale items (WARNING: This alters historical sales data)
-    await prisma.saleItem.deleteMany({
-      where: { productId: params.id },
-    });
-    // Delete associated stock movements first
-    await prisma.movimentacaoEstoque.deleteMany({
-      where: { produtoId: params.id },
+
+    // Perform deletion in a transaction to ensure integrity
+    await prisma.$transaction(async (tx) => {
+        // Delete associated sale items (WARNING: This alters historical sales data)
+        await tx.saleItem.deleteMany({
+          where: { productId: params.id },
+        });
+        // Delete associated stock movements first
+        await tx.movimentacaoEstoque.deleteMany({
+          where: { produtoId: params.id },
+        });
+
+        // Delete associated lots (explicitly, though cascade might handle it)
+        await tx.lote.deleteMany({
+          where: { produtoId: params.id },
+        });
+
+        await tx.product.delete({ where: { id: params.id } });
     });
 
-    // Delete associated lots (explicitly, though cascade might handle it)
-    await prisma.lote.deleteMany({
-      where: { produtoId: params.id },
-    });
-
-    await prisma.product.delete({ where: { id: params.id } });
     return NextResponse.json({ message: "Produto excluído com sucesso" });
   } catch (error) {
     console.error("Erro ao excluir produto:", error);

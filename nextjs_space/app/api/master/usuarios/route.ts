@@ -1,25 +1,24 @@
-
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/db';
-import bcrypt from 'bcryptjs';
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import bcrypt from "bcryptjs";
 
 // GET - Listar todos os usuários master (apenas master)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'master') {
+    if (!session || session.user.role !== "master") {
       return NextResponse.json(
-        { error: 'Acesso negado. Apenas usuários master.' },
+        { error: "Acesso negado. Apenas usuários master." },
         { status: 403 }
       );
     }
 
     const masters = await prisma.user.findMany({
       where: {
-        role: 'master',
+        role: "master",
       },
       select: {
         id: true,
@@ -29,15 +28,15 @@ export async function GET(request: NextRequest) {
         createdAt: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     return NextResponse.json(masters);
   } catch (error) {
-    console.error('Erro ao buscar usuários master:', error);
+    console.error("Erro ao buscar usuários master:", error);
     return NextResponse.json(
-      { error: 'Erro ao buscar usuários master' },
+      { error: "Erro ao buscar usuários master" },
       { status: 500 }
     );
   }
@@ -48,9 +47,9 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'master') {
+    if (!session || session.user.role !== "master") {
       return NextResponse.json(
-        { error: 'Acesso negado. Apenas usuários master.' },
+        { error: "Acesso negado. Apenas usuários master." },
         { status: 403 }
       );
     }
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Validações
     if (!email || !senha) {
       return NextResponse.json(
-        { error: 'Email e senha são obrigatórios' },
+        { error: "Email e senha são obrigatórios" },
         { status: 400 }
       );
     }
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Já existe um usuário com este email' },
+        { error: "Já existe um usuário com este email" },
         { status: 400 }
       );
     }
@@ -86,9 +85,9 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         password: hashedPassword,
-        nome: nome || email.split('@')[0],
-        name: nome || email.split('@')[0],
-        role: 'master',
+        nome: nome || email.split("@")[0],
+        name: nome || email.split("@")[0],
+        role: "master",
         empresaId: null, // Master não pertence a nenhuma empresa
       },
       select: {
@@ -102,15 +101,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: 'Usuário master criado com sucesso',
+        message: "Usuário master criado com sucesso",
         master,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Erro ao criar usuário master:', error);
+    console.error("Erro ao criar usuário master:", error);
     return NextResponse.json(
-      { error: 'Erro ao criar usuário master' },
+      { error: "Erro ao criar usuário master" },
       { status: 500 }
     );
   }
@@ -121,19 +120,19 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== 'master') {
+    if (!session || session.user.role !== "master") {
       return NextResponse.json(
-        { error: 'Acesso negado. Apenas usuários master.' },
+        { error: "Acesso negado. Apenas usuários master." },
         { status: 403 }
       );
     }
 
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('id');
+    const userId = searchParams.get("id");
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'ID do usuário é obrigatório' },
+        { error: "ID do usuário é obrigatório" },
         { status: 400 }
       );
     }
@@ -145,14 +144,14 @@ export async function DELETE(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Usuário não encontrado' },
+        { error: "Usuário não encontrado" },
         { status: 404 }
       );
     }
 
-    if (user.role !== 'master') {
+    if (user.role !== "master") {
       return NextResponse.json(
-        { error: 'Este usuário não é master' },
+        { error: "Este usuário não é master" },
         { status: 400 }
       );
     }
@@ -160,7 +159,7 @@ export async function DELETE(request: NextRequest) {
     // Não permitir que o usuário exclua a si mesmo
     if (user.id === session.user.id) {
       return NextResponse.json(
-        { error: 'Você não pode excluir sua própria conta' },
+        { error: "Você não pode excluir sua própria conta" },
         { status: 400 }
       );
     }
@@ -171,13 +170,13 @@ export async function DELETE(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { message: 'Usuário master excluído com sucesso' },
+      { message: "Usuário master excluído com sucesso" },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Erro ao excluir usuário master:', error);
+    console.error("Erro ao excluir usuário master:", error);
     return NextResponse.json(
-      { error: 'Erro ao excluir usuário master' },
+      { error: "Erro ao excluir usuário master" },
       { status: 500 }
     );
   }

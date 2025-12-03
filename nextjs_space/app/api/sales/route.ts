@@ -9,10 +9,6 @@ export const dynamic = "force-dynamic";
  * FEFO Engine - First Expired, First Out
  * Desconta a quantidade vendida dos lotes, priorizando os que vencem primeiro
  */
-/**
- * FEFO Engine - First Expired, First Out
- * Desconta a quantidade vendida dos lotes, priorizando os que vencem primeiro
- */
 async function descontarLotesFEFO(
   tx: any,
   produtoId: string,

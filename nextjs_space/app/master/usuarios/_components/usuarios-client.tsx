@@ -3,11 +3,9 @@
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -33,7 +31,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  UserCog,
   Plus,
   Trash2,
   Mail,
@@ -480,7 +477,7 @@ export default function UsuariosClient() {
               </h3>
               <p className="text-gray-600 dark:text-gray-400 text-center mb-6 max-w-md">
                 Comece criando seu primeiro usuário master clicando no botão
-                "Criar Novo Master" acima
+                &quot;Criar Novo Master&quot; acima
               </p>
               <InteractiveHoverButton
                 onClick={() => setDialogOpen(true)}

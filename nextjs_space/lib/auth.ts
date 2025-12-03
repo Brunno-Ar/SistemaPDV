@@ -1,4 +1,4 @@
-import NextAuth, { AuthOptions } from "next-auth";
+import NextAuth, { AuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -77,7 +77,7 @@ export const authOptions: AuthOptions = {
         return {
           id: user.id,
           email: user.email,
-          name: user.name || user.nome,
+          name: user.name || user.nome || "",
           role: user.role,
           empresaId: user.empresaId,
           empresaNome: user.empresa?.nome,
@@ -91,7 +91,7 @@ export const authOptions: AuthOptions = {
     maxAge: 8 * 60 * 60, // 8 horas (sessão expira após 8h)
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn() {
       // Permitir o login
       return true;
     },
@@ -100,9 +100,8 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.role = user.role;
         token.empresaId = user.empresaId;
-        token.empresaNome = (user as any).empresaNome;
-        token.vencimentoPlano = (user as any).vencimentoPlano;
-        token.mustChangePassword = (user as any).mustChangePassword;
+        token.empresaNome = user.empresaNome;
+        token.vencimentoPlano = user.vencimentoPlano;
         token.lastActivity = Date.now();
       }
 
@@ -120,7 +119,6 @@ export const authOptions: AuthOptions = {
         session.user.empresaId = token.empresaId as string;
         session.user.empresaNome = token.empresaNome as string;
         session.user.vencimentoPlano = token.vencimentoPlano as string;
-        (session.user as any).mustChangePassword = token.mustChangePassword;
         session.lastActivity = token.lastActivity as number;
       }
       return session;

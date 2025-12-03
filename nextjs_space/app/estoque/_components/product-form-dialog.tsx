@@ -20,6 +20,7 @@ import { Plus, Package } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { parseCurrency } from "@/lib/utils";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -536,8 +537,8 @@ export function ProductFormDialog({
                   className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  📅 Obrigatória se houver quantidade no lote (exceto se "Sem
-                  validade")
+                  📅 Obrigatória se houver quantidade no lote (exceto se &quot;Sem
+                  validade&quot;)
                 </p>
               </div>
 
@@ -580,10 +581,13 @@ export function ProductFormDialog({
               className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100 file:text-gray-700 dark:file:text-gray-300"
             />
             {(imagePreview || (productToEdit?.imagemUrl && !selectedFile)) && (
-              <img
+              <Image
                 src={imagePreview || productToEdit?.imagemUrl || ""}
                 alt="Preview"
-                className="w-20 h-20 object-cover rounded border border-gray-200 dark:border-zinc-700 mt-2"
+                width={80}
+                height={80}
+                className="object-cover rounded border border-gray-200 dark:border-zinc-700 mt-2"
+                unoptimized // Using unoptimized to handle external URLs or local previews without full config
               />
             )}
           </div>

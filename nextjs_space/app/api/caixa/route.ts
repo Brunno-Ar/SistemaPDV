@@ -73,7 +73,7 @@ async function calcularValoresEsperados(userId: string, caixaAberto: any) {
 }
 
 // GET - Buscar caixa aberto do usuário e status
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 

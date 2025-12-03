@@ -11,7 +11,6 @@ import {
   User,
   Building2,
   Users,
-  TrendingDown,
   ArrowRightLeft,
   Home,
   Menu,
@@ -45,7 +44,6 @@ export function NavBar() {
   const isMaster = role === "master";
   const isAdmin = role === "admin";
   const isGerente = role === "gerente";
-  const isCaixa = role === "caixa";
 
   // Navegação para MASTER
   const masterNavItems = [

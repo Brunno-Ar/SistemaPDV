@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
 // GET - Listar todas as empresas (apenas master)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       }, 0);
 
       // Remover o array de sales para não pesar o JSON
-      const { sales, _count, ...rest } = empresa;
+      const { _count, ...rest } = empresa;
 
       return {
         ...rest,

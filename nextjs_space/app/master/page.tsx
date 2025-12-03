@@ -21,11 +21,11 @@ export default async function MasterDashboard() {
   const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   // Buscar estatísticas gerais
-  const totalEmpresas = await prisma.empresa.count();
+  const _totalEmpresas = await prisma.empresa.count();
   const empresasAtivas = await prisma.empresa.count({
     where: { status: "ATIVO" },
   });
-  const totalUsuarios = await prisma.user.count();
+  const _totalUsuarios = await prisma.user.count();
   const totalProdutos = await prisma.product.count();
 
   // Novas Métricas

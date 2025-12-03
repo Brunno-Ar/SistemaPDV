@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -9,9 +9,6 @@ import {
   AlertTriangle,
   Wrench,
   Search,
-  Calendar as CalendarIcon,
-  ChevronDown,
-  ChevronUp,
   ArrowRightLeft,
   DollarSign,
   ArrowUpCircle,
@@ -39,7 +36,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 
@@ -100,11 +96,7 @@ export default function MovimentacoesClient({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  useEffect(() => {
-    fetchMovements();
-  }, [typeFilter, startDate, endDate]);
-
-  const fetchMovements = async () => {
+  const fetchMovements = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -133,7 +125,11 @@ export default function MovimentacoesClient({
     } finally {
       setLoading(false);
     }
-  };
+  }, [typeFilter, startDate, endDate, companyId]);
+
+  useEffect(() => {
+    fetchMovements();
+  }, [fetchMovements]);
 
   const filteredMovements = movements.filter((mov) => {
     const searchLower = searchTerm.toLowerCase();
@@ -595,7 +591,7 @@ export default function MovimentacoesClient({
                     </div>
                     {mov.reason && (
                       <p className="text-sm text-gray-500 dark:text-gray-400 italic max-w-md text-right">
-                        "{mov.reason}"
+                        &quot;{mov.reason}&quot;
                       </p>
                     )}
                   </div>
