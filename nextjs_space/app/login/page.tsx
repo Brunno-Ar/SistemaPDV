@@ -47,7 +47,11 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Email ou senha inválidos");
+        if (result.error === "CredentialsSignin") {
+          setError("Email ou senha inválidos");
+        } else {
+          setError(result.error);
+        }
       } else {
         const currentTime = Date.now().toString();
         sessionStorage.setItem("pdv_tab_session_id", currentTime);

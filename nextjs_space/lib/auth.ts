@@ -65,12 +65,16 @@ export const authOptions: AuthOptions = {
           // 3. Mensalidade vencida (apenas para empresas ativas)
           if (
             empresa.status === "ATIVO" &&
-            empresa.vencimentoPlano &&
-            empresa.vencimentoPlano < now
+            empresa.vencimentoPlano
           ) {
-            throw new Error(
-              "Mensalidade vencida. Entre em contato para renovar seu plano."
-            );
+            const toleranceDate = new Date(empresa.vencimentoPlano);
+            toleranceDate.setDate(toleranceDate.getDate() + 10);
+
+            if (now > toleranceDate) {
+              throw new Error(
+                "Acesso bloqueado. O pagamento da sua mensalidade não foi realizado. Entre em contato com o suporte."
+              );
+            }
           }
         }
 

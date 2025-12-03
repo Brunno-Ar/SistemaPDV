@@ -20,8 +20,8 @@ export default function DashboardClient() {
 
     const diffDays = stats.diasParaVencimento;
 
-    // ALERTA AMARELO: Próximo do vencimento (0 a 7 dias)
-    if (diffDays <= 7 && diffDays >= 0) {
+    // ALERTA AMARELO: Próximo do vencimento (1 a 7 dias)
+    if (diffDays <= 7 && diffDays > 0) {
       return (
         <Card className="mb-6 border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10 border-y-yellow-200 border-r-yellow-200 dark:border-y-yellow-900/30 dark:border-r-yellow-900/30">
           <CardContent className="p-4 flex items-start gap-4">
@@ -35,7 +35,7 @@ export default function DashboardClient() {
               <p className="text-yellow-700 dark:text-yellow-400/90">
                 Sua assinatura expira em{" "}
                 <span className="font-bold">
-                  {diffDays === 0 ? "hoje" : `${diffDays} dias`}
+                  {diffDays} dias
                 </span>
                 . Renove para evitar o bloqueio.
               </p>
@@ -45,8 +45,8 @@ export default function DashboardClient() {
       );
     }
 
-    // ALERTA VERMELHO: Vencido (< 0)
-    if (diffDays < 0) {
+    // ALERTA VERMELHO: Vencido (<= 0)
+    if (diffDays <= 0) {
       return (
         <Card className="mb-6 border-l-4 border-l-red-500 bg-red-50 dark:bg-red-900/10 border-y-red-200 border-r-red-200 dark:border-y-red-900/30 dark:border-r-red-900/30">
           <CardContent className="p-4 flex items-start gap-4">
@@ -58,8 +58,11 @@ export default function DashboardClient() {
                 Plano Vencido!
               </h3>
               <p className="text-red-700 dark:text-red-400/90">
-                O sistema será bloqueado em breve. Entre em contato com o
-                suporte imediatamente.
+                O pagamento da sua mensalidade não foi identificado. Você perderá o acesso em{" "}
+                <span className="font-bold">
+                  {Math.max(0, 10 + diffDays)} dias
+                </span>
+                . Entre em contato com o suporte.
               </p>
             </div>
           </CardContent>

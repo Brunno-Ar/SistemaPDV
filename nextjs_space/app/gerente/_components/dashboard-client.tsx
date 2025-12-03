@@ -45,9 +45,9 @@ interface DashboardData {
         importante: boolean;
         criadoEm: string;
     }[];
-    // Adicionando dados de estoque
     produtosEstoqueBaixo: any[];
     lotesVencimentoProximo: any[];
+    topLowStock?: any[];
 }
 
 export default function GerenteDashboardClient() {
@@ -58,27 +58,40 @@ export default function GerenteDashboardClient() {
     useEffect(() => {
         async function fetchData() {
             try {
-                // Buscar dados gerais (vendas)
-                const resAnalytics = await fetch("/api/employee/analytics");
+                // Fetch data in parallel
+                const [resAnalytics, resAdmin] = await Promise.all([
+                    fetch("/api/employee/analytics"),
+                    fetch("/api/admin/dashboard-stats")
+                ]);
 
-                // Buscar dados de estoque (reutilizando API do admin ou criando endpoint específico)
-                // Como o gerente tem acesso a /api/admin, podemos tentar usar
-                // Mas o hook useAdminDashboard é mais completo. 
-                // Para simplificar e evitar refatorar tudo agora, vamos buscar de um endpoint que o gerente tenha acesso.
-                // O endpoint /api/admin/dashboard-stats retorna tudo que precisamos.
-                const resAdmin = await fetch("/api/admin/dashboard-stats");
+                let analyticsData = {};
+                let adminData: any = {};
 
-                if (resAnalytics.ok && resAdmin.ok) {
-                    const jsonAnalytics = await resAnalytics.json();
-                    const jsonAdmin = await resAdmin.json();
-
-                    setData({
-                        ...jsonAnalytics,
-                        produtosEstoqueBaixo: jsonAdmin.produtosEstoqueBaixo || [],
-                        lotesVencimentoProximo: jsonAdmin.lotesVencimentoProximo || [],
-                        topLowStock: jsonAdmin.stats?.topLowStock
-                    });
+                if (resAnalytics.ok) {
+                    analyticsData = await resAnalytics.json();
+                } else {
+                    console.error("Failed to fetch analytics data");
                 }
+
+                if (resAdmin.ok) {
+                    adminData = await resAdmin.json();
+                } else {
+                    console.error("Failed to fetch admin stats");
+                }
+
+                setData({
+                    salesToday: 0,
+                    salesMonth: 0,
+                    totalItemsSold: 0,
+                    lastSales: [],
+                    weeklySales: [],
+                    avisos: [],
+                    ...analyticsData,
+                    produtosEstoqueBaixo: adminData.produtosEstoqueBaixo || [],
+                    lotesVencimentoProximo: adminData.lotesVencimentoProximo || [],
+                    topLowStock: adminData.stats?.topLowStock || []
+                } as DashboardData);
+
             } catch (error) {
                 console.error("Failed to fetch dashboard data", error);
             } finally {

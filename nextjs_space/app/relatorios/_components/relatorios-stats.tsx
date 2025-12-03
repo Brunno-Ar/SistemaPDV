@@ -20,7 +20,7 @@ export function RelatoriosStats({ analytics }: RelatoriosStatsProps) {
           <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                Vendas Hoje
+                Vendas nas últimas 24 horas
               </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -79,7 +79,7 @@ export function RelatoriosStats({ analytics }: RelatoriosStatsProps) {
           <Card className="bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-900/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-green-900 dark:text-green-200">
-                Lucro Hoje
+                Lucro nas últimas 24 horas
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
