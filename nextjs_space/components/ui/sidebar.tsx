@@ -110,21 +110,20 @@ export const DesktopSidebar = ({
   const closedColor = isDark ? "#18181b" : "#f5f5f5"; // zinc-900 vs neutral-100
 
   return (
-    <motion.div
-      className={cn(
-        "h-full px-4 py-4 hidden md:flex md:flex-col flex-shrink-0",
-        className
-      )}
-      animate={{
-        width: animate ? (open ? "300px" : "80px") : "300px",
-        backgroundColor: open ? openColor : closedColor,
-      }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      {...props}
-    >
-      {children}
-    </motion.div>
+    <div className="hidden lg:flex h-full flex-shrink-0">
+      <motion.div
+        className={cn("h-full px-4 py-4 flex flex-col", className)}
+        animate={{
+          width: animate ? (open ? "300px" : "80px") : "300px",
+          backgroundColor: open ? openColor : closedColor,
+        }}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        {...props}
+      >
+        {children}
+      </motion.div>
+    </div>
   );
 };
 
@@ -138,7 +137,7 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-10 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full"
+          "h-14 px-4 py-4 flex flex-row lg:hidden items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full"
         )}
         {...props}
       >

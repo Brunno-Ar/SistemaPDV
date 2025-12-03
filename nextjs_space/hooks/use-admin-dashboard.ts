@@ -69,7 +69,7 @@ export function useAdminDashboard() {
       const statsResponse = await fetch("/api/admin/dashboard-stats");
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        setStats(statsData);
+        setStats(statsData.stats);
       }
     } catch (error) {
       console.error("Erro ao carregar dados do dashboard:", error);

@@ -13,6 +13,9 @@ import {
   ClosedRegisterAlert,
 } from "./parts";
 import { parseCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ShoppingCart } from "lucide-react";
 
 export default function VenderClient() {
   const router = useRouter();
@@ -124,7 +127,7 @@ export default function VenderClient() {
   const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] lg:h-[calc(100vh-6rem)] bg-[#eff2f6] dark:bg-[#101922] p-4 lg:p-6 rounded-3xl lg:overflow-hidden flex flex-col">
+    <div className="min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-[#eff2f6] dark:bg-[#101922] p-4 lg:p-6 rounded-3xl lg:overflow-hidden flex flex-col relative pb-24 lg:pb-6">
       <ClosedRegisterAlert
         open={caixaFechado}
         onRedirect={() => router.push("/dashboard")}
@@ -173,8 +176,8 @@ export default function VenderClient() {
           </div>
         </div>
 
-        {/* Right Column: Cart (40%) */}
-        <div className="lg:col-span-2 h-auto lg:h-full min-h-0 lg:sticky lg:top-0">
+        {/* Right Column: Cart (40%) - Desktop Only */}
+        <div className="hidden lg:block lg:col-span-2 h-full min-h-0 sticky top-0">
           <CartSummary
             cart={cart}
             onUpdateQuantity={updateCartItemQuantity}
@@ -198,6 +201,49 @@ export default function VenderClient() {
             total={total}
           />
         </div>
+      </div>
+
+      {/* Mobile Cart Trigger & Sheet */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button className="w-full h-14 text-lg font-bold shadow-lg bg-primary hover:bg-primary/90 text-white rounded-xl flex items-center justify-between px-6">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="h-6 w-6" />
+                <span>
+                  {cart.length} {cart.length === 1 ? "item" : "itens"}
+                </span>
+              </div>
+              <span>R$ {total.toFixed(2)}</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[90vh] p-0 rounded-t-2xl">
+            <div className="h-full pt-6">
+              <CartSummary
+                cart={cart}
+                onUpdateQuantity={updateCartItemQuantity}
+                onRemove={removeFromCart}
+                onUpdateDiscount={updateCartItemDesconto}
+                paymentMethod={metodoPagamento}
+                onPaymentMethodChange={setMetodoPagamento}
+                valorRecebido={valorRecebido}
+                setValorRecebido={setValorRecebido}
+                troco={
+                  valorRecebido !== "" && metodoPagamento === "dinheiro"
+                    ? parseCurrency(valorRecebido) - total
+                    : null
+                }
+                onFinalize={finalizarVenda}
+                onClear={clearCart}
+                isOffline={isOffline}
+                finalizing={finalizing}
+                paymentError={paymentError}
+                setPaymentError={setPaymentError}
+                total={total}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );
