@@ -166,7 +166,7 @@ export function ProductTable({
                               Excluir Produto
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
-                              Tem certeza que deseja excluir "{product.nome}"?
+                              Tem certeza que deseja excluir &quot;{product.nome}&quot;?
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

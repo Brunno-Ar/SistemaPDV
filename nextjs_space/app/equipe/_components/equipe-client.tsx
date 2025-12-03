@@ -3,7 +3,7 @@
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useSession } from "next-auth/react";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -58,11 +58,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchUsuarios();
-  }, [companyId]); // Re-fetch quando companyId mudar
-
-  const fetchUsuarios = async () => {
+  const fetchUsuarios = useCallback(async () => {
     try {
       // 🔥 Incluir companyId se fornecido
       const url = companyId
@@ -93,7 +89,11 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+
+  useEffect(() => {
+    fetchUsuarios();
+  }, [fetchUsuarios]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

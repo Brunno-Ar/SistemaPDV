@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
     const {
       action,
       empresaId,
-      userId,
       mensagem,
       importante,
       novoVencimento,

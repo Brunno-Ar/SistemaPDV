@@ -3,13 +3,16 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { generateVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    let { email, password, nome, nomeEmpresa } = body;
+    // Separe email para permitir reatribuição, use const para os outros
+    let { email } = body;
+    const { password, nome, nomeEmpresa } = body;
 
     if (email) {
       email = email.toLowerCase();
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Criar empresa PENDENTE + Admin em transação
     console.log("Iniciando transação de criação");
-    const result = await prisma.$transaction(async (tx: any) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Criar empresa com status PENDENTE (aguardando aprovação do master)
       console.log("Criando empresa:", nomeEmpresa);
       const empresa = await tx.empresa.create({

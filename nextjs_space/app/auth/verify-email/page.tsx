@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export default function VerifyEmailPage() {
           setMessage(data.error || "Erro ao verificar email.");
         }
       } catch (error) {
+        console.error(error);
         setStatus("error");
         setMessage("Ocorreu um erro inesperado.");
       }
