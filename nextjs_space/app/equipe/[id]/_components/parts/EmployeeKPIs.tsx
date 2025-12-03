@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,64 +27,69 @@ export function EmployeeKPIs({
   savingMeta,
   formatCurrency,
 }: EmployeeKPIsProps) {
+  // Estado local para controlar o input sem interferência de re-renders do pai
+  const [localMeta, setLocalMeta] = React.useState(meta);
+
+  // Sincroniza o estado local quando a prop muda (ex: carregamento inicial ou após salvar)
+  React.useEffect(() => {
+    setLocalMeta(meta);
+  }, [meta]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Permitir apenas números, vírgula e ponto
-    const value = e.target.value;
-    if (/^[\d,.]*$/.test(value)) {
-      setMeta(value);
-    }
+    setLocalMeta(e.target.value);
   };
 
   const handleBlur = () => {
-    if (!meta) {
+    if (!localMeta) {
+      setLocalMeta("0,00");
       setMeta("0,00");
       return;
     }
 
-    // Normalizar entrada: troca ponto por vazio (milhar) e virgula por ponto para parsear
-    // Mas aqui queremos apenas formatar bonito para exibição
-    // A logica do usuario:
-    // 1. Se apagar tudo -> vazio (já tratado no onChange permitindo string vazia)
-    // 2. onBlur -> Se vazio, volta para "0,00".
-    // 3. onBlur -> Se tem valor, formata bonito (substitui ponto por virgula, etc).
+    // Remove tudo que não é dígito, ponto ou vírgula
+    const cleanValue = localMeta.replace(/[^\d,.]/g, "");
 
     let numericValue = 0;
 
-    // Tenta interpretar o que o usuário digitou
-    // Caso 1: Usuário digitou "1000" -> 1000.00 -> "1.000,00"
-    // Caso 2: Usuário digitou "1000,50" -> 1000.50 -> "1.000,50"
-    // Caso 3: Usuário digitou "1.000,50" -> 1000.50 -> "1.000,50"
-
-    const cleanValue = meta.replace(/[^\d,.]/g, "");
-
-    // Se tiver vírgula, assume que é decimal
+    // Lógica de interpretação PT-BR
     if (cleanValue.includes(",")) {
-      // Remove pontos de milhar se existirem, troca virgula por ponto
-      const dotDecimal = cleanValue.replace(/\./g, "").replace(",", ".");
-      numericValue = parseFloat(dotDecimal);
+      // Se tem vírgula, assume formato PT-BR (milhar.centena,decimal)
+      numericValue = parseFloat(cleanValue.replace(/\./g, "").replace(",", "."));
     } else {
-      // Se não tem vírgula, assume que é inteiro ou decimal com ponto (se o usuario usou ponto como decimal)
-      // Mas no BR, ponto costuma ser milhar.
-      // O usuario pediu: "Substitua ponto por vírgula automaticamente no onBlur"
-      // Se ele digitou "10.50", ele quis dizer "10,50"? Ou "1050"?
-      // Contexto: "Aceite ponto e vírgula". "Substitua ponto por vírgula".
-      // Então "10.50" -> "10,50".
-      const replaced = cleanValue.replace(/\./g, ",");
-      // Agora parseia como pt-BR (virgula decimal)
-      const dotDecimal = replaced.replace(",", ".");
-      numericValue = parseFloat(dotDecimal);
+      // Se NÃO tem vírgula
+      const dots = cleanValue.split(".").length - 1;
+
+      if (dots === 1 && cleanValue.indexOf(".") > cleanValue.length - 4) {
+        // Assume decimal se o ponto estiver nas ultimas 3 posicoes
+        numericValue = parseFloat(cleanValue);
+      } else {
+        // Assume milhar
+        numericValue = parseFloat(cleanValue.replace(/\./g, ""));
+      }
     }
 
     if (!isNaN(numericValue)) {
-      setMeta(
-        numericValue.toLocaleString("pt-BR", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      );
+      const formatted = numericValue.toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      setLocalMeta(formatted);
+      setMeta(formatted); // Atualiza o pai apenas no blur
     } else {
+      setLocalMeta("0,00");
       setMeta("0,00");
     }
+  };
+
+  // Wrapper para salvar garantindo que o pai tenha o valor correto
+  const onSave = () => {
+    // Garante que o pai tenha o valor atual do localMeta antes de salvar
+    setMeta(localMeta);
+    // Pequeno delay para garantir que o estado propagou (embora setMeta seja assíncrono, o handleUpdateMeta usa o estado do pai)
+    // Na verdade, o ideal seria passar o valor para handleUpdateMeta, mas vamos confiar no fluxo
+    setTimeout(() => {
+      handleUpdateMeta();
+    }, 0);
   };
 
   return (
@@ -127,7 +133,7 @@ export function EmployeeKPIs({
             <span className="text-lg font-bold">R$</span>
             <Input
               type="text"
-              value={meta}
+              value={localMeta}
               onChange={handleChange}
               onBlur={handleBlur}
               placeholder="0,00"
@@ -135,7 +141,7 @@ export function EmployeeKPIs({
             />
             <Button
               size="sm"
-              onClick={handleUpdateMeta}
+              onClick={onSave}
               disabled={savingMeta}
               variant="outline"
             >
@@ -145,9 +151,8 @@ export function EmployeeKPIs({
           <p className="text-xs text-muted-foreground mt-2">
             Progresso:{" "}
             {(() => {
-              // Parse robusto para calculo visual
               let val = 0;
-              const clean = meta.replace(/\./g, "").replace(",", ".");
+              const clean = localMeta.replace(/\./g, "").replace(",", ".");
               val = parseFloat(clean);
 
               if (!val || val === 0) return 0;

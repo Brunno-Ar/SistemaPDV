@@ -73,7 +73,7 @@ export function MuralAvisos() {
   const avisosLidos = avisos.filter((a) => a.lido);
 
   return (
-    <Card className="h-full">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-blue-600" />
@@ -95,19 +95,17 @@ export function MuralAvisos() {
             {avisosNaoLidos.map((aviso) => (
               <div
                 key={aviso.id}
-                className={`p-4 rounded-lg border ${
-                  aviso.importante
+                className={`p-4 rounded-lg border ${aviso.importante
                     ? "bg-red-50 border-red-200"
                     : "bg-blue-50 border-blue-200"
-                }`}
+                  }`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <span
-                    className={`text-xs font-bold px-2 py-1 rounded ${
-                      aviso.importante
+                    className={`text-xs font-bold px-2 py-1 rounded ${aviso.importante
                         ? "bg-red-100 text-red-700"
                         : "bg-blue-100 text-blue-700"
-                    }`}
+                      }`}
                   >
                     {aviso.importante ? "IMPORTANTE" : "Aviso"}
                   </span>

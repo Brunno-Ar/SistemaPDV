@@ -76,7 +76,8 @@ export default function FuncionarioDetalhes({
       return;
     }
     fetchFuncionario();
-  }, [funcionarioId, session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [funcionarioId]);
 
   const fetchFuncionario = async () => {
     try {
@@ -86,7 +87,12 @@ export default function FuncionarioDetalhes({
       if (!response.ok) throw new Error("Erro ao carregar funcionário");
       const data = await response.json();
       setFuncionario(data);
-      setMeta(String(data.metaMensal || "0"));
+      setMeta(
+        Number(data.metaMensal || 0).toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      );
     } catch (error) {
       console.error(error);
       toast({
@@ -112,8 +118,13 @@ export default function FuncionarioDetalhes({
             cleanValue.replace(/\./g, "").replace(",", ".")
           );
         } else {
-          // Plain number: 1000 -> 1000
-          numericMeta = parseFloat(cleanValue);
+          // Se tem ponto mas não tem vírgula, assume que o ponto é milhar (pt-BR)
+          // Ex: 1.500 -> 1500
+          if (cleanValue.includes(".")) {
+            numericMeta = parseFloat(cleanValue.replace(/\./g, ""));
+          } else {
+            numericMeta = parseFloat(cleanValue);
+          }
         }
       }
 

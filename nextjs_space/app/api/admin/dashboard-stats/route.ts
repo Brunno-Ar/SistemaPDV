@@ -73,6 +73,34 @@ export async function GET() {
       },
     });
 
+    // Lotes com vencimento próximo (30 dias)
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() + 30);
+
+    const lotesVencimentoProximo = await prisma.lote.findMany({
+      where: {
+        produto: { empresaId },
+        dataValidade: {
+          lte: dataLimite,
+          gte: new Date(), // Apenas futuros ou hoje (vencidos já foram) ou incluir vencidos? O admin mostra vencidos?
+          // O admin mostra "Vencimento Próximo". Vamos pegar os próximos 30 dias.
+        },
+        quantidade: { gt: 0 },
+      },
+      include: {
+        produto: {
+          select: {
+            nome: true,
+            sku: true,
+          },
+        },
+      },
+      orderBy: {
+        dataValidade: "asc",
+      },
+      take: 10,
+    });
+
     // Ordenar por criticidade (percentual de estoque restante) e formatar
     // Menor % = Mais crítico
     const topLowStockSorted = topLowStock
@@ -167,16 +195,20 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      totalProdutos,
-      produtosEstoqueBaixo,
-      vendasHoje,
-      vendasSemana,
-      receitaHoje,
-      receitaSemana,
-      lucroHoje,
-      lucroSemana,
-      topLowStock: topLowStockSorted,
-      diasParaVencimento,
+      stats: {
+        totalProdutos,
+        produtosEstoqueBaixo,
+        vendasHoje,
+        vendasSemana,
+        receitaHoje,
+        receitaSemana,
+        lucroHoje,
+        lucroSemana,
+        topLowStock: topLowStockSorted,
+        diasParaVencimento,
+      },
+      produtosEstoqueBaixo: topLowStockSorted, // Legacy support for direct access
+      lotesVencimentoProximo: lotesVencimentoProximo,
     });
   } catch (error) {
     console.error("Erro ao buscar estatísticas do dashboard:", error);
