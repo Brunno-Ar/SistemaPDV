@@ -11,6 +11,7 @@ interface Links {
   label: string;
   href: string;
   icon: React.JSX.Element | React.ReactNode;
+  id?: string;
 }
 
 interface SidebarContextProps {
@@ -189,6 +190,7 @@ export const SidebarLink = ({
   const { open, animate } = useSidebar();
   return (
     <Link
+      id={link.id}
       href={link.href}
       className={cn(
         "flex items-center justify-start gap-2 group/sidebar py-2",

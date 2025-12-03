@@ -4,6 +4,9 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { InactivityMonitor } from "@/components/inactivity-monitor";
 import { PasswordChangeAlert } from "@/components/PasswordChangeAlert";
+import { OnboardingTour } from "@/components/onboarding-tour";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,17 +33,25 @@ export const viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
         <Providers>
           <InactivityMonitor />
           <PasswordChangeAlert />
+          {session?.user && (
+            <OnboardingTour
+              role={session.user.role || "funcionario"}
+              tourCompleted={session.user.tourCompleted ?? false}
+            />
+          )}
           {children}
         </Providers>
       </body>

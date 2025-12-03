@@ -93,6 +93,7 @@ model User {
   createdAt     DateTime  @default(now()) @map("created_at")
   metaMensal    Decimal   @default(0) @map("meta_mensal") @db.Decimal(10, 2)
   mustChangePassword Boolean @default(false) @map("must_change_password")
+  tourCompleted Boolean   @default(false) @map("tour_completed")
 
   accounts      Account[]
   sessions      Session[]

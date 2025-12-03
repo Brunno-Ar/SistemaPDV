@@ -18,7 +18,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total de Produtos */}
-      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+      <Card id="card-produtos" className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">
             Total de Produtos
@@ -42,7 +42,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
       </Card>
 
       {/* Vendas Hoje */}
-      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+      <Card id="card-vendas" className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">
             Vendas Hoje
@@ -60,7 +60,7 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
       </Card>
 
       {/* Receita Hoje */}
-      <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+      <Card id="card-faturamento" className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-900 dark:text-gray-100">
             Receita Hoje

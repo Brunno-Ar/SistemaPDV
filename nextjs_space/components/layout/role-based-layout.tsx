@@ -66,11 +66,13 @@ export default function RoleBasedLayout({
         label: "Vender",
         href: "/vender",
         icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-vender",
       },
       {
         label: "Estoque",
         href: "/estoque",
         icon: <Package className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-estoque",
       },
       {
         label: "Lotes",
@@ -81,6 +83,7 @@ export default function RoleBasedLayout({
         label: "Relatórios",
         href: "/relatorios",
         icon: <BarChart3 className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-relatorios",
       },
       {
         label: "Minha Conta",
@@ -104,11 +107,13 @@ export default function RoleBasedLayout({
         label: "Vender",
         href: "/vender",
         icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-vender",
       },
       {
         label: "Estoque",
         href: "/estoque",
         icon: <Package className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-estoque",
       },
       {
         label: "Lotes",
@@ -124,11 +129,13 @@ export default function RoleBasedLayout({
         label: "Equipe",
         href: "/equipe",
         icon: <Users className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-equipe",
       },
       {
         label: "Relatórios",
         href: "/relatorios",
         icon: <BarChart3 className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-relatorios",
       },
       {
         label: "Minha Conta",
@@ -153,11 +160,13 @@ export default function RoleBasedLayout({
         label: "Vender",
         href: "/vender",
         icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-vender",
       },
       {
         label: "Minha Conta",
         href: "/minha-conta",
         icon: <User className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-minha-conta",
       },
       {
         label: "Configurações",

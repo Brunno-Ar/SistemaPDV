@@ -247,7 +247,7 @@ export default function DashboardClient() {
       </div>
 
       {/* Mural de Avisos (Bottom - Expanded) */}
-      <div className="min-h-[300px]">
+      <div id="mural-avisos" className="min-h-[300px]">
         <MuralAvisos />
       </div>
     </div>
