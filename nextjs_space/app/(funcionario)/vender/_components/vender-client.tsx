@@ -124,7 +124,7 @@ export default function VenderClient() {
   const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
 
   return (
-    <div className="h-[calc(100vh-6rem)] bg-[#eff2f6] dark:bg-[#101922] p-4 lg:p-6 rounded-3xl overflow-hidden flex flex-col">
+    <div className="min-h-[calc(100vh-6rem)] lg:h-[calc(100vh-6rem)] bg-[#eff2f6] dark:bg-[#101922] p-4 lg:p-6 rounded-3xl lg:overflow-hidden flex flex-col">
       <ClosedRegisterAlert
         open={caixaFechado}
         onRedirect={() => router.push("/dashboard")}
@@ -141,9 +141,9 @@ export default function VenderClient() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-auto lg:h-full lg:overflow-hidden">
         {/* Left Column: Products (60%) */}
-        <div className="lg:col-span-3 flex flex-col h-full overflow-hidden min-h-0">
+        <div className="lg:col-span-3 flex flex-col h-auto lg:h-full lg:overflow-hidden min-h-0">
           <div className="flex-none">
             <PageHeader
               title="Ponto de Venda"
@@ -174,7 +174,7 @@ export default function VenderClient() {
         </div>
 
         {/* Right Column: Cart (40%) */}
-        <div className="lg:col-span-2 h-full min-h-0 lg:sticky lg:top-0">
+        <div className="lg:col-span-2 h-auto lg:h-full min-h-0 lg:sticky lg:top-0">
           <CartSummary
             cart={cart}
             onUpdateQuantity={updateCartItemQuantity}
