@@ -21,6 +21,7 @@ interface DashboardStats {
   lucroHoje: number;
   lucroSemana: number;
   topLowStock?: Product[]; // New field from API
+  diasParaVencimento?: number | null; // New field from API
 }
 
 interface LoteVencimento {

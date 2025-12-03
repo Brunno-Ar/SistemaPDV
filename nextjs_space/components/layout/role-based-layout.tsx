@@ -55,6 +55,44 @@ export default function RoleBasedLayout({
         icon: <Settings className="h-5 w-5 flex-shrink-0" />,
       },
     ];
+  } else if (role === "gerente") {
+    links = [
+      {
+        label: "Dashboard",
+        href: "/gerente",
+        icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Vender",
+        href: "/vender",
+        icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Estoque",
+        href: "/estoque",
+        icon: <Package className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Lotes",
+        href: "/lotes",
+        icon: <Calendar className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Relatórios",
+        href: "/relatorios",
+        icon: <BarChart3 className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Minha Conta",
+        href: "/minha-conta",
+        icon: <User className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Configurações",
+        href: "/configuracoes",
+        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
+      },
+    ];
   } else if (role === "admin") {
     links = [
       {

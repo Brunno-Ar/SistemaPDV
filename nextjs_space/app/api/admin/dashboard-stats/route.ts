@@ -158,6 +158,14 @@ export async function GET() {
       return acc + (receitaItem - custoItem);
     }, 0);
 
+    // Cálculo de dias para vencimento
+    let diasParaVencimento = null;
+    if (session.user.vencimentoPlano) {
+      const dataVencimento = new Date(session.user.vencimentoPlano);
+      const diffTime = dataVencimento.getTime() - hoje.getTime();
+      diasParaVencimento = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
     return NextResponse.json({
       totalProdutos,
       produtosEstoqueBaixo,
@@ -168,6 +176,7 @@ export async function GET() {
       lucroHoje,
       lucroSemana,
       topLowStock: topLowStockSorted,
+      diasParaVencimento,
     });
   } catch (error) {
     console.error("Erro ao buscar estatísticas do dashboard:", error);

@@ -13,6 +13,13 @@ export default withAuth(
       }
     }
 
+    // Rotas exclusivas do GERENTE (Dashboard próprio)
+    if (path.startsWith("/gerente")) {
+      if (token?.role !== "gerente") {
+        return NextResponse.redirect(new URL("/login", req.url));
+      }
+    }
+
     // Rotas exclusivas do ADMIN/GERENTE (estoque, relatorios, movimentacoes, admin, lotes)
     if (
       path.startsWith("/estoque") ||
@@ -22,6 +29,11 @@ export default withAuth(
       path.startsWith("/admin") ||
       path.startsWith("/lotes")
     ) {
+      // Se for gerente tentando acessar /admin, redireciona para /gerente (dashboard dele)
+      if (path.startsWith("/admin") && token?.role === "gerente") {
+        return NextResponse.redirect(new URL("/gerente", req.url));
+      }
+
       if (
         token?.role !== "admin" &&
         token?.role !== "master" &&

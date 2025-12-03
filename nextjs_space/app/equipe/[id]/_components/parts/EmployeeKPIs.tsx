@@ -27,21 +27,63 @@ export function EmployeeKPIs({
   formatCurrency,
 }: EmployeeKPIsProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Permitir apenas números, vírgula e ponto
     const value = e.target.value;
+    if (/^[\d,.]*$/.test(value)) {
+      setMeta(value);
+    }
+  };
 
-    // Remove everything that is not a digit
-    const digits = value.replace(/\D/g, "");
+  const handleBlur = () => {
+    if (!meta) {
+      setMeta("0,00");
+      return;
+    }
 
-    // Convert to number (divide by 100 for cents)
-    const numberValue = Number(digits) / 100;
+    // Normalizar entrada: troca ponto por vazio (milhar) e virgula por ponto para parsear
+    // Mas aqui queremos apenas formatar bonito para exibição
+    // A logica do usuario:
+    // 1. Se apagar tudo -> vazio (já tratado no onChange permitindo string vazia)
+    // 2. onBlur -> Se vazio, volta para "0,00".
+    // 3. onBlur -> Se tem valor, formata bonito (substitui ponto por virgula, etc).
 
-    // Format back to PT-BR currency string
-    const formatted = numberValue.toLocaleString("pt-BR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    let numericValue = 0;
 
-    setMeta(formatted);
+    // Tenta interpretar o que o usuário digitou
+    // Caso 1: Usuário digitou "1000" -> 1000.00 -> "1.000,00"
+    // Caso 2: Usuário digitou "1000,50" -> 1000.50 -> "1.000,50"
+    // Caso 3: Usuário digitou "1.000,50" -> 1000.50 -> "1.000,50"
+
+    const cleanValue = meta.replace(/[^\d,.]/g, "");
+
+    // Se tiver vírgula, assume que é decimal
+    if (cleanValue.includes(",")) {
+      // Remove pontos de milhar se existirem, troca virgula por ponto
+      const dotDecimal = cleanValue.replace(/\./g, "").replace(",", ".");
+      numericValue = parseFloat(dotDecimal);
+    } else {
+      // Se não tem vírgula, assume que é inteiro ou decimal com ponto (se o usuario usou ponto como decimal)
+      // Mas no BR, ponto costuma ser milhar.
+      // O usuario pediu: "Substitua ponto por vírgula automaticamente no onBlur"
+      // Se ele digitou "10.50", ele quis dizer "10,50"? Ou "1050"?
+      // Contexto: "Aceite ponto e vírgula". "Substitua ponto por vírgula".
+      // Então "10.50" -> "10,50".
+      const replaced = cleanValue.replace(/\./g, ",");
+      // Agora parseia como pt-BR (virgula decimal)
+      const dotDecimal = replaced.replace(",", ".");
+      numericValue = parseFloat(dotDecimal);
+    }
+
+    if (!isNaN(numericValue)) {
+      setMeta(
+        numericValue.toLocaleString("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      );
+    } else {
+      setMeta("0,00");
+    }
   };
 
   return (
@@ -87,6 +129,7 @@ export function EmployeeKPIs({
               type="text"
               value={meta}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="0,00"
               className="h-8 w-32"
             />
@@ -102,12 +145,14 @@ export function EmployeeKPIs({
           <p className="text-xs text-muted-foreground mt-2">
             Progresso:{" "}
             {(() => {
-              const metaValue = parseFloat(
-                meta.replace(/\./g, "").replace(",", ".")
-              );
-              if (!metaValue || metaValue === 0) return 0;
+              // Parse robusto para calculo visual
+              let val = 0;
+              const clean = meta.replace(/\./g, "").replace(",", ".");
+              val = parseFloat(clean);
+
+              if (!val || val === 0) return 0;
               return (
-                (Number(funcionario.totalVendasMes) / metaValue) *
+                (Number(funcionario.totalVendasMes) / val) *
                 100
               ).toFixed(1);
             })()}
