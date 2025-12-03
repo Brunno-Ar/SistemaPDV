@@ -116,7 +116,7 @@ export default function GerenteDashboardClient() {
             <MeuCaixa />
 
             {/* KPI Grid */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -176,15 +176,15 @@ export default function GerenteDashboardClient() {
             </div>
 
             {/* Main Area */}
-            <div className="grid gap-4 md:grid-cols-7">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
                 {/* Shortcuts (Left - 2 cols) */}
-                <Card className="md:col-span-2 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl flex flex-col h-[220px]">
+                <Card className="md:col-span-2 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl flex flex-col h-auto md:h-[220px]">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                             Acesso Rápido
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="flex-1 flex flex-col gap-3 justify-center">
+                    <CardContent className="flex-1 flex flex-col gap-3 justify-center pb-6 md:pb-0">
                         <Link href="/vender" className="w-full">
                             <InteractiveHoverButton className="w-full h-14 text-base bg-cta-bg hover:bg-cta-bg/90 border-cta-bg shadow-md transition-all hover:-translate-y-1 text-white">
                                 <span className="flex items-center justify-center gap-2">
@@ -205,7 +205,7 @@ export default function GerenteDashboardClient() {
                 </Card>
 
                 {/* Chart (Right - 5 cols) */}
-                <Card className="md:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[220px]">
+                <Card className="md:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[300px] md:h-[220px]">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                             Desempenho Semanal
