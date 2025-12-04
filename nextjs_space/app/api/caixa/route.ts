@@ -291,9 +291,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `${
-          action === "sangria" ? "Sangria" : "Suprimento"
-        } realizado com sucesso!`,
+        message: `${action === "sangria" ? "Sangria" : "Suprimento"
+          } realizado com sucesso!`,
         movimentacao: mov,
       });
     }
@@ -318,8 +317,7 @@ export async function POST(request: NextRequest) {
       const temDivergencia =
         Math.abs(totalDivergencia) > 0.009 ||
         Math.abs(difDinheiro) > 0.009 ||
-        Math.abs(difPix) > 0.009 ||
-        Math.abs(difCartao) > 0.009;
+        Math.abs(difPix + difCartao) > 0.009;
 
       return NextResponse.json({
         success: true,
@@ -365,8 +363,7 @@ export async function POST(request: NextRequest) {
       const temDivergencia =
         Math.abs(totalDivergencia) > 0.009 ||
         Math.abs(difDinheiro) > 0.009 ||
-        Math.abs(difPix) > 0.009 ||
-        Math.abs(difCartao) > 0.009;
+        Math.abs(difPix + difCartao) > 0.009;
 
       // Backend Validation: Divergence requires Justification
       if (temDivergencia && (!justificativa || justificativa.trim() === "")) {

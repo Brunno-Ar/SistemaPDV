@@ -59,8 +59,7 @@ export function FechamentoCaixaDialog({
 
   // Inputs Fechamento
   const [valorDinheiro, setValorDinheiro] = useState("");
-  const [valorPix, setValorPix] = useState("");
-  const [valorCartao, setValorCartao] = useState("");
+  const [valorMaquininha, setValorMaquininha] = useState("");
   const [justificativa, setJustificativa] = useState("");
 
   // Estado Conferência
@@ -73,8 +72,7 @@ export function FechamentoCaixaDialog({
 
   const resetFechamento = () => {
     setValorDinheiro("");
-    setValorPix("");
-    setValorCartao("");
+    setValorMaquininha("");
     setJustificativa("");
     setEtapaFechamento("contagem");
     setResultadoConferencia(null);
@@ -94,8 +92,9 @@ export function FechamentoCaixaDialog({
       const payload: any = { action };
 
       payload.valorInformadoDinheiro = parseCurrency(valorDinheiro);
-      payload.valorInformadoPix = parseCurrency(valorPix);
-      payload.valorInformadoCartao = parseCurrency(valorCartao);
+      // Enviamos tudo como cartão, pois o backend agora valida a soma (Pix + Cartão)
+      payload.valorInformadoPix = 0;
+      payload.valorInformadoCartao = parseCurrency(valorMaquininha);
 
       if (action === "fechar") {
         payload.justificativa = justificativa;
@@ -168,7 +167,7 @@ export function FechamentoCaixaDialog({
 
         {etapaFechamento === "contagem" && (
           <div className="py-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="valorDinheiro">Dinheiro na Gaveta</Label>
                 <Input
@@ -181,23 +180,12 @@ export function FechamentoCaixaDialog({
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="valorPix">Total Pix</Label>
+                <Label htmlFor="valorMaquininha">Total Maquininha (Pix + Cartão)</Label>
                 <Input
-                  id="valorPix"
+                  id="valorMaquininha"
                   type="text"
-                  value={valorPix}
-                  onChange={(e) => setValorPix(e.target.value)}
-                  placeholder="0.00"
-                  inputMode="decimal"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="valorCartao">Total Cartão</Label>
-                <Input
-                  id="valorCartao"
-                  type="text"
-                  value={valorCartao}
-                  onChange={(e) => setValorCartao(e.target.value)}
+                  value={valorMaquininha}
+                  onChange={(e) => setValorMaquininha(e.target.value)}
                   placeholder="0.00"
                   inputMode="decimal"
                 />
@@ -256,16 +244,16 @@ export function FechamentoCaixaDialog({
                     diff: resultadoConferencia.diferenca.dinheiro,
                   },
                   {
-                    label: "Pix",
-                    inf: resultadoConferencia.informado.pix,
-                    sys: resultadoConferencia.esperado.pix,
-                    diff: resultadoConferencia.diferenca.pix,
-                  },
-                  {
-                    label: "Cartão",
-                    inf: resultadoConferencia.informado.cartao,
-                    sys: resultadoConferencia.esperado.cartao,
-                    diff: resultadoConferencia.diferenca.cartao,
+                    label: "Maquininha (Pix + Cartão)",
+                    inf:
+                      resultadoConferencia.informado.pix +
+                      resultadoConferencia.informado.cartao,
+                    sys:
+                      resultadoConferencia.esperado.pix +
+                      resultadoConferencia.esperado.cartao,
+                    diff:
+                      resultadoConferencia.diferenca.pix +
+                      resultadoConferencia.diferenca.cartao,
                   },
                 ].map((row) => (
                   <TableRow key={row.label}>
@@ -277,13 +265,12 @@ export function FechamentoCaixaDialog({
                       {formatCurrency(row.sys)}
                     </TableCell>
                     <TableCell
-                      className={`text-right font-bold ${
-                        Math.abs(row.diff) > 0.009
+                      className={`text-right font-bold ${Math.abs(row.diff) > 0.009
                           ? row.diff > 0
                             ? "text-blue-600"
                             : "text-red-600"
                           : "text-green-600"
-                      }`}
+                        }`}
                     >
                       {formatCurrency(row.diff)}
                     </TableCell>
@@ -351,8 +338,8 @@ export function FechamentoCaixaDialog({
                 {processing
                   ? "Finalizando..."
                   : temDivergencia
-                  ? "Finalizar com Divergência"
-                  : "Finalizar Fechamento"}
+                    ? "Finalizar com Divergência"
+                    : "Finalizar Fechamento"}
               </Button>
             </>
           )}
