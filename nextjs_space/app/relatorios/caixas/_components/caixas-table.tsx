@@ -31,7 +31,7 @@ interface CaixasTableProps {
 
 export function CaixasTable({ data }: CaixasTableProps) {
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>

@@ -55,11 +55,14 @@ async function calcularValoresEsperados(userId: string, caixaAberto: Partial<Cai
   const saldoTeoricoDinheiro =
     saldoInicial + vendasDinheiro + totalSuprimentos - totalSangrias;
 
-  // Expected Machine (Pix + Card)
-  const saldoTeoricoMaquininha = vendasPix + vendasCartao;
+  // Expected Pix
+  const saldoTeoricoPix = vendasPix;
+
+  // Expected Card (Credit + Debit)
+  const saldoTeoricoCartao = vendasCartao;
 
   // Total Theoretical Drawer
-  const totalTeoricoSistema = saldoTeoricoDinheiro + saldoTeoricoMaquininha;
+  const totalTeoricoSistema = saldoTeoricoDinheiro + saldoTeoricoPix + saldoTeoricoCartao;
 
   return {
     vendasDinheiro,
@@ -68,7 +71,8 @@ async function calcularValoresEsperados(userId: string, caixaAberto: Partial<Cai
     totalSangrias,
     totalSuprimentos,
     saldoTeoricoDinheiro,
-    saldoTeoricoMaquininha,
+    saldoTeoricoPix,
+    saldoTeoricoCartao,
     totalTeoricoSistema,
   };
 }
@@ -173,7 +177,8 @@ export async function POST(request: NextRequest) {
       metodoPagamento,
       // Novos campos de fechamento
       valorInformadoDinheiro,
-      valorInformadoMaquininha, // Novo campo
+      valorInformadoPix,
+      valorInformadoCartao,
       justificativa,
     } = body;
 
@@ -303,7 +308,8 @@ export async function POST(request: NextRequest) {
     if (action === "conferir" || action === "fechar") {
       // 1. Get Inputs (Informed)
       const infDinheiro = Number(valorInformadoDinheiro ?? 0);
-      const infMaquininha = Number(valorInformadoMaquininha ?? 0);
+      const infPix = Number(valorInformadoPix ?? 0);
+      const infCartao = Number(valorInformadoCartao ?? 0);
 
       // 2. Get Theoretical (System)
       const dados = await calcularValoresEsperados(
@@ -312,31 +318,35 @@ export async function POST(request: NextRequest) {
       );
 
       // 3. Calculate Divergence (General)
-      const totalInformado = infDinheiro + infMaquininha;
+      const totalInformado = infDinheiro + infPix + infCartao;
       const totalSistema = dados.totalTeoricoSistema;
       const divergenciaGeral = totalInformado - totalSistema;
 
       // Check if there is a significant divergence (> 1 cent)
       const temDivergencia = Math.abs(divergenciaGeral) > 0.009;
 
-      // 4. Internal Audit (Cash Only)
+      // 4. Internal Audit
       const diffDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
-      const diffMaquininha = infMaquininha - dados.saldoTeoricoMaquininha;
+      const diffPix = infPix - dados.saldoTeoricoPix;
+      const diffCartao = infCartao - dados.saldoTeoricoCartao;
 
       const detalhes = {
         esperado: {
           dinheiro: dados.saldoTeoricoDinheiro,
-          maquininha: dados.saldoTeoricoMaquininha,
+          pix: dados.saldoTeoricoPix,
+          cartao: dados.saldoTeoricoCartao,
           total: totalSistema,
         },
         informado: {
           dinheiro: infDinheiro,
-          maquininha: infMaquininha,
+          pix: infPix,
+          cartao: infCartao,
           total: totalInformado,
         },
         diferenca: {
           dinheiro: diffDinheiro,
-          maquininha: diffMaquininha,
+          pix: diffPix,
+          cartao: diffCartao,
           total: divergenciaGeral,
         },
       };
@@ -369,11 +379,9 @@ export async function POST(request: NextRequest) {
         data: {
           saldoFinal: totalInformado,
           valorInformadoDinheiro: infDinheiro,
-          valorInformadoMaquininha: infMaquininha,
-          // Deprecated fields set to 0 to avoid null issues if they are required in some legacy view,
-          // or we can leave them null if schema allows. Schema allows null.
-          valorInformadoPix: 0,
-          valorInformadoCartao: 0,
+          valorInformadoPix: infPix,
+          valorInformadoCartao: infCartao,
+          valorInformadoMaquininha: infPix + infCartao, // Sum for legacy compatibility
 
           justificativa: justificativa,
           quebraDeCaixa: divergenciaGeral, // Total monetário da divergência (pode ser positivo ou negativo)

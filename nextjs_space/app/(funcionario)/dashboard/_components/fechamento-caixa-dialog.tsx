@@ -28,17 +28,20 @@ import { Textarea } from "@/components/ui/textarea";
 interface DetalhesConferencia {
   esperado: {
     dinheiro: number;
-    maquininha: number;
+    pix: number;
+    cartao: number;
     total: number;
   };
   informado: {
     dinheiro: number;
-    maquininha: number;
+    pix: number;
+    cartao: number;
     total: number;
   };
   diferenca: {
     dinheiro: number;
-    maquininha: number;
+    pix: number;
+    cartao: number;
     total: number;
   };
 }
@@ -58,7 +61,8 @@ export function FechamentoCaixaDialog({
 
   // Inputs Fechamento
   const [valorDinheiro, setValorDinheiro] = useState("");
-  const [valorMaquininha, setValorMaquininha] = useState("");
+  const [valorPix, setValorPix] = useState("");
+  const [valorCartao, setValorCartao] = useState("");
   const [justificativa, setJustificativa] = useState("");
 
   // Estado Conferência
@@ -71,7 +75,8 @@ export function FechamentoCaixaDialog({
 
   const resetFechamento = () => {
     setValorDinheiro("");
-    setValorMaquininha("");
+    setValorPix("");
+    setValorCartao("");
     setJustificativa("");
     setEtapaFechamento("contagem");
     setResultadoConferencia(null);
@@ -91,8 +96,8 @@ export function FechamentoCaixaDialog({
       const payload: any = { action };
 
       payload.valorInformadoDinheiro = parseCurrency(valorDinheiro);
-      // New field: Maquininha (Pix + Card)
-      payload.valorInformadoMaquininha = parseCurrency(valorMaquininha);
+      payload.valorInformadoPix = parseCurrency(valorPix);
+      payload.valorInformadoCartao = parseCurrency(valorCartao);
 
       if (action === "fechar") {
         payload.justificativa = justificativa;
@@ -181,17 +186,31 @@ export function FechamentoCaixaDialog({
                 </p>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="valorMaquininha">Total Maquininha</Label>
+                <Label htmlFor="valorPix">Pix</Label>
                 <Input
-                  id="valorMaquininha"
+                  id="valorPix"
                   type="text"
-                  value={valorMaquininha}
-                  onChange={(e) => setValorMaquininha(e.target.value)}
+                  value={valorPix}
+                  onChange={(e) => setValorPix(e.target.value)}
                   placeholder="0.00"
                   inputMode="decimal"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  (Somatória de Pix e Cartão na máquina)
+                  (Total de vendas Pix)
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="valorCartao">Cartão (Crédito/Débito)</Label>
+                <Input
+                  id="valorCartao"
+                  type="text"
+                  value={valorCartao}
+                  onChange={(e) => setValorCartao(e.target.value)}
+                  placeholder="0.00"
+                  inputMode="decimal"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  (Total de vendas Cartão)
                 </p>
               </div>
             </div>
@@ -245,10 +264,16 @@ export function FechamentoCaixaDialog({
                     diff: resultadoConferencia.diferenca.dinheiro,
                   },
                   {
-                    label: "Maquininha",
-                    inf: resultadoConferencia.informado.maquininha,
-                    sys: resultadoConferencia.esperado.maquininha,
-                    diff: resultadoConferencia.diferenca.maquininha,
+                    label: "Pix",
+                    inf: resultadoConferencia.informado.pix,
+                    sys: resultadoConferencia.esperado.pix,
+                    diff: resultadoConferencia.diferenca.pix,
+                  },
+                  {
+                    label: "Cartão",
+                    inf: resultadoConferencia.informado.cartao,
+                    sys: resultadoConferencia.esperado.cartao,
+                    diff: resultadoConferencia.diferenca.cartao,
                   },
                   {
                     label: "TOTAL GERAL",
