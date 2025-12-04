@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
+import { useSession } from "next-auth/react";
 
 interface OnboardingTourProps {
   role: string;
@@ -10,6 +11,7 @@ interface OnboardingTourProps {
 
 export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
   const [run, setRun] = useState(false);
+  const { update } = useSession();
 
   useEffect(() => {
     // Only run if not completed and role is not master
@@ -33,6 +35,7 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
         await fetch("/api/user/complete-tour", {
           method: "POST",
         });
+        await update({ tourCompleted: true });
       } catch (error) {
         console.error("Failed to complete tour", error);
       }

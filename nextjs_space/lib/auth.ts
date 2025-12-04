@@ -114,6 +114,9 @@ export const authOptions: AuthOptions = {
       // Atualizar última atividade se for um update manual
       if (trigger === "update") {
         token.lastActivity = Date.now();
+        if (session?.tourCompleted !== undefined) {
+          token.tourCompleted = session.tourCompleted;
+        }
       }
 
       return token;
