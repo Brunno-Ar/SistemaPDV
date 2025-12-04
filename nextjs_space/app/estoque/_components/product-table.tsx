@@ -39,9 +39,10 @@ export function ProductTable({
   return (
     <Card className="bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
       <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 border-gray-200 dark:border-zinc-700">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800 border-gray-200 dark:border-zinc-700">
               <TableHead className="text-gray-700 dark:text-gray-300">
                 Produto
               </TableHead>
@@ -188,7 +189,8 @@ export function ProductTable({
               ))
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

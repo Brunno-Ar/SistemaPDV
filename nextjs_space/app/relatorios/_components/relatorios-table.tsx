@@ -33,9 +33,10 @@ export function RelatoriosTable({ recentSales }: RelatoriosTableProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800">
               <TableHead className="text-gray-700 dark:text-gray-300">
                 Data/Hora
               </TableHead>
@@ -127,7 +128,8 @@ export function RelatoriosTable({ recentSales }: RelatoriosTableProps) {
               ))
             )}
           </TableBody>
-        </Table>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
