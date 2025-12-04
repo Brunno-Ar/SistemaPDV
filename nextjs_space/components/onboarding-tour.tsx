@@ -14,7 +14,12 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
   useEffect(() => {
     // Only run if not completed and role is not master
     if (!tourCompleted && role !== "master") {
-      setRun(true);
+      // Small delay to ensure DOM is fully ready and hydration is complete
+      const timer = setTimeout(() => {
+        setRun(true);
+      }, 1000);
+
+      return () => clearTimeout(timer);
     }
   }, [tourCompleted, role]);
 
@@ -37,7 +42,12 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
   const adminSteps: Step[] = [
     {
       target: "body",
-      content: "Bem-vindo ao FlowPDV! Vamos fazer um tour rápido pelas funcionalidades.",
+      content: (
+        <div className="text-center">
+          <h3 className="font-bold text-lg mb-2">Bem-vindo ao FlowPDV!</h3>
+          <p>Vamos fazer um tour rápido pelas funcionalidades do sistema.</p>
+        </div>
+      ),
       placement: "center",
       disableBeacon: true,
     },
@@ -48,6 +58,10 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
     {
       target: "#menu-estoque",
       content: "Gerencie seus produtos e estoque nesta área.",
+    },
+    {
+      target: "#menu-movimentacoes",
+      content: "Acompanhe todas as movimentações de estoque e financeiras.",
     },
     {
       target: "#menu-equipe",
@@ -63,10 +77,45 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
     },
   ];
 
+  const gerenteSteps: Step[] = [
+    {
+      target: "body",
+      content: (
+        <div className="text-center">
+          <h3 className="font-bold text-lg mb-2">Bem-vindo ao FlowPDV!</h3>
+          <p>Vamos fazer um tour rápido pelas funcionalidades do sistema.</p>
+        </div>
+      ),
+      placement: "center",
+      disableBeacon: true,
+    },
+    {
+      target: "#menu-vender",
+      content: "Aqui você realiza as vendas no PDV (Ponto de Venda).",
+    },
+    {
+      target: "#menu-estoque",
+      content: "Gerencie seus produtos e estoque nesta área.",
+    },
+    {
+      target: "#menu-movimentacoes",
+      content: "Acompanhe as movimentações de estoque e financeiras.",
+    },
+    {
+      target: "#card-faturamento",
+      content: "Acompanhe seu faturamento diário aqui.",
+    },
+  ];
+
   const funcionarioSteps: Step[] = [
     {
       target: "body",
-      content: "Bem-vindo ao FlowPDV! Vamos conhecer seu ambiente de trabalho.",
+      content: (
+        <div className="text-center">
+          <h3 className="font-bold text-lg mb-2">Bem-vindo ao FlowPDV!</h3>
+          <p>Vamos conhecer seu ambiente de trabalho.</p>
+        </div>
+      ),
       placement: "center",
       disableBeacon: true,
     },
@@ -86,8 +135,10 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
 
   let steps: Step[] = [];
 
-  if (role === "admin" || role === "gerente") {
+  if (role === "admin") {
     steps = adminSteps;
+  } else if (role === "gerente") {
+    steps = gerenteSteps;
   } else if (role === "caixa" || role === "funcionario") {
     steps = funcionarioSteps;
   }
@@ -106,20 +157,42 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
         options: {
           primaryColor: "#137fec",
           zIndex: 1000,
+          arrowColor: "#fff",
+          backgroundColor: "#fff",
+          overlayColor: "rgba(0, 0, 0, 0.6)",
+          textColor: "#333",
+        },
+        tooltip: {
+          borderRadius: "12px",
+          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+          padding: "20px",
+        },
+        tooltipContainer: {
+          textAlign: "left",
         },
         buttonNext: {
           backgroundColor: "#137fec",
+          borderRadius: "8px",
+          padding: "10px 20px",
+          fontWeight: 600,
+          fontSize: "14px",
         },
         buttonBack: {
-          color: "#137fec",
+          color: "#666",
+          marginRight: "10px",
+          fontWeight: 500,
+        },
+        buttonSkip: {
+          color: "#999",
+          fontSize: "14px",
         },
       }}
       locale={{
         back: "Voltar",
         close: "Fechar",
-        last: "Terminar",
+        last: "Concluir",
         next: "Próximo",
-        skip: "Pular",
+        skip: "Pular tour",
       }}
     />
   );

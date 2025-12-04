@@ -80,10 +80,10 @@ export default function RoleBasedLayout({
         icon: <Calendar className="h-5 w-5 flex-shrink-0" />,
       },
       {
-        label: "Relatórios",
-        href: "/relatorios",
-        icon: <BarChart3 className="h-5 w-5 flex-shrink-0" />,
-        id: "menu-relatorios",
+        label: "Movimentações",
+        href: "/movimentacoes",
+        icon: <ArrowRightLeft className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-movimentacoes",
       },
       {
         label: "Minha Conta",
@@ -124,6 +124,7 @@ export default function RoleBasedLayout({
         label: "Movimentações",
         href: "/movimentacoes",
         icon: <ArrowRightLeft className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-movimentacoes",
       },
       {
         label: "Equipe",

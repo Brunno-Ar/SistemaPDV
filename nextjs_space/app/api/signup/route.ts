@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     // Separe email para permitir reatribuição, use const para os outros
     let { email } = body;
-    const { password, nome, nomeEmpresa } = body;
+    const { password, nome, nomeEmpresa, telefone } = body;
 
     if (email) {
       email = email.toLowerCase();
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       const empresa = await tx.empresa.create({
         data: {
           nome: nomeEmpresa,
+          telefone,
           status: "PENDENTE", // Será aprovada pelo master
           // vencimentoPlano será definido quando aprovado
         },
