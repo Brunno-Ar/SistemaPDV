@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { TipoMovimentacaoCaixa, MetodoPagamento } from "@prisma/client";
+import { TipoMovimentacaoCaixa, MetodoPagamento, Caixa } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
 // Helper function to calculate expected values
-async function calcularValoresEsperados(userId: string, caixaAberto: any) {
+async function calcularValoresEsperados(userId: string, caixaAberto: Partial<Caixa>) {
   // 1. Fetch Sales aggregated by payment method since opening
   const vendas = await prisma.sale.groupBy({
     by: ["metodoPagamento"],
@@ -51,13 +51,15 @@ async function calcularValoresEsperados(userId: string, caixaAberto: any) {
   // 3. Calculate Theoretical Balances
   const saldoInicial = Number(caixaAberto.saldoInicial);
 
-  // Money in Drawer = Initial + Sales(Money) + Supply - Bleed
+  // Expected Cash = Initial + Supplies - Bleeds + Sales(Cash)
   const saldoTeoricoDinheiro =
     saldoInicial + vendasDinheiro + totalSuprimentos - totalSangrias;
 
-  // Digital Balances (just Sales)
-  const saldoTeoricoPix = vendasPix;
-  const saldoTeoricoCartao = vendasCartao;
+  // Expected Machine (Pix + Card)
+  const saldoTeoricoMaquininha = vendasPix + vendasCartao;
+
+  // Total Theoretical Drawer
+  const totalTeoricoSistema = saldoTeoricoDinheiro + saldoTeoricoMaquininha;
 
   return {
     vendasDinheiro,
@@ -66,9 +68,8 @@ async function calcularValoresEsperados(userId: string, caixaAberto: any) {
     totalSangrias,
     totalSuprimentos,
     saldoTeoricoDinheiro,
-    saldoTeoricoPix,
-    saldoTeoricoCartao,
-    totalVendas: vendasDinheiro + vendasPix + vendasCartao,
+    saldoTeoricoMaquininha,
+    totalTeoricoSistema,
   };
 }
 
@@ -171,8 +172,7 @@ export async function POST(request: NextRequest) {
       descricao,
       // Novos campos de fechamento
       valorInformadoDinheiro,
-      valorInformadoPix,
-      valorInformadoCartao,
+      valorInformadoMaquininha, // Novo campo
       justificativa,
     } = body;
 
@@ -297,73 +297,58 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // === CONFERIR (NOVA AÇÃO) ===
-    if (action === "conferir") {
-      // Validate inputs (allow 0)
+    // === CONFERIR / FECHAR (LÓGICA UNIFICADA) ===
+    if (action === "conferir" || action === "fechar") {
+      // 1. Get Inputs (Informed)
       const infDinheiro = Number(valorInformadoDinheiro ?? 0);
-      const infPix = Number(valorInformadoPix ?? 0);
-      const infCartao = Number(valorInformadoCartao ?? 0);
+      const infMaquininha = Number(valorInformadoMaquininha ?? 0);
 
+      // 2. Get Theoretical (System)
       const dados = await calcularValoresEsperados(
         session.user.id,
         caixaAberto
       );
 
-      const difDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
-      const difPix = infPix - dados.saldoTeoricoPix;
-      const difCartao = infCartao - dados.saldoTeoricoCartao;
+      // 3. Calculate Divergence (General)
+      const totalInformado = infDinheiro + infMaquininha;
+      const totalSistema = dados.totalTeoricoSistema;
+      const divergenciaGeral = totalInformado - totalSistema;
 
-      const totalDivergencia = difDinheiro + difPix + difCartao;
-      const temDivergencia =
-        Math.abs(totalDivergencia) > 0.009 ||
-        Math.abs(difDinheiro) > 0.009 ||
-        Math.abs(difPix + difCartao) > 0.009;
+      // Check if there is a significant divergence (> 1 cent)
+      const temDivergencia = Math.abs(divergenciaGeral) > 0.009;
 
-      return NextResponse.json({
-        success: true,
-        temDivergencia,
-        detalhes: {
-          esperado: {
-            dinheiro: dados.saldoTeoricoDinheiro,
-            pix: dados.saldoTeoricoPix,
-            cartao: dados.saldoTeoricoCartao,
-          },
-          informado: {
-            dinheiro: infDinheiro,
-            pix: infPix,
-            cartao: infCartao,
-          },
-          diferenca: {
-            dinheiro: difDinheiro,
-            pix: difPix,
-            cartao: difCartao,
-            total: totalDivergencia,
-          },
+      // 4. Internal Audit (Cash Only)
+      const diffDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
+      const diffMaquininha = infMaquininha - dados.saldoTeoricoMaquininha;
+
+      const detalhes = {
+        esperado: {
+          dinheiro: dados.saldoTeoricoDinheiro,
+          maquininha: dados.saldoTeoricoMaquininha,
+          total: totalSistema,
         },
-      });
-    }
+        informado: {
+          dinheiro: infDinheiro,
+          maquininha: infMaquininha,
+          total: totalInformado,
+        },
+        diferenca: {
+          dinheiro: diffDinheiro,
+          maquininha: diffMaquininha,
+          total: divergenciaGeral,
+        },
+      };
 
-    // === FECHAR CAIXA ===
-    if (action === "fechar") {
-      // Inputs
-      const infDinheiro = Number(valorInformadoDinheiro ?? 0);
-      const infPix = Number(valorInformadoPix ?? 0);
-      const infCartao = Number(valorInformadoCartao ?? 0);
+      // If just checking, return details
+      if (action === "conferir") {
+        return NextResponse.json({
+          success: true,
+          temDivergencia,
+          detalhes,
+        });
+      }
 
-      const dados = await calcularValoresEsperados(
-        session.user.id,
-        caixaAberto
-      );
-
-      const difDinheiro = infDinheiro - dados.saldoTeoricoDinheiro;
-      const difPix = infPix - dados.saldoTeoricoPix;
-      const difCartao = infCartao - dados.saldoTeoricoCartao;
-
-      const totalDivergencia = difDinheiro + difPix + difCartao;
-      const temDivergencia =
-        Math.abs(totalDivergencia) > 0.009 ||
-        Math.abs(difDinheiro) > 0.009 ||
-        Math.abs(difPix + difCartao) > 0.009;
+      // === ACTION: FECHAR ===
 
       // Backend Validation: Divergence requires Justification
       if (temDivergencia && (!justificativa || justificativa.trim() === "")) {
@@ -376,19 +361,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Total Final (Sum of informed values)
-      const saldoFinal = infDinheiro + infPix + infCartao;
-
       // Update Caixa
       const caixaFechado = await prisma.caixa.update({
         where: { id: caixaAberto.id },
         data: {
-          saldoFinal: saldoFinal,
+          saldoFinal: totalInformado,
           valorInformadoDinheiro: infDinheiro,
-          valorInformadoPix: infPix,
-          valorInformadoCartao: infCartao,
+          valorInformadoMaquininha: infMaquininha,
+          // Deprecated fields set to 0 to avoid null issues if they are required in some legacy view,
+          // or we can leave them null if schema allows. Schema allows null.
+          valorInformadoPix: 0,
+          valorInformadoCartao: 0,
+
           justificativa: justificativa,
-          quebraDeCaixa: totalDivergencia, // Total monetário da divergência
+          quebraDeCaixa: divergenciaGeral, // Total monetário da divergência (pode ser positivo ou negativo)
+          divergenciaDinheiro: diffDinheiro, // Internal Audit Log
+
           status: "FECHADO",
           dataFechamento: new Date(),
         },
@@ -402,7 +390,7 @@ export async function POST(request: NextRequest) {
         caixa: caixaFechado,
         divergencia: temDivergencia,
         detalhes: {
-          diferencaTotal: totalDivergencia,
+          diferencaTotal: divergenciaGeral,
         },
       });
     }

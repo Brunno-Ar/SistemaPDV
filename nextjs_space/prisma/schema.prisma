@@ -272,11 +272,16 @@ model Caixa {
   empresaId      String      @map("empresa_id")
   saldoInicial   Decimal     @map("saldo_inicial") @db.Decimal(10, 2)
   saldoFinal     Decimal?    @map("saldo_final") @db.Decimal(10, 2)
+
   valorInformadoDinheiro Decimal? @map("valor_informado_dinheiro") @db.Decimal(10, 2)
-  valorInformadoPix      Decimal? @map("valor_informado_pix") @db.Decimal(10, 2)
-  valorInformadoCartao   Decimal? @map("valor_informado_cartao") @db.Decimal(10, 2)
+  valorInformadoPix      Decimal? @map("valor_informado_pix") @db.Decimal(10, 2) // Deprecado, manter por histórico
+  valorInformadoCartao   Decimal? @map("valor_informado_cartao") @db.Decimal(10, 2) // Deprecado, manter por histórico
+  valorInformadoMaquininha Decimal? @map("valor_informado_maquininha") @db.Decimal(10, 2) // Novo campo unificado
+
   justificativa          String?  @db.Text
   quebraDeCaixa  Decimal?    @map("quebra_de_caixa") @db.Decimal(10, 2)
+  divergenciaDinheiro Decimal? @map("divergencia_dinheiro") @db.Decimal(10, 2) // Auditoria interna
+
   status         StatusCaixa @default(ABERTO)
   dataAbertura   DateTime    @default(now()) @map("data_abertura")
   dataFechamento DateTime?   @map("data_fechamento")

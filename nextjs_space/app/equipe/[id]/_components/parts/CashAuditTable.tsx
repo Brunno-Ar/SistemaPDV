@@ -69,7 +69,8 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                     const saldoInformado =
                       (Number(caixa.valorInformadoDinheiro) || 0) +
                       (Number(caixa.valorInformadoPix) || 0) +
-                      (Number(caixa.valorInformadoCartao) || 0);
+                      (Number(caixa.valorInformadoCartao) || 0) +
+                      (Number(caixa.valorInformadoMaquininha) || 0);
 
                     return (
                       <TableRow key={caixa.id}>

@@ -28,18 +28,17 @@ import { Textarea } from "@/components/ui/textarea";
 interface DetalhesConferencia {
   esperado: {
     dinheiro: number;
-    pix: number;
-    cartao: number;
+    maquininha: number;
+    total: number;
   };
   informado: {
     dinheiro: number;
-    pix: number;
-    cartao: number;
+    maquininha: number;
+    total: number;
   };
   diferenca: {
     dinheiro: number;
-    pix: number;
-    cartao: number;
+    maquininha: number;
     total: number;
   };
 }
@@ -92,9 +91,8 @@ export function FechamentoCaixaDialog({
       const payload: any = { action };
 
       payload.valorInformadoDinheiro = parseCurrency(valorDinheiro);
-      // Enviamos tudo como cartão, pois o backend agora valida a soma (Pix + Cartão)
-      payload.valorInformadoPix = 0;
-      payload.valorInformadoCartao = parseCurrency(valorMaquininha);
+      // New field: Maquininha (Pix + Card)
+      payload.valorInformadoMaquininha = parseCurrency(valorMaquininha);
 
       if (action === "fechar") {
         payload.justificativa = justificativa;
@@ -178,9 +176,12 @@ export function FechamentoCaixaDialog({
                   placeholder="0.00"
                   inputMode="decimal"
                 />
+                <p className="text-[10px] text-muted-foreground">
+                  (Conte o dinheiro físico)
+                </p>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="valorMaquininha">Total Maquininha (Pix + Cartão)</Label>
+                <Label htmlFor="valorMaquininha">Total Maquininha</Label>
                 <Input
                   id="valorMaquininha"
                   type="text"
@@ -189,11 +190,11 @@ export function FechamentoCaixaDialog({
                   placeholder="0.00"
                   inputMode="decimal"
                 />
+                <p className="text-[10px] text-muted-foreground">
+                  (Somatória de Pix e Cartão na máquina)
+                </p>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-4">
-              * Deixe em branco caso não tenha havido vendas no método.
-            </p>
           </div>
         )}
 
@@ -231,7 +232,7 @@ export function FechamentoCaixaDialog({
                 <TableRow>
                   <TableHead>Método</TableHead>
                   <TableHead className="text-right">Informado</TableHead>
-                  <TableHead className="text-right">Sistema</TableHead>
+                  <TableHead className="text-right">Esperado</TableHead>
                   <TableHead className="text-right">Diferença</TableHead>
                 </TableRow>
               </TableHeader>
@@ -244,19 +245,20 @@ export function FechamentoCaixaDialog({
                     diff: resultadoConferencia.diferenca.dinheiro,
                   },
                   {
-                    label: "Maquininha (Pix + Cartão)",
-                    inf:
-                      resultadoConferencia.informado.pix +
-                      resultadoConferencia.informado.cartao,
-                    sys:
-                      resultadoConferencia.esperado.pix +
-                      resultadoConferencia.esperado.cartao,
-                    diff:
-                      resultadoConferencia.diferenca.pix +
-                      resultadoConferencia.diferenca.cartao,
+                    label: "Maquininha",
+                    inf: resultadoConferencia.informado.maquininha,
+                    sys: resultadoConferencia.esperado.maquininha,
+                    diff: resultadoConferencia.diferenca.maquininha,
+                  },
+                  {
+                    label: "TOTAL GERAL",
+                    inf: resultadoConferencia.informado.total,
+                    sys: resultadoConferencia.esperado.total,
+                    diff: resultadoConferencia.diferenca.total,
+                    bold: true,
                   },
                 ].map((row) => (
-                  <TableRow key={row.label}>
+                  <TableRow key={row.label} className={row.bold ? "bg-muted/50 font-bold" : ""}>
                     <TableCell className="font-medium">{row.label}</TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(row.inf)}
