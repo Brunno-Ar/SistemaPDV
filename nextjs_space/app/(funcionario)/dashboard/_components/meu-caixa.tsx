@@ -76,6 +76,14 @@ interface DetalhesConferencia {
 
 import { FechamentoCaixaDialog } from "./fechamento-caixa-dialog";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 export function MeuCaixa() {
   const { data: session } = useSession();
   const [caixa, setCaixa] = useState<CaixaStatus | null>(null);
@@ -85,6 +93,7 @@ export function MeuCaixa() {
   // Inputs Gerais
   const [inputValue, setInputValue] = useState("");
   const [description, setDescription] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("dinheiro");
   const [processing, setProcessing] = useState(false);
 
   const router = useRouter();
@@ -132,6 +141,7 @@ export function MeuCaixa() {
           throw new Error("Valor deve ser maior que zero.");
         payload.valor = numericValue;
         payload.descricao = description;
+        payload.metodoPagamento = paymentMethod;
       }
 
       const res = await fetch("/api/caixa", {
@@ -155,6 +165,7 @@ export function MeuCaixa() {
       setDialogOpen(null);
       setInputValue("");
       setDescription("");
+      setPaymentMethod("dinheiro");
       await fetchStatus();
       router.refresh();
     } catch (error: any) {
@@ -167,6 +178,7 @@ export function MeuCaixa() {
           description:
             "Detectamos que seu caixa já está aberto. Atualizando...",
           variant: "default",
+          duration: 5000,
         });
         setDialogOpen(null);
         fetchStatus();
@@ -318,6 +330,7 @@ export function MeuCaixa() {
               if (!o) {
                 setInputValue("");
                 setDescription("");
+                setPaymentMethod("dinheiro");
               }
               setDialogOpen(o ? "suprimento" : null);
             }}
@@ -348,6 +361,23 @@ export function MeuCaixa() {
                   />
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="metodoPagamentoSuprimento">Forma de Pagamento</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
+                    <SelectTrigger id="metodoPagamentoSuprimento">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="pix">Pix</SelectItem>
+                      <SelectItem value="debito">Débito</SelectItem>
+                      <SelectItem value="credito">Crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="descricaoSuprimento">Descrição</Label>
                   <Input
                     id="descricaoSuprimento"
@@ -374,6 +404,7 @@ export function MeuCaixa() {
               if (!o) {
                 setInputValue("");
                 setDescription("");
+                setPaymentMethod("dinheiro");
               }
               setDialogOpen(o ? "sangria" : null);
             }}
@@ -400,6 +431,23 @@ export function MeuCaixa() {
                     placeholder="0,00"
                     inputMode="decimal"
                   />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="metodoPagamentoSangria">Forma de Pagamento</Label>
+                  <Select
+                    value={paymentMethod}
+                    onValueChange={setPaymentMethod}
+                  >
+                    <SelectTrigger id="metodoPagamentoSangria">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="pix">Pix</SelectItem>
+                      <SelectItem value="debito">Débito</SelectItem>
+                      <SelectItem value="credito">Crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="descricaoSangria">Descrição</Label>

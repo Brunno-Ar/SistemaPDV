@@ -302,6 +302,7 @@ model MovimentacaoCaixa {
   usuarioId   String                @map("usuario_id")
   tipo        TipoMovimentacaoCaixa
   valor       Decimal               @db.Decimal(10, 2)
+  metodoPagamento MetodoPagamento? @map("metodo_pagamento")
   descricao   String?
   dataHora    DateTime              @default(now()) @map("data_hora")
 

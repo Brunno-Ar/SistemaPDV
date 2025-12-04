@@ -170,6 +170,7 @@ export async function POST(request: NextRequest) {
       saldoInicial,
       valor,
       descricao,
+      metodoPagamento,
       // Novos campos de fechamento
       valorInformadoDinheiro,
       valorInformadoMaquininha, // Novo campo
@@ -286,6 +287,7 @@ export async function POST(request: NextRequest) {
           tipo: tipo,
           valor: Number(valor),
           descricao: descricao || "",
+          metodoPagamento: metodoPagamento as MetodoPagamento,
         },
       });
 

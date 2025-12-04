@@ -21,6 +21,14 @@ export default async function RelatoriosCaixasPage() {
     redirect("/vender");
   }
 
+  if (!session.user.empresaId) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        Usuário não vinculado a uma empresa.
+      </div>
+    );
+  }
+
   // Fetch last 30 days of Caixas
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
