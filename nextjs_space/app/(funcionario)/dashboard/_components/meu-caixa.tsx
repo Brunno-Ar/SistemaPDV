@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+
 import { toast } from "@/components/ui/use-toast";
 import { formatCurrency, parseCurrency } from "@/lib/utils";
 import {
@@ -23,20 +23,9 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   RotateCcw,
-  History,
-  AlertTriangle,
-  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
+
 import { useSession } from "next-auth/react";
 
 interface Movimentacao {
@@ -55,24 +44,7 @@ interface CaixaStatus {
   movimentacoes: Movimentacao[];
 }
 
-interface DetalhesConferencia {
-  esperado: {
-    dinheiro: number;
-    pix: number;
-    cartao: number;
-  };
-  informado: {
-    dinheiro: number;
-    pix: number;
-    cartao: number;
-  };
-  diferenca: {
-    dinheiro: number;
-    pix: number;
-    cartao: number;
-    total: number;
-  };
-}
+
 
 import { FechamentoCaixaDialog } from "./fechamento-caixa-dialog";
 
@@ -83,6 +55,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+interface CaixaPayload {
+  action: string;
+  saldoInicial?: number;
+  valor?: number;
+  descricao?: string;
+  metodoPagamento?: string;
+}
 
 export function MeuCaixa() {
   const { data: session } = useSession();
@@ -119,7 +99,7 @@ export function MeuCaixa() {
   const handleAction = async (action: string) => {
     setProcessing(true);
     try {
-      const payload: any = { action };
+      const payload: CaixaPayload = { action };
 
       if (action === "abrir") {
         if (!session?.user?.empresaId) {
@@ -168,10 +148,10 @@ export function MeuCaixa() {
       setPaymentMethod("dinheiro");
       await fetchStatus();
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
       if (
-        error.message &&
-        error.message.includes("já possui um caixa aberto")
+        message.includes("já possui um caixa aberto")
       ) {
         toast({
           title: "Atenção",
@@ -187,7 +167,7 @@ export function MeuCaixa() {
 
       toast({
         title: "Erro",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {

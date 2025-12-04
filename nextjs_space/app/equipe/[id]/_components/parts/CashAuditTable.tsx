@@ -18,12 +18,35 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, List } from "lucide-react";
+import { List } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+interface Movimentacao {
+  id: string;
+  tipo: string;
+  valor: number;
+  descricao?: string;
+  dataHora: string;
+}
+
+interface Caixa {
+  id: string;
+  dataAbertura: string;
+  dataFechamento?: string;
+  saldoInicial: number;
+  quebraDeCaixa?: number | null;
+  valorInformadoDinheiro?: number;
+  valorInformadoPix?: number;
+  valorInformadoCartao?: number;
+  valorInformadoMaquininha?: number;
+  movimentacoes: Movimentacao[];
+  status: string;
+  justificativa?: string;
+}
+
 interface CashAuditTableProps {
-  caixas: any[];
+  caixas: Caixa[];
   formatCurrency: (value: number | string) => string;
 }
 
@@ -65,7 +88,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
               </TableHeader>
               <TableBody>
                 {caixas && caixas.length > 0 ? (
-                  caixas.map((caixa: any) => {
+                  caixas.map((caixa) => {
                     const saldoInformado =
                       (Number(caixa.valorInformadoDinheiro) || 0) +
                       (Number(caixa.valorInformadoPix) || 0) +
@@ -112,7 +135,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                           {formatCurrency(caixa.saldoInicial)}
                         </TableCell>
                         <TableCell>
-                          {getQuebraBadge(caixa.quebraDeCaixa)}
+                          {getQuebraBadge(caixa.quebraDeCaixa ?? null)}
                         </TableCell>
                         <TableCell className="text-right">
                           <Sheet>
@@ -190,8 +213,8 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                       <TableBody>
                                         {caixa.movimentacoes && caixa.movimentacoes.length > 0 ? (
                                           caixa.movimentacoes
-                                            .filter((m: any) => m.tipo !== "ABERTURA")
-                                            .map((mov: any) => (
+                                            .filter((m) => m.tipo !== "ABERTURA")
+                                            .map((mov) => (
                                               <TableRow key={mov.id}>
                                                 <TableCell className="text-xs">
                                                   {format(
@@ -224,7 +247,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                             ))
                                         ) : null}
 
-                                        {(!caixa.movimentacoes || caixa.movimentacoes.filter((m: any) => m.tipo !== "ABERTURA").length === 0) && (
+                                        {(!caixa.movimentacoes || caixa.movimentacoes.filter((m) => m.tipo !== "ABERTURA").length === 0) && (
                                           <TableRow>
                                             <TableCell
                                               colSpan={4}
@@ -283,7 +306,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                 <div className="flex justify-between items-center">
                                   <span className="font-semibold">Resultado (Quebra de Caixa)</span>
                                   <div className="scale-110 origin-right">
-                                    {getQuebraBadge(caixa.quebraDeCaixa)}
+                                    {getQuebraBadge(caixa.quebraDeCaixa ?? null)}
                                   </div>
                                 </div>
                                 <p className="text-xs text-muted-foreground text-right">
