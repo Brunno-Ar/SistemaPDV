@@ -100,7 +100,7 @@ export const authOptions: AuthOptions = {
       // Permitir o login
       return true;
     },
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session }) {
       // Se é um novo login, adiciona os dados do usuário
       if (user) {
         token.role = user.role;
