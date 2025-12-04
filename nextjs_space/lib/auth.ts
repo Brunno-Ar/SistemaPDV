@@ -86,6 +86,7 @@ export const authOptions: AuthOptions = {
           empresaId: user.empresaId,
           empresaNome: user.empresa?.nome,
           vencimentoPlano: user.empresa?.vencimentoPlano?.toISOString(),
+          tourCompleted: user.tourCompleted,
         };
       },
     }),
@@ -106,6 +107,7 @@ export const authOptions: AuthOptions = {
         token.empresaId = user.empresaId;
         token.empresaNome = user.empresaNome;
         token.vencimentoPlano = user.vencimentoPlano;
+        token.tourCompleted = user.tourCompleted;
         token.lastActivity = Date.now();
       }
 
@@ -123,6 +125,7 @@ export const authOptions: AuthOptions = {
         session.user.empresaId = token.empresaId as string;
         session.user.empresaNome = token.empresaNome as string;
         session.user.vencimentoPlano = token.vencimentoPlano as string;
+        session.user.tourCompleted = token.tourCompleted as boolean;
         session.lastActivity = token.lastActivity as number;
       }
       return session;

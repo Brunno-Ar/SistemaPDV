@@ -167,9 +167,8 @@ export function CartSummary({
               }}
             >
               <SelectTrigger
-                className={`h-11 bg-white dark:bg-[#182635] border-gray-200 dark:border-zinc-700 rounded-xl ${
-                  paymentError ? "border-red-500 ring-1 ring-red-500" : ""
-                }`}
+                className={`h-11 bg-white dark:bg-[#182635] border-gray-200 dark:border-zinc-700 rounded-xl ${paymentError ? "border-red-500 ring-1 ring-red-500" : ""
+                  }`}
               >
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
@@ -202,6 +201,12 @@ export function CartSummary({
                         autoFocus
                         placeholder="0,00"
                         value={valorRecebido}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            onFinalize();
+                          }
+                        }}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (/^[\d,.]*$/.test(value)) {
@@ -219,11 +224,10 @@ export function CartSummary({
                         Troco
                       </span>
                       <p
-                        className={`text-xl font-bold ${
-                          troco < 0
+                        className={`text-xl font-bold ${troco < 0
                             ? "text-red-500"
                             : "text-blue-600 dark:text-blue-400"
-                        }`}
+                          }`}
                       >
                         R$ {troco.toFixed(2)}
                       </p>

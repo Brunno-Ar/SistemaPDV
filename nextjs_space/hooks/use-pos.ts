@@ -72,13 +72,17 @@ export function usePOS() {
     localStorage.setItem("pdv_cart", JSON.stringify(cart));
   }, [cart]);
 
+  const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
+
   useEffect(() => {
     localStorage.setItem("pdv_payment_method", metodoPagamento);
-    // Limpar valor recebido se mudar método de pagamento (exceto se for para dinheiro, que inicia vazio)
-    if (metodoPagamento !== "dinheiro") {
+    // Se mudar para dinheiro ou o total mudar, preenche automaticamente com o total
+    if (metodoPagamento === "dinheiro") {
+      setValorRecebido(total.toFixed(2).replace(".", ","));
+    } else {
       setValorRecebido("");
     }
-  }, [metodoPagamento]);
+  }, [metodoPagamento, total]);
 
   // Busca com Debounce
   useEffect(() => {
@@ -148,7 +152,7 @@ export function usePOS() {
             variant: "default",
           });
           return;
-        } catch (e) {}
+        } catch (e) { }
       }
       setProducts([]);
       setFilteredProducts([]);
@@ -224,11 +228,11 @@ export function usePOS() {
       prevCart.map((item) =>
         item.product.id === productId
           ? {
-              ...item,
-              quantidade: newQuantity,
-              subtotal:
-                newQuantity * item.product.precoVenda - item.descontoAplicado,
-            }
+            ...item,
+            quantidade: newQuantity,
+            subtotal:
+              newQuantity * item.product.precoVenda - item.descontoAplicado,
+          }
           : item
       )
     );

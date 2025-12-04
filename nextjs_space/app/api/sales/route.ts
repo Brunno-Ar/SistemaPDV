@@ -94,10 +94,15 @@ export async function POST(request: NextRequest) {
     });
 
     if (!caixaAberto) {
-      return NextResponse.json(
-        { error: "Caixa fechado. Abra o caixa para realizar vendas." },
-        { status: 400 }
-      );
+      // Se for admin ou master, permite vender mesmo sem caixa aberto
+      if (session.user.role === "admin" || session.user.role === "master") {
+        // Segue o fluxo...
+      } else {
+        return NextResponse.json(
+          { error: "Caixa fechado. Abra o caixa para realizar vendas." },
+          { status: 400 }
+        );
+      }
     }
 
     const body = await request.json();

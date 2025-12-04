@@ -17,14 +17,30 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ShoppingCart } from "lucide-react";
 
+import { useSession } from "next-auth/react";
+
 export default function VenderClient() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [caixaFechado, setCaixaFechado] = useState(false);
   const [verificandoCaixa, setVerificandoCaixa] = useState(true);
 
   // Verificar status do caixa ao montar
   useEffect(() => {
     async function checkCaixa() {
+      // Se a sessão ainda estiver carregando, aguarda
+      if (status === "loading") return;
+
+      // Se for Admin ou Master, libera o acesso direto (sem precisar de caixa)
+      if (
+        session?.user?.role === "admin" ||
+        session?.user?.role === "master"
+      ) {
+        setCaixaFechado(false);
+        setVerificandoCaixa(false);
+        return;
+      }
+
       try {
         const res = await fetch("/api/caixa", { cache: "no-store" });
         if (res.ok) {
@@ -49,7 +65,7 @@ export default function VenderClient() {
       }
     }
     checkCaixa();
-  }, []);
+  }, [session, status]);
 
   const {
     filteredProducts,

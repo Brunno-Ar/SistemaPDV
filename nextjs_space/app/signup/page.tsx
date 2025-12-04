@@ -15,6 +15,7 @@ import {
   Loader2,
   AlertTriangle,
   CheckCircle2,
+  Phone,
 } from "lucide-react";
 import { ThemeToggle } from "../(landing)/_components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [nome, setNome] = useState("");
   const [nomeEmpresa, setNomeEmpresa] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -55,6 +57,7 @@ export default function SignupPage() {
           password,
           nome,
           nomeEmpresa,
+          telefone,
         }),
       });
 
@@ -72,6 +75,7 @@ export default function SignupPage() {
       setConfirmPassword("");
       setNome("");
       setNomeEmpresa("");
+      setTelefone("");
 
       setTimeout(() => {
         router.push("/login");
@@ -86,7 +90,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-white overflow-hidden">
       {/* Left Side - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-12 relative z-10 overflow-y-auto max-h-screen">
+      <div className="w-full lg:w-1/2 flex flex-col justify-start items-center p-8 lg:p-12 pt-24 lg:pt-24 relative z-10 overflow-y-auto max-h-screen">
         <div className="absolute top-8 left-8">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -129,6 +133,22 @@ export default function SignupPage() {
                   className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-12 py-3.5 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all placeholder:text-gray-400"
                   placeholder="Minha Loja Inc."
                   required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Telefone / WhatsApp
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="tel"
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-12 py-3.5 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all placeholder:text-gray-400"
+                  placeholder="(11) 99999-9999"
                 />
               </div>
             </div>

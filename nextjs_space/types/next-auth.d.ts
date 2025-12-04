@@ -11,6 +11,7 @@ declare module "next-auth" {
       empresaNome?: string | null;
       status?: string | null;
       vencimentoPlano?: string | null;
+      tourCompleted?: boolean;
     };
     lastActivity?: number;
   }
@@ -21,6 +22,7 @@ declare module "next-auth" {
     empresaNome?: string | null;
     status?: string | null;
     vencimentoPlano?: string | null;
+    tourCompleted?: boolean;
   }
 }
 
@@ -32,5 +34,6 @@ declare module "next-auth/jwt" {
     status?: string | null;
     vencimentoPlano?: string | null;
     lastActivity?: number;
+    tourCompleted?: boolean;
   }
 }

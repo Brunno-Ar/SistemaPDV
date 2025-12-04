@@ -1,12 +1,15 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { motion } from "framer-motion";
 import {
   Sidebar,
   SidebarBody,
   SidebarLink,
   SidebarBrand,
+  useSidebar,
 } from "@/components/ui/sidebar";
+
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -21,6 +24,29 @@ import {
   Settings,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+
+const SidebarUserInfo = ({ session }: { session: any }) => {
+  const { open } = useSidebar();
+
+  if (!session?.user) return null;
+
+  return (
+    <motion.div
+      animate={{
+        display: open ? "block" : "none",
+        opacity: open ? 1 : 0,
+      }}
+      className="px-2 py-1 mb-4 text-xs border-b border-white/20 pb-2 text-white"
+    >
+      <p className="font-medium truncate">
+        {session.user.empresaNome || "Empresa"}
+      </p>
+      <p className="truncate opacity-80">
+        {session.user.role} | {session.user.name?.split(" ")[0]}
+      </p>
+    </motion.div>
+  );
+};
 
 export default function RoleBasedLayout({
   children,
@@ -66,11 +92,13 @@ export default function RoleBasedLayout({
         label: "Vender",
         href: "/vender",
         icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-vender",
       },
       {
         label: "Estoque",
         href: "/estoque",
         icon: <Package className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-estoque",
       },
       {
         label: "Lotes",
@@ -81,6 +109,7 @@ export default function RoleBasedLayout({
         label: "Movimentações",
         href: "/movimentacoes",
         icon: <ArrowRightLeft className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-movimentacoes",
       },
       {
         label: "Minha Conta",
@@ -104,11 +133,13 @@ export default function RoleBasedLayout({
         label: "Vender",
         href: "/vender",
         icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-vender",
       },
       {
         label: "Estoque",
         href: "/estoque",
         icon: <Package className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-estoque",
       },
       {
         label: "Lotes",
@@ -119,16 +150,19 @@ export default function RoleBasedLayout({
         label: "Movimentações",
         href: "/movimentacoes",
         icon: <ArrowRightLeft className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-movimentacoes",
       },
       {
         label: "Equipe",
         href: "/equipe",
         icon: <Users className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-equipe",
       },
       {
         label: "Relatórios",
         href: "/relatorios",
         icon: <BarChart3 className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-relatorios",
       },
       {
         label: "Minha Conta",
@@ -153,11 +187,13 @@ export default function RoleBasedLayout({
         label: "Vender",
         href: "/vender",
         icon: <ShoppingCart className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-vender",
       },
       {
         label: "Minha Conta",
         href: "/minha-conta",
         icon: <User className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-minha-conta",
       },
       {
         label: "Configurações",
@@ -173,6 +209,7 @@ export default function RoleBasedLayout({
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
             <SidebarBrand />
+            <SidebarUserInfo session={session} />
             {/* Links */}
             <div className="flex flex-col gap-2">
               {links.map((link, idx) => (
