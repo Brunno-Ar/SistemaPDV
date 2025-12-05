@@ -164,19 +164,19 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
             Gerenciar Equipe
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
             Adicione e gerencie os usuários da sua empresa
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
           <DialogTrigger asChild>
-            <InteractiveHoverButton className="bg-cta-bg hover:bg-cta-bg/90 text-white border-cta-bg">
-              <span className="flex items-center gap-2">
+            <InteractiveHoverButton className="bg-cta-bg hover:bg-cta-bg/90 text-white border-cta-bg w-full sm:w-auto">
+              <span className="flex items-center justify-center gap-2">
                 <Plus className="h-4 w-4" />
                 Novo Usuário
               </span>
@@ -292,23 +292,22 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                       </CardTitle>
                       <CardDescription className="flex items-center space-x-1 mt-1">
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded ${
-                            usuario.role === "admin"
+                          className={`inline-block px-2 py-1 text-xs rounded ${usuario.role === "admin"
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
-                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                              : usuario.role === "gerente"
-                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                          }`}
+                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                : usuario.role === "gerente"
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            }`}
                         >
                           {usuario.role === "admin"
                             ? "Admin"
                             : usuario.role === "master"
-                            ? "Master"
-                            : usuario.role === "gerente"
-                            ? "Gerente"
-                            : "Caixa"}
+                              ? "Master"
+                              : usuario.role === "gerente"
+                                ? "Gerente"
+                                : "Caixa"}
                         </span>
                       </CardDescription>
                     </div>
@@ -351,23 +350,22 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                       </CardTitle>
                       <CardDescription className="flex items-center space-x-1 mt-1">
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded ${
-                            usuario.role === "admin"
+                          className={`inline-block px-2 py-1 text-xs rounded ${usuario.role === "admin"
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
-                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                              : usuario.role === "gerente"
-                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                          }`}
+                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                                : usuario.role === "gerente"
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            }`}
                         >
                           {usuario.role === "admin"
                             ? "Admin"
                             : usuario.role === "master"
-                            ? "Master"
-                            : usuario.role === "gerente"
-                            ? "Gerente"
-                            : "Caixa"}
+                              ? "Master"
+                              : usuario.role === "gerente"
+                                ? "Gerente"
+                                : "Caixa"}
                         </span>
                       </CardDescription>
                     </div>

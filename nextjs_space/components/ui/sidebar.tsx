@@ -138,13 +138,20 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-14 px-4 py-4 flex flex-row lg:hidden items-center justify-between bg-neutral-100 dark:bg-neutral-800 w-full"
+          "h-16 px-4 py-3 flex flex-row lg:hidden items-center justify-between bg-[#137fec] dark:bg-zinc-900 w-full safe-area-top"
         )}
         {...props}
       >
-        <div className="flex justify-end z-20 w-full">
+        {/* Logo visível no mobile */}
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center">
+            <span className="text-[#137fec] font-bold text-lg">F</span>
+          </div>
+          <span className="font-bold text-lg text-white">FlowPDV</span>
+        </div>
+        <div className="flex items-center z-20">
           <Menu
-            className="text-neutral-800 dark:text-neutral-200 cursor-pointer"
+            className="text-white cursor-pointer h-6 w-6"
             onClick={() => setOpen(!open)}
           />
         </div>
@@ -159,15 +166,24 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed h-full w-full inset-0 bg-white dark:bg-neutral-900 p-10 z-[100] flex flex-col justify-between",
+                "fixed h-full w-full inset-0 bg-[#137fec] dark:bg-zinc-900 px-6 pt-safe pb-safe z-[100] flex flex-col justify-between overflow-y-auto",
                 className
               )}
             >
-              <div
-                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200 cursor-pointer"
-                onClick={() => setOpen(!open)}
-              >
-                <X />
+              {/* Header do menu mobile */}
+              <div className="flex items-center justify-between py-4 border-b border-white/20 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center">
+                    <span className="text-[#137fec] font-bold text-lg">F</span>
+                  </div>
+                  <span className="font-bold text-lg text-white">FlowPDV</span>
+                </div>
+                <div
+                  className="p-2 rounded-lg bg-white/10 text-white cursor-pointer"
+                  onClick={() => setOpen(!open)}
+                >
+                  <X className="h-5 w-5" />
+                </div>
               </div>
               {children}
             </motion.div>
@@ -187,27 +203,38 @@ export const SidebarLink = ({
   className?: string;
   props?: LinkProps;
 }) => {
-  const { open, animate } = useSidebar();
+  const { open, animate, setOpen } = useSidebar();
+
+  const handleClick = () => {
+    // Fecha o menu mobile ao clicar em um link
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setOpen(false);
+    }
+  };
+
   return (
     <Link
       id={link.id}
       href={link.href}
+      onClick={handleClick}
       className={cn(
-        "flex items-center justify-start gap-2 group/sidebar py-2",
+        "flex items-center justify-start gap-3 group/sidebar py-3 px-2 rounded-lg transition-colors",
         open
-          ? "text-white hover:text-white/90"
-          : "text-neutral-700 dark:text-neutral-200 hover:text-black",
+          ? "text-white hover:bg-white/10"
+          : "text-neutral-700 dark:text-neutral-200 hover:text-black hover:bg-gray-100 dark:hover:bg-zinc-800",
         className
       )}
       {...props}
     >
-      {link.icon}
+      <span className={cn(open ? "text-white" : "text-neutral-700 dark:text-neutral-200")}>
+        {link.icon}
+      </span>
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        className="text-base font-medium group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
       >
         {link.label}
       </motion.span>

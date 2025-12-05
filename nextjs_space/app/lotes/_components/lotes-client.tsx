@@ -20,7 +20,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -38,7 +37,6 @@ import {
   XCircle,
   Package,
   Search,
-  Filter,
   Edit,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -621,8 +619,8 @@ export default function LotesClient() {
                     <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataValidade
                         ? new Date(lote.dataValidade).toLocaleDateString(
-                            "pt-BR"
-                          )
+                          "pt-BR"
+                        )
                         : "Indeterminado"}
                     </TableCell>
                     <TableCell>{getStatusBadge(lote)}</TableCell>

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { EmployeeKPIs, CashAuditTable, EmployeeActions } from "./parts";
-import { parseCurrency } from "@/lib/utils";
 
 interface FuncionarioDetalhesProps {
   funcionarioId: string;

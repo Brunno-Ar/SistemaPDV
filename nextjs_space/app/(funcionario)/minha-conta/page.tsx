@@ -110,8 +110,8 @@ export default function MinhaContaPage() {
                 {salesMonth >= metaMensal
                   ? "Parabéns! Você atingiu sua meta mensal! 🚀"
                   : `Faltam ${formatCurrency(
-                      metaMensal - salesMonth
-                    )} para atingir sua meta.`}
+                    metaMensal - salesMonth
+                  )} para atingir sua meta.`}
               </p>
             </div>
           </CardContent>
@@ -129,68 +129,104 @@ export default function MinhaContaPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <tr>
-                  <th className="px-4 py-3 rounded-l-lg">Data/Hora</th>
-                  <th className="px-4 py-3">ID da Venda</th>
-                  <th className="px-4 py-3">Valor</th>
-                  <th className="px-4 py-3 rounded-r-lg text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sales.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-4 py-8 text-center text-gray-500"
-                    >
-                      Nenhuma venda registrada recentemente.
-                    </td>
-                  </tr>
-                ) : (
-                  sales.map((sale) => (
-                    <tr
-                      key={sale.id}
-                      className="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                    >
-                      <td className="px-4 py-4 font-medium text-gray-900 dark:text-white flex items-center gap-2">
+          {sales.length === 0 ? (
+            <div className="py-8 text-center text-gray-500">
+              Nenhuma venda registrada recentemente.
+            </div>
+          ) : (
+            <>
+              {/* Mobile: Card Layout */}
+              <div className="md:hidden space-y-3">
+                {sales.map((sale) => (
+                  <div
+                    key={sale.id}
+                    className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-400" />
-                        <div className="flex flex-col">
-                          <span>
-                            {new Date(sale.createdAt).toLocaleDateString(
-                              "pt-BR"
-                            )}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(sale.createdAt).toLocaleTimeString(
-                              "pt-BR",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
-                          </span>
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {new Date(sale.createdAt).toLocaleDateString("pt-BR")}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(sale.createdAt).toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
                         </div>
-                      </td>
-                      <td className="px-4 py-4 text-gray-500 font-mono text-xs">
-                        {sale.id.substring(0, 8)}...
-                      </td>
-                      <td className="px-4 py-4 font-bold text-gray-900 dark:text-white">
+                      </div>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                        Concluída
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-gray-500 font-mono">
+                        ID: {sale.id.substring(0, 8)}...
+                      </p>
+                      <p className="font-bold text-lg text-gray-900 dark:text-white">
                         {formatCurrency(sale.valorTotal)}
-                      </td>
-                      <td className="px-4 py-4 text-right">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                          Concluída
-                        </span>
-                      </td>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: Table Layout */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                    <tr>
+                      <th className="px-4 py-3 rounded-l-lg">Data/Hora</th>
+                      <th className="px-4 py-3">ID da Venda</th>
+                      <th className="px-4 py-3">Valor</th>
+                      <th className="px-4 py-3 rounded-r-lg text-right">Status</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {sales.map((sale) => (
+                      <tr
+                        key={sale.id}
+                        className="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                      >
+                        <td className="px-4 py-4 font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <div className="flex flex-col">
+                            <span>
+                              {new Date(sale.createdAt).toLocaleDateString(
+                                "pt-BR"
+                              )}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(sale.createdAt).toLocaleTimeString(
+                                "pt-BR",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-gray-500 font-mono text-xs">
+                          {sale.id.substring(0, 8)}...
+                        </td>
+                        <td className="px-4 py-4 font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(sale.valorTotal)}
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                            Concluída
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

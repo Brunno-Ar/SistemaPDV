@@ -24,8 +24,8 @@ export function RelatoriosFilters({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end">
+          <div className="flex-1 min-w-0 sm:min-w-[200px]">
             <Label
               htmlFor="startDate"
               className="text-gray-700 dark:text-gray-300"
@@ -42,7 +42,7 @@ export function RelatoriosFilters({
               className="bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-gray-100"
             />
           </div>
-          <div className="flex-1 min-w-[200px]">
+          <div className="flex-1 min-w-0 sm:min-w-[200px]">
             <Label
               htmlFor="endDate"
               className="text-gray-700 dark:text-gray-300"
@@ -59,18 +59,20 @@ export function RelatoriosFilters({
               className="bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-gray-100"
             />
           </div>
-          <InteractiveHoverButton
-            onClick={onApplyFilter}
-            className="bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
-          >
-            Aplicar Filtro
-          </InteractiveHoverButton>
-          <InteractiveHoverButton
-            className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
-            onClick={onClearFilter}
-          >
-            Limpar
-          </InteractiveHoverButton>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <InteractiveHoverButton
+              onClick={onApplyFilter}
+              className="flex-1 sm:flex-initial bg-cta-bg text-white border-cta-bg hover:bg-cta-bg/90"
+            >
+              Aplicar Filtro
+            </InteractiveHoverButton>
+            <InteractiveHoverButton
+              className="flex-1 sm:flex-initial bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
+              onClick={onClearFilter}
+            >
+              Limpar
+            </InteractiveHoverButton>
+          </div>
         </div>
       </CardContent>
     </Card>
