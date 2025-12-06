@@ -44,8 +44,6 @@ interface CaixaStatus {
   movimentacoes: Movimentacao[];
 }
 
-
-
 import { FechamentoCaixaDialog } from "./fechamento-caixa-dialog";
 
 import {
@@ -64,10 +62,14 @@ interface CaixaPayload {
   metodoPagamento?: string;
 }
 
-export function MeuCaixa() {
+interface MeuCaixaProps {
+  initialData?: CaixaStatus | null;
+}
+
+export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
   const { data: session } = useSession();
-  const [caixa, setCaixa] = useState<CaixaStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [caixa, setCaixa] = useState<CaixaStatus | null>(initialData ?? null);
+  const [loading, setLoading] = useState(initialData === undefined); // Só carrega se não tiver dados iniciais
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
 
   // Inputs Gerais
@@ -93,8 +95,11 @@ export function MeuCaixa() {
   };
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
+    // 🚀 Otimização: Só busca se não tiver dados iniciais
+    if (initialData === undefined) {
+      fetchStatus();
+    }
+  }, [initialData]);
 
   const handleAction = async (action: string) => {
     setProcessing(true);
@@ -149,10 +154,9 @@ export function MeuCaixa() {
       await fetchStatus();
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido";
-      if (
-        message.includes("já possui um caixa aberto")
-      ) {
+      const message =
+        error instanceof Error ? error.message : "Erro desconhecido";
+      if (message.includes("já possui um caixa aberto")) {
         toast({
           title: "Atenção",
           description:
@@ -341,7 +345,9 @@ export function MeuCaixa() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="metodoPagamentoSuprimento">Forma de Pagamento</Label>
+                  <Label htmlFor="metodoPagamentoSuprimento">
+                    Forma de Pagamento
+                  </Label>
                   <Select
                     value={paymentMethod}
                     onValueChange={setPaymentMethod}
@@ -413,7 +419,9 @@ export function MeuCaixa() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="metodoPagamentoSangria">Forma de Pagamento</Label>
+                  <Label htmlFor="metodoPagamentoSangria">
+                    Forma de Pagamento
+                  </Label>
                   <Select
                     value={paymentMethod}
                     onValueChange={setPaymentMethod}

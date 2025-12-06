@@ -48,6 +48,7 @@ interface DashboardData {
 export default function GerenteDashboardClient() {
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [caixaData, setCaixaData] = useState<any>(undefined); // undefined = ainda não buscou
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -79,9 +80,13 @@ export default function GerenteDashboardClient() {
           console.error("Failed to fetch admin stats");
         }
 
-        // Os dados de caixa e avisos são usados pelos componentes MeuCaixa e MuralAvisos
-        // Eles têm seu próprio estado interno, então apenas pré-aquecemos o cache
-        // Os componentes vão buscar novamente, mas agora o servidor já tem os dados em cache
+        // 🚀 Armazenar dados do caixa para passar ao MeuCaixa
+        if (resCaixa.ok) {
+          const caixaJson = await resCaixa.json();
+          setCaixaData(caixaJson.caixaAberto || null);
+        } else {
+          setCaixaData(null);
+        }
 
         setData({
           salesToday: 0,
@@ -97,6 +102,7 @@ export default function GerenteDashboardClient() {
         } as DashboardData);
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
+        setCaixaData(null); // Em caso de erro, seta como null
       } finally {
         setLoading(false);
       }
@@ -128,8 +134,8 @@ export default function GerenteDashboardClient() {
         <p className="text-gray-500 dark:text-gray-400">{formattedDate}</p>
       </div>
 
-      {/* Caixa Widget */}
-      <MeuCaixa />
+      {/* Caixa Widget - Passa dados pré-carregados */}
+      <MeuCaixa initialData={caixaData} />
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
