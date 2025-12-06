@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 interface OnboardingTourProps {
   role: string;
@@ -11,10 +12,26 @@ interface OnboardingTourProps {
 
 export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
   const [run, setRun] = useState(false);
-  const { update } = useSession();
+  const { data: session, update, status: sessionStatus } = useSession();
+  const pathname = usePathname();
+
+  // Bloqueio imediato de renderização em páginas públicas
+  const publicPages = ["/login", "/forgot-password", "/register", "/signup"];
+  const isPublicPage = publicPages.some((page) => pathname?.startsWith(page));
 
   useEffect(() => {
-    // Only run if not completed and role is not master
+    // NUNCA rodar em páginas públicas
+    if (isPublicPage) {
+      setRun(false);
+      return;
+    }
+
+    // Só executa se o usuário estiver autenticado, tour não completado e não for master
+    if (sessionStatus !== "authenticated" || !session?.user) {
+      setRun(false);
+      return;
+    }
+
     if (!tourCompleted && role !== "master") {
       // Small delay to ensure DOM is fully ready and hydration is complete
       const timer = setTimeout(() => {
@@ -23,7 +40,11 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
 
       return () => clearTimeout(timer);
     }
-  }, [tourCompleted, role]);
+  }, [tourCompleted, role, sessionStatus, session, isPublicPage]);
+
+  if (isPublicPage) {
+    return null;
+  }
 
   const handleJoyrideCallback = async (data: CallBackProps) => {
     const { status } = data;
@@ -167,7 +188,8 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
         },
         tooltip: {
           borderRadius: "12px",
-          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+          boxShadow:
+            "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
           padding: "20px",
         },
         tooltipContainer: {

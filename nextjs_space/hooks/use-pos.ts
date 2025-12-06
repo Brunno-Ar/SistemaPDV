@@ -13,12 +13,43 @@ export interface CartItem {
 
 export function usePOS() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [sortOption, setSortOption] = useState<string>("name_asc");
+
+  // Ordenação Reativa com useMemo
+  const filteredProducts = useMemo(() => {
+    let sorted = [...searchResults];
+
+    switch (sortOption) {
+      case "name_asc":
+        sorted.sort((a, b) => a.nome.localeCompare(b.nome));
+        break;
+      case "name_desc":
+        sorted.sort((a, b) => b.nome.localeCompare(a.nome));
+        break;
+      case "stock_asc":
+        sorted.sort((a, b) => a.estoqueAtual - b.estoqueAtual);
+        break;
+      case "stock_desc":
+        sorted.sort((a, b) => b.estoqueAtual - a.estoqueAtual);
+        break;
+      case "price_asc":
+        sorted.sort((a, b) => a.precoVenda - b.precoVenda);
+        break;
+      case "price_desc":
+        sorted.sort((a, b) => b.precoVenda - a.precoVenda);
+        break;
+      default:
+        break;
+    }
+    return sorted;
+  }, [searchResults, sortOption]);
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [metodoPagamento, setMetodoPagamento] = useState("");
   const [valorRecebido, setValorRecebido] = useState<string>("");
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [finalizing, setFinalizing] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
@@ -56,7 +87,7 @@ export function usePOS() {
     setIsOffline(!navigator.onLine);
 
     // Initial load from Dexie
-    searchProducts("");
+    searchProducts("", true);
 
     return () => {
       window.removeEventListener("online", handleOnline);
@@ -84,61 +115,90 @@ export function usePOS() {
     }
   }, [metodoPagamento, total]);
 
-  // Busca com Debounce usando Dexie
+  // Busca com Debounce usando Dexie (150ms para ser mais responsivo)
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      searchProducts(searchTerm);
-    }, 300);
+      searchProducts(searchTerm, false);
+    }, 150);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  const searchProducts = async (term: string) => {
-    try {
-      setLoading(true);
-      let results: Product[];
+  // Função para remover acentos (normalização)
+  const removeAccents = (str: string): string => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  };
 
-      if (term.trim() === "") {
+  const searchProducts = async (term: string, isInitial: boolean = false) => {
+    try {
+      // Só mostra loading no carregamento inicial, não durante pesquisa
+      // Isso evita o "piscar" da tela durante digitação
+      let results: Product[];
+      const normalizedTerm = removeAccents(term.trim().toLowerCase());
+
+      if (normalizedTerm === "") {
         // Limit to 50 items for initial view to avoid performance issues
         results = await db.products.limit(50).toArray();
       } else {
-        // Search by Name (startsWithIgnoreCase) OR SKU (equals)
-        // Dexie doesn't support complex OR queries easily in one go without advanced logic,
-        // but we can query both and merge.
+        // Improved search: "Contains" instead of "StartsWith"
+        // Also accent-insensitive: "cafe" finds "Café", "acucar" finds "Açúcar"
+        results = await db.products
+          .filter((product) => {
+            const normalizedName = product.nome
+              ? removeAccents(product.nome.toLowerCase())
+              : "";
+            const normalizedSku = product.sku
+              ? removeAccents(product.sku.toString().toLowerCase())
+              : "";
 
-        // Option 1: Filter in memory (fast enough for 5000 items)
-        // Option 2: Dexie specific queries.
-
-        // Let's try Dexie queries first for performance.
-        const byName = await db.products
-          .where("nome")
-          .startsWithIgnoreCase(term)
-          .limit(20)
+            const nameMatch = normalizedName.includes(normalizedTerm);
+            const skuMatch = normalizedSku.includes(normalizedTerm);
+            return nameMatch || skuMatch;
+          })
+          .limit(50)
           .toArray();
-
-        const bySku = await db.products.where("sku").equals(term).toArray();
-
-        // Merge and deduplicate
-        const merged = [...bySku, ...byName];
-        const unique = Array.from(
-          new Map(merged.map((item) => [item.id, item])).values()
-        );
-        results = unique;
       }
 
-      setFilteredProducts(results);
+      setSearchResults(results);
       // We don't necessarily update 'products' state anymore as we rely on search results.
-      // But keeping it for compatibility if needed? No, filteredProducts is what matters for UI.
-      if (term.trim() === "") setProducts(results);
+      if (normalizedTerm === "") setProducts(results);
     } catch (error) {
       console.error("Erro ao buscar produtos localmente:", error);
+      toast({
+        title: "Erro na busca",
+        description: "Falha ao buscar produtos no banco local.",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      // Só desliga o loading inicial
+      if (isInitial) {
+        setInitialLoading(false);
+      }
     }
   };
 
   const addToCart = (product: Product) => {
-    // Permite venda mesmo com estoque insuficiente (venda física é soberana)
+    // 1. Verifica se o produto tem estoque > 0
+    if (product.estoqueAtual <= 0) {
+      toast({
+        title: "Estoque Indisponível",
+        description: `O produto "${product.nome}" está sem estoque.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // 2. Verifica se a quantidade no carrinho + 1 ultrapassa o estoque
+    const existingItem = cart.find((item) => item.product.id === product.id);
+    if (existingItem && existingItem.quantidade >= product.estoqueAtual) {
+      toast({
+        title: "Limite de Estoque",
+        description: `Você já atingiu a quantidade máxima em estoque para este produto.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setCart((prevCart) => {
       const existingItemIndex = prevCart.findIndex(
         (item) => item.product.id === product.id
@@ -174,7 +234,18 @@ export function usePOS() {
       return;
     }
 
-    // Removing stock check here too.
+    const itemInCart = cart.find((item) => item.product.id === productId);
+    if (itemInCart) {
+      if (newQuantity > itemInCart.product.estoqueAtual) {
+        toast({
+          title: "Estoque Insuficiente",
+          description: `A quantidade máxima disponível é ${itemInCart.product.estoqueAtual}.`,
+          variant: "destructive",
+        });
+        // Atualiza para o máximo possível ao invés de ignorar, melhor UX
+        newQuantity = itemInCart.product.estoqueAtual;
+      }
+    }
 
     setCart((prevCart) =>
       prevCart.map((item) =>
@@ -366,7 +437,7 @@ export function usePOS() {
     setSearchTerm,
     metodoPagamento,
     setMetodoPagamento,
-    loading,
+    loading: initialLoading,
     finalizing,
     paymentError,
     setPaymentError,
@@ -386,5 +457,7 @@ export function usePOS() {
     setValorRecebido,
     lastValorRecebido,
     lastTroco,
+    sortOption,
+    setSortOption,
   };
 }

@@ -101,6 +101,8 @@ export default function VenderClient() {
     setValorRecebido,
     lastValorRecebido,
     lastTroco,
+    sortOption,
+    setSortOption,
   } = usePOS();
 
   // Atalhos de Teclado (Mantidos aqui pois dependem de refs e window events)
@@ -195,6 +197,8 @@ export default function VenderClient() {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               searchInputRef={searchInputRef}
+              sortOption={sortOption}
+              onSortChange={setSortOption}
             />
           </div>
         </div>

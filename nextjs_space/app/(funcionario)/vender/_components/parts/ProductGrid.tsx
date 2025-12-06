@@ -1,10 +1,17 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package } from "lucide-react";
+import { Search, Package, ListFilter } from "lucide-react";
 import Image from "next/image";
 import { Product } from "@/hooks/use-pos";
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ProductGridProps {
   products: Product[];
@@ -12,6 +19,8 @@ interface ProductGridProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
+  sortOption: string;
+  onSortChange: (value: string) => void;
 }
 
 function ProductImage({
@@ -46,6 +55,8 @@ export function ProductGrid({
   searchTerm,
   onSearchChange,
   searchInputRef,
+  sortOption,
+  onSortChange,
 }: ProductGridProps) {
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
 
@@ -57,18 +68,37 @@ export function ProductGrid({
 
   return (
     <div className="flex flex-col h-full gap-6">
-      <div className="relative flex-none">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
-        <Input
-          ref={searchInputRef}
-          placeholder="Buscar produtos... (F2)"
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="h-14 pl-12 rounded-xl shadow-sm bg-white dark:bg-[#182635] border-2 border-gray-200 dark:border-gray-700 text-base focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-all"
-        />
+      <div className="flex gap-3 flex-none">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
+          <Input
+            ref={searchInputRef}
+            placeholder="Buscar produtos... (F2)"
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="h-14 pl-12 rounded-xl shadow-sm bg-white dark:bg-[#182635] border-2 border-gray-200 dark:border-gray-700 text-base focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-all w-full"
+          />
+        </div>
+
+        <Select value={sortOption} onValueChange={onSortChange}>
+          <SelectTrigger className="w-[180px] h-14 rounded-xl bg-white dark:bg-[#182635] border-2 border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center gap-2">
+              <ListFilter className="h-4 w-4" />
+              <SelectValue placeholder="Ordenar" />
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+            <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+            <SelectItem value="stock_desc">Maior Estoque</SelectItem>
+            <SelectItem value="stock_asc">Menor Estoque</SelectItem>
+            <SelectItem value="price_asc">Menor Preço</SelectItem>
+            <SelectItem value="price_desc">Maior Preço</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
         {products.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
             <div className="bg-white dark:bg-[#182635] p-6 rounded-full shadow-sm mb-4">

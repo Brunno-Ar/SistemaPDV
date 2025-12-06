@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -127,17 +128,11 @@ export function CartSummary({
                       <span className="text-xs font-medium text-gray-500">
                         Desc:
                       </span>
-                      <input
-                        type="number"
-                        className="w-20 h-7 text-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded px-2 text-right focus:outline-none focus:border-primary transition-all"
+                      <DiscountInput
                         value={item.descontoAplicado}
-                        onChange={(e) =>
-                          onUpdateDiscount(
-                            item.product.id,
-                            parseCurrency(e.target.value)
-                          )
+                        onChange={(val) =>
+                          onUpdateDiscount(item.product.id, val)
                         }
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                   </div>
@@ -167,8 +162,9 @@ export function CartSummary({
               }}
             >
               <SelectTrigger
-                className={`h-11 bg-white dark:bg-[#182635] border-gray-200 dark:border-zinc-700 rounded-xl ${paymentError ? "border-red-500 ring-1 ring-red-500" : ""
-                  }`}
+                className={`h-11 bg-white dark:bg-[#182635] border-gray-200 dark:border-zinc-700 rounded-xl ${
+                  paymentError ? "border-red-500 ring-1 ring-red-500" : ""
+                }`}
               >
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
@@ -224,10 +220,11 @@ export function CartSummary({
                         Troco
                       </span>
                       <p
-                        className={`text-xl font-bold ${troco < 0
+                        className={`text-xl font-bold ${
+                          troco < 0
                             ? "text-red-500"
                             : "text-blue-600 dark:text-blue-400"
-                          }`}
+                        }`}
                       >
                         R$ {troco.toFixed(2)}
                       </p>
@@ -289,5 +286,53 @@ export function CartSummary({
         </div>
       </div>
     </div>
+  );
+}
+
+interface DiscountInputProps {
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function DiscountInput({ value, onChange }: DiscountInputProps) {
+  // Estado local para gerenciar o que o usuário digita (pode ser "2," "2,5" etc)
+  const [localValue, setLocalValue] = useState<string>("");
+
+  // Sincroniza o estado local quando o valor externo muda
+  useEffect(() => {
+    // Se o valor externo é 0 e o local é vazio, mantemos vazio para placeholder aparecer
+    if (value === 0 && localValue === "") return;
+
+    const numericLocal = parseCurrency(localValue);
+    // Só atualiza se houver diferença real numérica para evitar sobrescrever enquanto digita
+    if (Math.abs(numericLocal - value) > 0.009) {
+      setLocalValue(value === 0 ? "" : value.toFixed(2).replace(".", ","));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Permite digitar apenas números, vírgula e ponto
+    const newValue = e.target.value.replace(/[^0-9,.]/g, "");
+    setLocalValue(newValue);
+  };
+
+  const handleBlur = () => {
+    const numeric = parseCurrency(localValue);
+    onChange(numeric);
+    // Formata bonitinho ao sair
+    setLocalValue(numeric === 0 ? "" : numeric.toFixed(2).replace(".", ","));
+  };
+
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      className="w-20 h-7 text-xs bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded px-2 text-right focus:outline-none focus:border-primary transition-all p-0"
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onClick={(e) => e.stopPropagation()}
+      placeholder="0,00"
+    />
   );
 }

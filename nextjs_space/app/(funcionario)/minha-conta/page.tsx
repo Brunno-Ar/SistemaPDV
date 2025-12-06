@@ -8,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MuralAvisos } from "@/components/mural-avisos";
 import { formatCurrency } from "@/lib/utils";
 import { RestartTourButton } from "@/components/restart-tour-button";
-import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 interface Sale {
   id: string;
@@ -118,9 +117,6 @@ export default function MinhaContaPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* App Install Section */}
-      <InstallPrompt variant="inline" />
 
       <div className="mb-6">
         <MuralAvisos />
