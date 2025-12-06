@@ -54,18 +54,38 @@ interface DashboardData {
 export default function DashboardClient() {
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [caixaData, setCaixaData] = useState<any>(undefined); // undefined = ainda não buscou
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/employee/analytics");
-        if (res.ok) {
-          const json = await res.json();
+        // 🚀 Otimização: Buscar TODOS os dados em paralelo
+        // Isso inclui analytics, caixa e avisos
+        const [resAnalytics, resCaixa, resAvisos] = await Promise.all([
+          fetch("/api/employee/analytics"),
+          fetch("/api/caixa", { cache: "no-store" }),
+          fetch("/api/avisos"),
+        ]);
+
+        if (resAnalytics.ok) {
+          const json = await resAnalytics.json();
           setData(json);
         }
+
+        // 🚀 Armazenar dados do caixa para passar ao MeuCaixa
+        if (resCaixa.ok) {
+          const caixaJson = await resCaixa.json();
+          setCaixaData(caixaJson.caixaAberto || null);
+        } else {
+          setCaixaData(null);
+        }
+
+        // Os dados de avisos são usados pelo MuralAvisos
+        // Ele tem seu próprio estado interno, mas agora o servidor já tem os dados em cache
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
+        setCaixaData(null); // Em caso de erro, seta como null
       } finally {
         setLoading(false);
       }
@@ -98,8 +118,8 @@ export default function DashboardClient() {
         <p className="text-gray-500 dark:text-gray-400">{formattedDate}</p>
       </div>
 
-      {/* Caixa Widget - Top Priority */}
-      <MeuCaixa />
+      {/* Caixa Widget - Top Priority - Passa dados pré-carregados */}
+      <MeuCaixa initialData={caixaData} />
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

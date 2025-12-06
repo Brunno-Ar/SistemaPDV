@@ -1,3 +1,4 @@
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -301,8 +302,8 @@ export function LotManagerDialog({
         ) : (
           <>
             {loadingLots ? (
-              <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                Carregando lotes...
+              <div className="py-4">
+                <AnimatedLoadingSkeleton />
               </div>
             ) : (
               <div className="space-y-4">

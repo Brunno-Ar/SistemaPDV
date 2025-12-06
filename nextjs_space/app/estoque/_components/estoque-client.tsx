@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import { MessageLoading } from "@/components/ui/message-loading";
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { ProductFormDialog } from "./product-form-dialog";
 import { LotManagerDialog } from "./lot-manager-dialog";
 import {
@@ -133,8 +133,8 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
-        <MessageLoading />
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
       </div>
     );
   }

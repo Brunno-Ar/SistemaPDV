@@ -40,7 +40,7 @@ import {
   Edit,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { MessageLoading } from "@/components/ui/message-loading";
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { parseCurrency } from "@/lib/utils";
 
 interface Product {
@@ -435,8 +435,8 @@ export default function LotesClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
-        <MessageLoading />
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
       </div>
     );
   }
@@ -619,8 +619,8 @@ export default function LotesClient() {
                     <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataValidade
                         ? new Date(lote.dataValidade).toLocaleDateString(
-                          "pt-BR"
-                        )
+                            "pt-BR"
+                          )
                         : "Indeterminado"}
                     </TableCell>
                     <TableCell>{getStatusBadge(lote)}</TableCell>

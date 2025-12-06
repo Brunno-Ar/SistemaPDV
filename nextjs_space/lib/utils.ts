@@ -41,3 +41,28 @@ export function parseCurrency(value: string): number {
   const parsed = parseFloat(normalized);
   return isNaN(parsed) ? 0 : parsed;
 }
+
+/**
+ * Extrai mensagem de erro de forma segura, sem usar 'any'
+ * Use em blocos catch para obter a mensagem de erro
+ *
+ * @example
+ * try {
+ *   await fetch(...)
+ * } catch (error) {
+ *   const message = getErrorMessage(error);
+ *   toast({ title: "Erro", description: message });
+ * }
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return "Ocorreu um erro inesperado";
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -202,7 +203,11 @@ export default function FuncionarioDetalhes({
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Carregando...</div>;
+    return (
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
+      </div>
+    );
   }
 
   if (!funcionario) {

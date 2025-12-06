@@ -58,13 +58,13 @@ export function ProductGrid({
   return (
     <div className="flex flex-col h-full gap-6">
       <div className="relative flex-none">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10" />
         <Input
           ref={searchInputRef}
           placeholder="Buscar produtos... (F2)"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="h-14 pl-12 rounded-xl shadow-sm bg-white dark:bg-[#182635] border-gray-100 dark:border-gray-700 text-base focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
+          className="h-14 pl-12 rounded-xl shadow-sm bg-white dark:bg-[#182635] border-2 border-gray-200 dark:border-gray-700 text-base focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-primary transition-all"
         />
       </div>
 

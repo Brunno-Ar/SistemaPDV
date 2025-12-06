@@ -51,13 +51,19 @@ export const FooterCTA = () => {
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-zinc-500 text-sm">
           <p>© 2024 Flow PDV. Todos os direitos reservados.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <Link href="#" className="hover:text-white transition-colors">
+            <Link href="/termos" className="hover:text-white transition-colors">
               Termos
             </Link>
-            <Link href="#" className="hover:text-white transition-colors">
+            <Link
+              href="/privacidade"
+              className="hover:text-white transition-colors"
+            >
               Privacidade
             </Link>
-            <Link href="#" className="hover:text-white transition-colors">
+            <Link
+              href="/suporte"
+              className="hover:text-white transition-colors"
+            >
               Suporte
             </Link>
           </div>

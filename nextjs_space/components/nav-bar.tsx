@@ -21,7 +21,6 @@ import {
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { NotificationBell } from "@/components/notification-bell";
 
 export function NavBar() {
   const { data: session } = useSession();
@@ -205,7 +204,6 @@ export function NavBar() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-2">
-            <NotificationBell />
             {navItems.map((item) => {
               const Icon = item.icon;
               return (

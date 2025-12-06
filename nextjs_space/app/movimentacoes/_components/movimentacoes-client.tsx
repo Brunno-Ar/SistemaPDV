@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import {
   Accordion,
   AccordionContent,
@@ -166,29 +167,53 @@ export default function MovimentacoesClient({
     }
   };
 
-  const getTypeLabel = (type: string) => {
+  const getTypeLabel = (type: string, paymentMethod?: string) => {
+    const methodLabels: Record<string, string> = {
+      dinheiro: "Dinheiro",
+      pix: "Pix",
+      debito: "Débito",
+      credito: "Crédito",
+    };
+
+    let baseLabel = "";
     switch (type) {
       case "VENDA":
-        return "Venda";
+        baseLabel = "Venda";
+        break;
       case "ENTRADA":
-        return "Entrada de Estoque";
+        baseLabel = "Entrada de Estoque";
+        break;
       case "AJUSTE_QUEBRA":
-        return "Quebra/Perda";
+        baseLabel = "Quebra/Perda";
+        break;
       case "AJUSTE_INVENTARIO":
-        return "Ajuste Manual";
+        baseLabel = "Ajuste Manual";
+        break;
       case "DEVOLUCAO":
-        return "Devolução";
+        baseLabel = "Devolução";
+        break;
       case "ABERTURA":
-        return "Abertura de Caixa";
+        baseLabel = "Abertura de Caixa";
+        break;
       case "SANGRIA":
-        return "Sangria de Caixa";
+        baseLabel = "Sangria de Caixa";
+        break;
       case "SUPRIMENTO":
-        return "Suprimento de Caixa";
+        baseLabel = "Suprimento de Caixa";
+        break;
       case "FECHAMENTO":
-        return "Fechamento de Caixa";
+        baseLabel = "Fechamento de Caixa";
+        break;
       default:
-        return type;
+        baseLabel = type;
     }
+
+    // Adicionar método de pagamento para sangrias e suprimentos
+    if ((type === "SANGRIA" || type === "SUPRIMENTO") && paymentMethod) {
+      return `${baseLabel} (${methodLabels[paymentMethod] || paymentMethod})`;
+    }
+
+    return baseLabel;
   };
 
   // Movement Dialog State
@@ -416,8 +441,8 @@ export default function MovimentacoesClient({
 
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            Carregando movimentações...
+          <div className="py-4">
+            <AnimatedLoadingSkeleton />
           </div>
         ) : filteredMovements.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400 border rounded-lg bg-gray-50 dark:bg-zinc-800 dark:border-zinc-700">
@@ -541,7 +566,7 @@ export default function MovimentacoesClient({
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
-                          {getTypeLabel(mov.type)}
+                          {getTypeLabel(mov.type, mov.paymentMethod)}
                         </h3>
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">

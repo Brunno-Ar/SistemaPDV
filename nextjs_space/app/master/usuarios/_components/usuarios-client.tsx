@@ -1,14 +1,10 @@
 "use client";
 
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -163,8 +159,8 @@ export default function UsuariosClient() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-600">Carregando usuários master...</div>
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
       </div>
     );
   }

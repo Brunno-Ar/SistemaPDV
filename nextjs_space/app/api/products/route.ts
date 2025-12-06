@@ -6,6 +6,36 @@ import { getFileUrl } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
 
+// 🚀 Otimização: Função helper para processar em batches
+async function signUrlsInBatches(products: any[], batchSize = 10) {
+  const results: any[] = [];
+
+  for (let i = 0; i < products.length; i += batchSize) {
+    const batch = products.slice(i, i + batchSize);
+    const batchResults = await Promise.all(
+      batch.map(async (product: any) => {
+        let signedUrl = null;
+        if (product.imagemUrl) {
+          try {
+            signedUrl = await getFileUrl(product.imagemUrl, 3600);
+          } catch (e) {
+            // Silently fail - use original URL
+            console.error(`Erro ao assinar URL para produto ${product.id}`, e);
+          }
+        }
+        return {
+          ...product,
+          precoVenda: Number(product.precoVenda),
+          imagemUrl: signedUrl || product.imagemUrl,
+        };
+      })
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
+}
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -35,25 +65,8 @@ export async function GET() {
       orderBy: { nome: "asc" },
     });
 
-    // Converter Decimal para number e assinar URLs de imagem
-    const serializedProducts = await Promise.all(
-      products.map(async (product: any) => {
-        let signedUrl = null;
-        if (product.imagemUrl) {
-          try {
-            signedUrl = await getFileUrl(product.imagemUrl, 3600); // 1 hora de validade
-          } catch (e) {
-            console.error(`Erro ao assinar URL para produto ${product.id}`, e);
-          }
-        }
-
-        return {
-          ...product,
-          precoVenda: Number(product.precoVenda),
-          imagemUrl: signedUrl || product.imagemUrl, // Substitui pela URL assinada ou mantém a original se falhar
-        };
-      })
-    );
+    // 🚀 Otimização: Processar URLs em batches de 10 para evitar sobrecarga
+    const serializedProducts = await signUrlsInBatches(products, 10);
 
     return NextResponse.json(serializedProducts);
   } catch (error: any) {

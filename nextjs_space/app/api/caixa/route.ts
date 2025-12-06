@@ -7,7 +7,10 @@ import { TipoMovimentacaoCaixa, MetodoPagamento, Caixa } from "@prisma/client";
 export const dynamic = "force-dynamic";
 
 // Helper function to calculate expected values
-async function calcularValoresEsperados(userId: string, caixaAberto: Partial<Caixa>) {
+async function calcularValoresEsperados(
+  userId: string,
+  caixaAberto: Partial<Caixa>
+) {
   // 1. Fetch Sales aggregated by payment method since opening
   const vendas = await prisma.sale.groupBy({
     by: ["metodoPagamento"],
@@ -49,16 +52,17 @@ async function calcularValoresEsperados(userId: string, caixaAberto: Partial<Cai
   });
 
   // 3. Calculate Theoretical Balances
-  const saldoInicial = Number(caixaAberto.saldoInicial);
+  // NOTA: Não incluímos o saldo inicial no cálculo
+  // O funcionário deve informar apenas o valor das operações do dia, sem contar o fundo de troco
 
-  // Expected Cash = Initial + Supplies - Bleeds + Sales(Cash)
+  // Expected Cash = Sales(Cash) + Supplies - Bleeds (sem saldo inicial)
   const saldoTeoricoDinheiro =
-    saldoInicial + vendasDinheiro + totalSuprimentos - totalSangrias;
+    vendasDinheiro + totalSuprimentos - totalSangrias;
 
   // Expected Machine (Pix + Card)
   const saldoTeoricoMaquininha = vendasPix + vendasCartao;
 
-  // Total Theoretical Drawer
+  // Total Theoretical Drawer (sem saldo inicial)
   const totalTeoricoSistema = saldoTeoricoDinheiro + saldoTeoricoMaquininha;
 
   return {
@@ -293,8 +297,9 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `${action === "sangria" ? "Sangria" : "Suprimento"
-          } realizado com sucesso!`,
+        message: `${
+          action === "sangria" ? "Sangria" : "Suprimento"
+        } realizado com sucesso!`,
         movimentacao: mov,
       });
     }

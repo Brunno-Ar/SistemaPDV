@@ -246,11 +246,19 @@ export default function SignupPage() {
                 className="text-sm text-gray-500 dark:text-gray-400"
               >
                 Eu concordo com os{" "}
-                <Link href="#" className="text-blue-600 hover:underline">
+                <Link
+                  href="/termos"
+                  className="text-blue-600 hover:underline"
+                  target="_blank"
+                >
                   Termos de Serviço
                 </Link>{" "}
                 e{" "}
-                <Link href="#" className="text-blue-600 hover:underline">
+                <Link
+                  href="/privacidade"
+                  className="text-blue-600 hover:underline"
+                  target="_blank"
+                >
                   Política de Privacidade
                 </Link>
                 .
