@@ -59,11 +59,21 @@ export default function DashboardClient() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch("/api/employee/analytics");
-        if (res.ok) {
-          const json = await res.json();
+        // 🚀 Otimização: Buscar TODOS os dados em paralelo
+        // Isso inclui analytics, caixa e avisos
+        const [resAnalytics, resCaixa, resAvisos] = await Promise.all([
+          fetch("/api/employee/analytics"),
+          fetch("/api/caixa", { cache: "no-store" }),
+          fetch("/api/avisos"),
+        ]);
+
+        if (resAnalytics.ok) {
+          const json = await resAnalytics.json();
           setData(json);
         }
+
+        // Os dados de caixa e avisos são usados pelos componentes MeuCaixa e MuralAvisos
+        // Eles têm seu próprio estado interno, mas agora o servidor já tem os dados em cache
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
       } finally {
