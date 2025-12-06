@@ -7,6 +7,7 @@ import { PasswordChangeAlert } from "@/components/PasswordChangeAlert";
 import { OnboardingTour } from "@/components/onboarding-tour";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { SyncManager } from "@/components/sync-manager";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +45,7 @@ export default async function RootLayout({
     <html lang="pt-BR">
       <body className={inter.className}>
         <Providers>
+          <SyncManager />
           <InactivityMonitor />
           <PasswordChangeAlert />
           {session?.user && (

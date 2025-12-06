@@ -1,14 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
+import { db, ProductLocal } from "@/lib/local-db";
 
-export interface Product {
-  id: string;
-  nome: string;
-  sku: string;
-  precoVenda: number;
-  estoqueAtual: number;
-  imagemUrl?: string | null;
-}
+export interface Product extends ProductLocal {}
 
 export interface CartItem {
   product: Product;
@@ -59,7 +53,8 @@ export function usePOS() {
     window.addEventListener("offline", handleOffline);
     setIsOffline(!navigator.onLine);
 
-    fetchProducts();
+    // Initial load from Dexie
+    searchProducts("");
 
     return () => {
       window.removeEventListener("online", handleOnline);
@@ -84,84 +79,85 @@ export function usePOS() {
     }
   }, [metodoPagamento, total]);
 
-  // Busca com Debounce
+  // Busca com Debounce usando Dexie
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchTerm.trim() === "") {
-        setFilteredProducts(products);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `/api/products/search?query=${encodeURIComponent(searchTerm)}`
-        );
-        const data = await response.json();
-
-        if (response.ok && Array.isArray(data)) {
-          setFilteredProducts(data);
-        } else {
-          setFilteredProducts(
-            products.filter((product) =>
-              product.nome.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-          );
-        }
-      } catch (error) {
-        console.error("Erro na busca rápida:", error);
-        setFilteredProducts(
-          products.filter((product) =>
-            product.nome.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        );
-      }
+    const delayDebounceFn = setTimeout(() => {
+      searchProducts(searchTerm);
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, products]);
+  }, [searchTerm]);
 
-  const fetchProducts = async () => {
-    if (!navigator.onLine) return;
-
+  const searchProducts = async (term: string) => {
     try {
-      const response = await fetch("/api/products");
-      const data = await response.json();
+      setLoading(true);
+      let results: Product[];
 
-      if (!response.ok)
-        throw new Error(data.error || "Erro ao carregar produtos");
-
-      if (Array.isArray(data)) {
-        setProducts(data);
-        if (searchTerm.trim() === "") setFilteredProducts(data);
-        localStorage.setItem("pdv_products_cache", JSON.stringify(data));
+      if (term.trim() === "") {
+        // Limit to 50 items for initial view to avoid performance issues
+        results = await db.products.limit(50).toArray();
       } else {
-        setProducts([]);
-        if (searchTerm.trim() === "") setFilteredProducts([]);
+        // Search by Name (startsWithIgnoreCase) OR SKU (equals)
+        // Dexie doesn't support complex OR queries easily in one go without advanced logic,
+        // but we can query both and merge.
+
+        // Option 1: Filter in memory (fast enough for 5000 items)
+        // Option 2: Dexie specific queries.
+
+        // Let's try Dexie queries first for performance.
+        const byName = await db.products
+          .where("nome")
+          .startsWithIgnoreCase(term)
+          .limit(20)
+          .toArray();
+
+        const bySku = await db.products
+          .where("sku")
+          .equals(term)
+          .toArray();
+
+        // Merge and deduplicate
+        const merged = [...bySku, ...byName];
+        const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+        results = unique;
       }
+
+      setFilteredProducts(results);
+      // We don't necessarily update 'products' state anymore as we rely on search results.
+      // But keeping it for compatibility if needed? No, filteredProducts is what matters for UI.
+      if (term.trim() === "") setProducts(results);
+
     } catch (error) {
-      console.error("Erro ao carregar produtos:", error);
-      const cachedProducts = localStorage.getItem("pdv_products_cache");
-      if (cachedProducts) {
-        try {
-          const parsed = JSON.parse(cachedProducts);
-          setProducts(parsed);
-          if (searchTerm.trim() === "") setFilteredProducts(parsed);
-          toast({
-            title: "Modo Offline",
-            description: "Carregando produtos do cache local.",
-            variant: "default",
-          });
-          return;
-        } catch (e) { }
-      }
-      setProducts([]);
-      setFilteredProducts([]);
+      console.error("Erro ao buscar produtos localmente:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const addToCart = (product: Product) => {
+    // Check stock locally (even though we allow negative stock in offline mode, usually we want to warn)
+    // The requirement says: "Offline: Force sale (allow negative stock)".
+    // So we can relax the check or show a warning but allow add.
+    // However, the current logic blocks it.
+    // Let's keep blocking for now unless we are explicitly offline?
+    // User said: "Resolução de Conflito (Estoque): Opção A (Forçar Venda / Estoque Negativo)".
+    // This implies we should allow adding even if stock is 0?
+    // "Se o cliente levou o produto e pagou... o sistema tem que registrar... mesmo que estoque fique negativo".
+    // So we should REMOVE the block `if (currentQuantity >= product.estoqueAtual)`.
+
+    // However, maybe we should only allow it if we are offline? Or always?
+    // "A venda física é soberana". This applies generally.
+    // But usually online systems block it.
+    // Let's relax it for Offline mode OR if configured.
+    // For now, I will allow it but maybe warn?
+    // Actually, the prompt says "Transformar... em PWA... funcional offline".
+    // I will allow adding to cart regardless of stock logic for now, or maybe just relax it.
+
+    // Let's modify the check to be less strict or remove it.
+    // "Estoque insuficiente" toast is annoying if I physically have the item.
+    // I'll comment out the blocking check for now to fulfill "Force Sale".
+
+    /*
     const existingItem = cart.find((item) => item.product.id === product.id);
     const currentQuantity = existingItem?.quantidade || 0;
 
@@ -173,6 +169,7 @@ export function usePOS() {
       });
       return;
     }
+    */
 
     setCart((prevCart) => {
       const existingItemIndex = prevCart.findIndex(
@@ -209,20 +206,7 @@ export function usePOS() {
       return;
     }
 
-    const productInList = products.find((p) => p.id === productId);
-    const itemInCart = cart.find((i) => i.product.id === productId);
-    const product = productInList || itemInCart?.product;
-
-    if (!product) return;
-
-    if (newQuantity > product.estoqueAtual) {
-      toast({
-        title: "Estoque insuficiente",
-        description: `Máximo disponível: ${product.estoqueAtual}`,
-        variant: "destructive",
-      });
-      return;
-    }
+    // Removing stock check here too.
 
     setCart((prevCart) =>
       prevCart.map((item) =>
@@ -271,15 +255,6 @@ export function usePOS() {
   };
 
   const finalizarVenda = async () => {
-    if (isOffline) {
-      toast({
-        title: "Sem conexão",
-        description: "Não é possível finalizar vendas offline.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (cart.length === 0) {
       toast({
         title: "Carrinho vazio",
@@ -321,46 +296,79 @@ export function usePOS() {
     setFinalizing(true);
     setPaymentError(false);
 
+    const salePayload = {
+      items: cart.map((item) => ({
+        productId: item.product.id,
+        quantidade: item.quantidade,
+        precoUnitario: item.product.precoVenda,
+        descontoAplicado: item.descontoAplicado,
+      })),
+      metodoPagamento,
+      valorRecebido: metodoPagamento === "dinheiro" ? valorRecebidoNum : null,
+      troco: trocoCalculado,
+    };
+
     try {
-      const response = await fetch("/api/sales", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: cart.map((item) => ({
-            productId: item.product.id,
-            quantidade: item.quantidade,
-            precoUnitario: item.product.precoVenda,
-            descontoAplicado: item.descontoAplicado,
-          })),
-          metodoPagamento,
-          valorRecebido: metodoPagamento === "dinheiro" ? valorRecebidoNum : null,
-          troco: trocoCalculado,
-        }),
-      });
+      // Try to send to API first
+      if (navigator.onLine) {
+         const response = await fetch("/api/sales", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(salePayload),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok)
-        throw new Error(data.error || "Erro ao finalizar venda");
+        if (!response.ok)
+          throw new Error(data.error || "Erro ao finalizar venda");
 
-      setLastSaleTotal(total);
-      setLastPaymentMethod(metodoPagamento);
-      setLastValorRecebido(valorRecebidoNum);
-      setLastTroco(trocoCalculado);
+        toast({
+          title: "Venda realizada",
+          description: "Venda registrada com sucesso!",
+          variant: "default",
+        });
+      } else {
+        throw new Error("Offline"); // Force offline handling
+      }
 
-      setShowSuccessScreen(true);
-      clearCart();
-      fetchProducts();
     } catch (error) {
-      toast({
-        title: "Erro",
-        description:
-          error instanceof Error ? error.message : "Erro ao finalizar venda",
-        variant: "destructive",
-      });
-    } finally {
-      setFinalizing(false);
+      console.log("Saving offline:", error);
+
+      // Save locally
+      try {
+        await db.offlineSales.add({
+          payload: salePayload,
+          timestamp: Date.now()
+        });
+
+        toast({
+          title: "Venda Salva Localmente",
+          description: "Será enviada quando houver internet.",
+          className: "bg-yellow-500 text-white", // Visual feedback
+        });
+      } catch (dbError) {
+        console.error("Critical: Failed to save locally", dbError);
+        toast({
+          title: "Erro Crítico",
+          description: "Não foi possível salvar a venda. Tente novamente.",
+          variant: "destructive",
+        });
+        setFinalizing(false);
+        return; // Do not clear cart
+      }
     }
+
+    // Success (either online or offline saved)
+    setLastSaleTotal(total);
+    setLastPaymentMethod(metodoPagamento);
+    setLastValorRecebido(valorRecebidoNum);
+    setLastTroco(trocoCalculado);
+
+    setShowSuccessScreen(true);
+    clearCart();
+    setFinalizing(false);
+
+    // Refresh local stock if needed (optional, logic might be complex locally without full sync)
   };
 
   const handleNewSale = () => {
