@@ -1,81 +1,141 @@
-# 🚀 Flow PDV (SaaS) - Plataforma de Gestão Multi-Tenant
+# 🚀 Flow PDV (SaaS) - Ecossistema de Gestão para Varejo
 
-![Status](https://img.shields.io/badge/Status-Em_Desenvolvimento-blue?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+<div align="center">
 
-> **Uma solução Enterprise para gestão de varejo, arquitetada para escalar.**
-> O Flow PDV não é apenas um ponto de venda; é um ecossistema SaaS completo que permite a gestão centralizada de múltiplas empresas, com controle financeiro rigoroso, gestão de estoque inteligente (FEFO) e hierarquia de acesso granular.
+![Banner Flow PDV](https://via.placeholder.com/1200x400?text=Flow+PDV+-+Enterprise+SaaS+Solution)
+
+[![Status](https://img.shields.io/badge/Status-Em_Desenvolvimento-blue?style=for-the-badge)]()
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)]()
+[![Stack](https://img.shields.io/badge/Tech-Next.js_14_|_Prisma_|_Postgres-black?style=for-the-badge)]()
+
+**Gestão Multi-Tenant • Controle Financeiro Rigoroso • Estoque Inteligente (FEFO)**
+
+[Ver Demo Online](https://seu-link-aqui.com) • [Reportar Bug](https://github.com/seu-usuario/flow-pdv/issues)
+
+</div>
 
 ---
 
-## 📸 Screenshots
+## 📖 Sobre o Projeto
 
-| **Painel do Master (SaaS)** | **Frente de Caixa (PDV)** |
+O **Flow PDV** é uma plataforma **SaaS (Software as a Service)** completa, projetada para modernizar a gestão de pequenos e médios comércios. 
+
+Diferente de PDVs comuns, o Flow foi arquitetado para resolver as dores reais do varejo: **quebra de caixa**, **produtos vencidos** e **falta de clareza no lucro real**. O sistema opera em uma arquitetura **Multi-tenant** segura, onde uma única instância atende milhares de lojas com isolamento total de dados.
+
+---
+
+## 📸 Galeria de Funcionalidades
+
+| **Dashboard Gerencial (Dark Mode)** | **Frente de Caixa (PDV Ágil)** |
 |:---:|:---:|
-| ![Master Dashboard](https://via.placeholder.com/500x300?text=Painel+Master+SaaS) | ![PDV Screen](https://via.placeholder.com/500x300?text=Tela+de+Vendas) |
-| *Gestão global de assinantes e planos* | *Interface ágil para vendas rápidas* |
+| ![Dashboard](https://via.placeholder.com/500x300?text=Dashboard+com+Graficos+de+Lucro) | ![PDV](https://via.placeholder.com/500x300?text=Tela+de+Vendas+com+Atalhos) |
+| *Visão clara de Faturamento x Custo x Lucro* | *Venda rápida com atalhos (F2/F12) e busca otimizada* |
+
+| **Gestão de Equipe & Metas** | **Auditoria de Caixa** |
+|:---:|:---:|
+| ![Equipe](https://via.placeholder.com/500x300?text=Perfil+do+Funcionario+e+Metas) | ![Auditoria](https://via.placeholder.com/500x300?text=Auditoria+de+Fechamento+Cego) |
+| *Definição de metas e mural de avisos* | *Conferência de quebra de caixa e sangrias* |
 
 ---
 
-## 🧠 Diferenciais Técnicos & Arquitetura
+## 🧠 Engenharia & Diferenciais Técnicos
 
-Este projeto se destaca pela implementação de regras de negócio complexas e uma arquitetura multi-tenant segura.
+Este projeto implementa lógicas de negócio complexas geralmente encontradas apenas em ERPs Enterprise:
 
-### 🔐 Arquitetura SaaS Multi-Tenant
-- **Isolamento de Dados:** Middleware de segurança que garante que dados de uma empresa (Produtos, Vendas, Clientes) sejam inacessíveis para outras.
-- **Hierarquia de Roles:** Sistema robusto de permissões (`Master` > `Admin` > `Caixa`) implementado via *NextAuth* e *Server-Side Logic*.
-- **Fluxo de Aprovação:** Empresas criadas via Signup entram como `PENDENTE` e exigem aprovação manual ou automática do Master para ativação.
+### 1. 💰 Inteligência Financeira (Profitability Engine)
+* **Custo Histórico (Snapshot):** O sistema não calcula o lucro baseando-se no custo *atual* do produto. No momento da venda, gravamos um "snapshot" do custo médio ponderado daquele lote específico. Isso garante relatórios de lucratividade 100% precisos, imunes à inflação futura do estoque.
+* **Auditoria de Caixa Blindada:** Implementação de **Fechamento Cego**. O operador informa o valor na gaveta sem saber o esperado pelo sistema. O Admin recebe um relatório detalhado de Sobra/Falta (Quebra de Caixa), Sangrias e Suprimentos.
 
-### 📦 Gestão de Estoque Avançada (FEFO)
-Diferente de PDVs comuns, este sistema implementa lógica **FEFO (First Expired, First Out)**:
-- O sistema rastreia **Lotes e Validades**.
-- Ao realizar uma venda, o backend (`/api/sales`) desconta automaticamente do lote com vencimento mais próximo.
-- Previne prejuízos com produtos vencidos e garante a rotatividade correta do estoque.
+### 2. 📦 Estoque FEFO (First Expired, First Out)
+* O sistema gerencia múltiplos lotes por produto.
+* Ao realizar uma venda, o algoritmo baixa automaticamente o estoque do lote com a **validade mais próxima**, reduzindo desperdícios e perdas por vencimento.
 
-### 👑 "God Mode" (Painel Master)
-O Super Admin (Master) possui ferramentas exclusivas de gestão:
-- **Spy Mode:** Capacidade de visualizar o dashboard financeiro de qualquer cliente em tempo real para auditoria.
-- **Gestão de Ciclo de Vida:** Ações atômicas para `Aprovar`, `Pausar` (Inadimplência) ou `Renovar` planos de assinatura.
-
----
-
-## ✨ Funcionalidades Principais
-
-### 🏢 Para o Lojista (Cliente do SaaS)
-* **Frente de Caixa (PDV):**
-    * Busca rápida de produtos por Nome ou SKU.
-    * Carrinho dinâmico com cálculo de descontos por item.
-    * Múltiplos métodos de pagamento (Pix, Crédito, Débito, Dinheiro).
-* **Gestão Financeira:**
-    * **Controle de Caixa:** Abertura e Fechamento com cálculo automático de quebra de caixa.
-    * **Relatórios:** Lucro líquido, Margem de contribuição e Gráficos de desempenho (Recharts).
-* **Equipe:**
-    * Criação de contas para operadores de caixa com acesso restrito.
-
-### 🛠️ Para o Desenvolvedor (Stack)
-
-O projeto foi construído com a stack mais moderna do ecossistema React/Node:
-
-* **Frontend:** [Next.js 14 (App Router)](https://nextjs.org/) - Server Components & Server Actions.
-* **Linguagem:** [TypeScript](https://www.typescriptlang.org/) - Tipagem estrita para segurança do código.
-* **Estilização:** [Tailwind CSS](https://tailwindcss.com/) + [Shadcn/UI](https://ui.shadcn.com/) - Design System consistente e acessível.
-* **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/) - Relacional e robusto.
-* **ORM:** [Prisma](https://www.prisma.io/) - Modelagem de dados e Migrations.
-* **Auth:** [NextAuth.js v4](https://next-auth.js.org/) - Autenticação segura com JWT.
-* **Armazenamento:** [AWS S3](https://aws.amazon.com/s3/) - Upload de imagens de produtos.
+### 3. 🔐 Arquitetura SaaS Multi-Tenant
+* **Isolamento Lógico:** Middleware e Services garantem que dados de uma empresa (Produtos, Vendas, Clientes) sejam estritamente inacessíveis para outras tenants.
+* **RBAC (Role-Based Access Control):** Sistema granular de permissões:
+    * `Master`: Dono do SaaS (Gestão de Assinaturas, Métricas Globais).
+    * `Admin`: Dono da Loja (Acesso total à sua empresa).
+    * `Gerente`: Gestão operacional (Estoque, Relatórios), sem acesso a RH/Financeiro sensível.
+    * `Caixa`: Acesso restrito ao PDV e Fechamento.
 
 ---
 
-## 🚀 Instalação e Execução
+## 🛠️ Stack Tecnológica
 
-Siga os passos abaixo para rodar o projeto localmente:
+O projeto utiliza as tecnologias mais modernas do ecossistema React para garantir performance, tipagem segura e DX (Developer Experience).
+
+* **Core:** [Next.js 14](https://nextjs.org/) (App Router & Server Actions)
+* **Linguagem:** [TypeScript](https://www.typescriptlang.org/) (Strict Mode)
+* **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/) (via Supabase)
+* **ORM:** [Prisma](https://www.prisma.io/) (Schema robusto com Relations & Enums)
+* **Estilização:** [Tailwind CSS](https://tailwindcss.com/) + [Shadcn/UI](https://ui.shadcn.com/)
+* **Animações:** [Framer Motion](https://www.framer.com/motion/) (Micro-interações e Layouts fluidos)
+* **Gráficos:** [Recharts](https://recharts.org/) (Analytics financeiro)
+* **Onboarding:** [React Joyride](https://docs.react-joyride.com/) (Tour guiado para novos usuários)
+* **Upload:** AWS S3 (Armazenamento de imagens de produtos)
+
+---
+
+## 🚀 Como Rodar Localmente
 
 ### Pré-requisitos
 * Node.js 18+
 * PostgreSQL (Local ou Docker)
-* Conta na AWS (para S3 - opcional)
 
-### 1. Clone o repositório
-```bash
-git clone [https://github.com/seu-usuario/Flow-pdv.git](https://github.com/seu-usuario/flow-pdv.git)
-cd flow-pdv
+### Instalação
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/seu-usuario/flow-pdv.git](https://github.com/seu-usuario/flow-pdv.git)
+    cd flow-pdv
+    ```
+
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
+
+3.  **Configure as variáveis de ambiente:**
+    Crie um arquivo `.env` baseado no exemplo e adicione suas credenciais do Banco e Auth.
+
+4.  **Setup do Banco de Dados:**
+    ```bash
+    # Cria as tabelas e roda o Seed (Dados iniciais de teste)
+    npm run reset-db 
+    ```
+
+5.  **Rode o projeto:**
+    ```bash
+    npm run dev
+    ```
+    Acesse `http://localhost:3000`.
+
+---
+
+## 🗺️ Roadmap (Próximos Passos)
+
+* [x] Gestão de Lotes e Validade (FEFO)
+* [x] Controle Financeiro (Caixa e DRE)
+* [x] Gestão de Equipe e Metas
+* [x] Mural de Avisos Internos
+* [ ] **Impressão Térmica:** Geração de cupom não-fiscal (PDF/Raw).
+* [ ] **PWA:** Funcionalidade Offline-first e instalação no Desktop/Mobile.
+* [ ] **Integração WhatsApp:** Envio de comprovantes via API.
+
+---
+
+## 🤝 Contribuição
+
+Contribuições são bem-vindas! Sinta-se à vontade para abrir Issues ou enviar Pull Requests.
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT.
+
+---
+
+<div align="center">
+  Desenvolvido com 💙 por <strong>Bruno Araujo</strong>
+  <br>
+  <a href="https://www.linkedin.com/in/seu-linkedin">LinkedIn</a> • <a href="https://github.com/seu-github">GitHub</a>
+</div>
