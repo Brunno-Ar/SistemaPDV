@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { db } from "@/lib/local-db";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export function SyncManager() {
   const { data: session, status } = useSession();
@@ -11,9 +11,11 @@ export function SyncManager() {
   // 1. Clear DB on Logout
   useEffect(() => {
     if (status === "unauthenticated") {
-      db.delete().then(() => {
-        console.log("Local DB cleared on logout");
-      }).catch(err => console.error("Error clearing DB", err));
+      db.delete()
+        .then(() => {
+          console.log("Local DB cleared on logout");
+        })
+        .catch((err) => console.error("Error clearing DB", err));
     }
   }, [status]);
 
@@ -50,7 +52,7 @@ export function SyncManager() {
       if (!res.ok) throw new Error("Failed to fetch products");
       const products = await res.json();
 
-      await db.transaction('rw', db.products, async () => {
+      await db.transaction("rw", db.products, async () => {
         await db.products.clear();
         await db.products.bulkAdd(products);
       });
@@ -71,14 +73,17 @@ export function SyncManager() {
         const res = await fetch("/api/sales", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sale.payload)
+          body: JSON.stringify(sale.payload),
         });
 
         if (res.ok) {
-           await db.offlineSales.delete(sale.id!);
-           toast({ title: "Sincronizado", description: "Venda offline enviada com sucesso!" });
+          await db.offlineSales.delete(sale.id!);
+          toast({
+            title: "Sincronizado",
+            description: "Venda offline enviada com sucesso!",
+          });
         } else {
-           console.error("Failed to sync sale", sale.id, res.statusText);
+          console.error("Failed to sync sale", sale.id, res.statusText);
         }
       } catch (error) {
         console.error("Network error during sync", error);

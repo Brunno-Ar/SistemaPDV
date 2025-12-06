@@ -14,7 +14,6 @@ export async function GET() {
     const products = await prisma.product.findMany({
       where: {
         empresaId: session.user.empresaId,
-        ativo: true // Only active products
       },
       select: {
         id: true,
@@ -22,13 +21,13 @@ export async function GET() {
         sku: true,
         precoVenda: true,
         estoqueAtual: true,
-        imagemUrl: true
-      }
+        imagemUrl: true,
+      },
     });
 
-    const formattedProducts = products.map(p => ({
+    const formattedProducts = products.map((p) => ({
       ...p,
-      precoVenda: Number(p.precoVenda)
+      precoVenda: Number(p.precoVenda),
     }));
 
     return NextResponse.json(formattedProducts);

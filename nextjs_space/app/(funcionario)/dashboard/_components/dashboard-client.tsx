@@ -51,10 +51,26 @@ interface DashboardData {
   }[];
 }
 
+interface CaixaStatus {
+  id: string;
+  status: "ABERTO" | "FECHADO";
+  saldoInicial: number;
+  dataAbertura: string;
+  movimentacoes: Array<{
+    id: string;
+    tipo: "SANGRIA" | "SUPRIMENTO" | "ABERTURA" | "VENDA";
+    valor: number;
+    descricao: string;
+    dataHora: string;
+  }>;
+}
+
 export default function DashboardClient() {
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [caixaData, setCaixaData] = useState<any>(undefined); // undefined = ainda não buscou
+  const [caixaData, setCaixaData] = useState<CaixaStatus | null | undefined>(
+    undefined
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
+  manifest: "/manifest.json",
   openGraph: {
     title: "FlowPDV - Sistema de Gestão",
     description: "Sistema de Ponto de Venda com controle de estoque",

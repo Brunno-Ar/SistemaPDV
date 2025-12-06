@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { formatCurrency, parseCurrency } from "@/lib/utils";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import {
@@ -258,7 +258,10 @@ export function FechamentoCaixaDialog({
                     bold: true,
                   },
                 ].map((row) => (
-                  <TableRow key={row.label} className={row.bold ? "bg-muted/50 font-bold" : ""}>
+                  <TableRow
+                    key={row.label}
+                    className={row.bold ? "bg-muted/50 font-bold" : ""}
+                  >
                     <TableCell className="font-medium">{row.label}</TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(row.inf)}
@@ -267,12 +270,13 @@ export function FechamentoCaixaDialog({
                       {formatCurrency(row.sys)}
                     </TableCell>
                     <TableCell
-                      className={`text-right font-bold ${Math.abs(row.diff) > 0.009
+                      className={`text-right font-bold ${
+                        Math.abs(row.diff) > 0.009
                           ? row.diff > 0
                             ? "text-blue-600"
                             : "text-red-600"
                           : "text-green-600"
-                        }`}
+                      }`}
                     >
                       {formatCurrency(row.diff)}
                     </TableCell>
@@ -340,8 +344,8 @@ export function FechamentoCaixaDialog({
                 {processing
                   ? "Finalizando..."
                   : temDivergencia
-                    ? "Finalizar com Divergência"
-                    : "Finalizar Fechamento"}
+                  ? "Finalizar com Divergência"
+                  : "Finalizar Fechamento"}
               </Button>
             </>
           )}

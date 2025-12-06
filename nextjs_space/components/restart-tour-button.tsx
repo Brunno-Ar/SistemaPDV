@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { RotateCcw } from "lucide-react";
 
 export function RestartTourButton() {

@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { ReactNode, useEffect, useState } from "react";
 
 interface ProvidersProps {
@@ -31,6 +32,7 @@ export function Providers({ children }: ProvidersProps) {
       >
         <ErrorBoundary>{children}</ErrorBoundary>
         <Toaster />
+        <SonnerToaster />
       </ThemeProvider>
     </SessionProvider>
   );

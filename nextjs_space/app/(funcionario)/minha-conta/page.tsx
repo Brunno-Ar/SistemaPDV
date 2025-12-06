@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { MuralAvisos } from "@/components/mural-avisos";
 import { formatCurrency } from "@/lib/utils";
 import { RestartTourButton } from "@/components/restart-tour-button";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 interface Sale {
   id: string;
@@ -110,13 +111,16 @@ export default function MinhaContaPage() {
                 {salesMonth >= metaMensal
                   ? "Parabéns! Você atingiu sua meta mensal! 🚀"
                   : `Faltam ${formatCurrency(
-                    metaMensal - salesMonth
-                  )} para atingir sua meta.`}
+                      metaMensal - salesMonth
+                    )} para atingir sua meta.`}
               </p>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* App Install Section */}
+      <InstallPrompt variant="inline" />
 
       <div className="mb-6">
         <MuralAvisos />
@@ -147,13 +151,18 @@ export default function MinhaContaPage() {
                         <Clock className="h-4 w-4 text-gray-400" />
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">
-                            {new Date(sale.createdAt).toLocaleDateString("pt-BR")}
+                            {new Date(sale.createdAt).toLocaleDateString(
+                              "pt-BR"
+                            )}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {new Date(sale.createdAt).toLocaleTimeString("pt-BR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {new Date(sale.createdAt).toLocaleTimeString(
+                              "pt-BR",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                           </p>
                         </div>
                       </div>
@@ -181,7 +190,9 @@ export default function MinhaContaPage() {
                       <th className="px-4 py-3 rounded-l-lg">Data/Hora</th>
                       <th className="px-4 py-3">ID da Venda</th>
                       <th className="px-4 py-3">Valor</th>
-                      <th className="px-4 py-3 rounded-r-lg text-right">Status</th>
+                      <th className="px-4 py-3 rounded-r-lg text-right">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

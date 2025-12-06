@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "../(landing)/_components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { DotScreenShader } from "@/components/DotScreenShader";
+import { Sparkles } from "@/components/Sparkles";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
         {/* Background Shader */}
         <div className="absolute inset-0 z-0">
-          <DotScreenShader />
+          <Sparkles />
         </div>
 
         <div className="relative z-10 max-w-lg text-center p-12 pointer-events-none">

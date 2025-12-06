@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Lock } from "lucide-react";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export default function ConfiguracoesPage() {
   const { resolvedTheme } = useTheme();
@@ -106,6 +107,9 @@ export default function ConfiguracoesPage() {
             <ThemeToggle />
           </div>
         </div>
+
+        {/* PWA / App Section */}
+        <InstallPrompt variant="inline" />
 
         {/* Security Section */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6 shadow-sm">

@@ -97,6 +97,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/((?!api/auth|api/profile|login|signup|_next/static|_next/image|favicon.ico|public).*)",
+    "/((?!api/auth|api/profile|login|signup|_next/static|_next/image|favicon.ico|favicon.svg|sw.js|manifest.json|workbox-.*).*)",
   ],
 };
