@@ -49,14 +49,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Mock email sending: return password in response (DEV ONLY)
-    // In production, this would send an email via Nodemailer/Resend/SendGrid
+    // NOTA: Esta rota foi mantida por compatibilidade, mas recomenda-se usar /api/auth/forgot-password
+    // que envia a senha por email ao invés de retornar na resposta
     return NextResponse.json(
       {
         message:
           "Se o e-mail estiver cadastrado, você receberá as instruções em instantes.",
-        // TODO: Remove this in production
-        tempPassword: temporaryPassword,
+        // Senha temporária NUNCA deve ser retornada na resposta por segurança
+        // A senha é gerada mas só seria útil em ambiente de desenvolvimento
+        // Em produção, esta rota deve enviar email igual forgot-password
       },
       { status: 200 }
     );
