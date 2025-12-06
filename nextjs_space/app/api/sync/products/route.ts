@@ -14,7 +14,7 @@ export async function GET() {
     const products = await prisma.product.findMany({
       where: {
         empresaId: session.user.empresaId,
-        ativo: true // Only active products
+        // Remove 'ativo: true' because it doesn't exist in the schema
       },
       select: {
         id: true,
