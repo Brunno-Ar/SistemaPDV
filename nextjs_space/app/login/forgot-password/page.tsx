@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/recover-password", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -41,17 +41,8 @@ export default function ForgotPasswordPage() {
       setSubmitted(true);
       toast({
         title: "Solicitação enviada",
-        description: data.message,
+        description: "Verifique seu e-mail para a senha temporária.",
       });
-
-      // DEV ONLY: Show temp password
-      if (data.tempPassword) {
-        toast({
-          title: "DEV MODE: Senha Temporária",
-          description: `Senha: ${data.tempPassword}`,
-          duration: 10000,
-        });
-      }
     } catch (error) {
       toast({
         title: "Erro",
