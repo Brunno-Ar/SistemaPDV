@@ -1,7 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/page-header";
-import { MessageLoading } from "@/components/ui/message-loading";
+import { PageLoading } from "@/components/ui/loading";
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard";
 import { StatsCards, StockAlerts, QuickAccess } from "./parts";
 import { useSession } from "next-auth/react";
@@ -16,7 +16,12 @@ export default function DashboardClient() {
   const getExpirationAlert = () => {
     // Usar dados da API se disponíveis (mais confiável) ou fallback para sessão
     // Se stats for null (carregando ou erro), não mostra nada por enquanto
-    if (!stats || stats.diasParaVencimento === null || stats.diasParaVencimento === undefined) return null;
+    if (
+      !stats ||
+      stats.diasParaVencimento === null ||
+      stats.diasParaVencimento === undefined
+    )
+      return null;
 
     const diffDays = stats.diasParaVencimento;
 
@@ -34,10 +39,8 @@ export default function DashboardClient() {
               </h3>
               <p className="text-yellow-700 dark:text-yellow-400/90">
                 Sua assinatura expira em{" "}
-                <span className="font-bold">
-                  {diffDays} dias
-                </span>
-                . Renove para evitar o bloqueio.
+                <span className="font-bold">{diffDays} dias</span>. Renove para
+                evitar o bloqueio.
               </p>
             </div>
           </CardContent>
@@ -58,7 +61,8 @@ export default function DashboardClient() {
                 Plano Vencido!
               </h3>
               <p className="text-red-700 dark:text-red-400/90">
-                O pagamento da sua mensalidade não foi identificado. Você perderá o acesso em{" "}
+                O pagamento da sua mensalidade não foi identificado. Você
+                perderá o acesso em{" "}
                 <span className="font-bold">
                   {Math.max(0, 10 + diffDays)} dias
                 </span>
@@ -74,11 +78,7 @@ export default function DashboardClient() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-[calc(100vh-100px)]">
-        <MessageLoading />
-      </div>
-    );
+    return <PageLoading />;
   }
 
   return (

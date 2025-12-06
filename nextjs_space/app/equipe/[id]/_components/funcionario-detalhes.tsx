@@ -202,7 +202,11 @@ export default function FuncionarioDetalhes({
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Carregando...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="flex h-12 w-12 animate-spin items-center justify-center rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
   }
 
   if (!funcionario) {

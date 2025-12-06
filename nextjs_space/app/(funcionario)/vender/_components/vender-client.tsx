@@ -3,7 +3,7 @@
 import { PageHeader } from "@/components/ui/page-header";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { MessageLoading } from "@/components/ui/message-loading";
+import { ClassicLoader, PageLoading } from "@/components/ui/loading";
 import { usePOS } from "@/hooks/use-pos";
 import { useRouter } from "next/navigation";
 import {
@@ -32,10 +32,7 @@ export default function VenderClient() {
       if (status === "loading") return;
 
       // Se for Admin ou Master, libera o acesso direto (sem precisar de caixa)
-      if (
-        session?.user?.role === "admin" ||
-        session?.user?.role === "master"
-      ) {
+      if (session?.user?.role === "admin" || session?.user?.role === "master") {
         setCaixaFechado(false);
         setVerificandoCaixa(false);
         return;
@@ -133,11 +130,7 @@ export default function VenderClient() {
   }
 
   if (loading || verificandoCaixa) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
-        <MessageLoading />
-      </div>
-    );
+    return <PageLoading />;
   }
 
   const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
@@ -152,7 +145,7 @@ export default function VenderClient() {
       {finalizing && (
         <div className="fixed inset-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow-xl border dark:border-zinc-800 flex flex-col items-center gap-4">
-            <MessageLoading showText={false} />
+            <ClassicLoader className="w-12 h-12 border-4" />
             <p className="font-medium text-lg text-gray-700 dark:text-gray-300">
               Processando Venda...
             </p>

@@ -301,8 +301,8 @@ export function LotManagerDialog({
         ) : (
           <>
             {loadingLots ? (
-              <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-                Carregando lotes...
+              <div className="flex justify-center py-8">
+                <div className="flex h-10 w-10 animate-spin items-center justify-center rounded-full border-4 border-primary border-t-transparent" />
               </div>
             ) : (
               <div className="space-y-4">

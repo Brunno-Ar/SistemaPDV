@@ -144,7 +144,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-600">Carregando equipe...</div>
+        <div className="flex h-12 w-12 animate-spin items-center justify-center rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -292,22 +292,23 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                       </CardTitle>
                       <CardDescription className="flex items-center space-x-1 mt-1">
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded ${usuario.role === "admin"
+                          className={`inline-block px-2 py-1 text-xs rounded ${
+                            usuario.role === "admin"
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
-                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                : usuario.role === "gerente"
-                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                            }`}
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                              : usuario.role === "gerente"
+                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          }`}
                         >
                           {usuario.role === "admin"
                             ? "Admin"
                             : usuario.role === "master"
-                              ? "Master"
-                              : usuario.role === "gerente"
-                                ? "Gerente"
-                                : "Caixa"}
+                            ? "Master"
+                            : usuario.role === "gerente"
+                            ? "Gerente"
+                            : "Caixa"}
                         </span>
                       </CardDescription>
                     </div>
@@ -350,22 +351,23 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
                       </CardTitle>
                       <CardDescription className="flex items-center space-x-1 mt-1">
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded ${usuario.role === "admin"
+                          className={`inline-block px-2 py-1 text-xs rounded ${
+                            usuario.role === "admin"
                               ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
                               : usuario.role === "master"
-                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                                : usuario.role === "gerente"
-                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                            }`}
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                              : usuario.role === "gerente"
+                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                          }`}
                         >
                           {usuario.role === "admin"
                             ? "Admin"
                             : usuario.role === "master"
-                              ? "Master"
-                              : usuario.role === "gerente"
-                                ? "Gerente"
-                                : "Caixa"}
+                            ? "Master"
+                            : usuario.role === "gerente"
+                            ? "Gerente"
+                            : "Caixa"}
                         </span>
                       </CardDescription>
                     </div>

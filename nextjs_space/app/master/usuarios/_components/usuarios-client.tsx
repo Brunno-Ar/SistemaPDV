@@ -3,12 +3,7 @@
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -164,7 +159,7 @@ export default function UsuariosClient() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-600">Carregando usuários master...</div>
+        <div className="flex h-12 w-12 animate-spin items-center justify-center rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }

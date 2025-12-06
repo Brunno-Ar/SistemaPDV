@@ -5,7 +5,7 @@ import { useRelatorios } from "@/hooks/use-relatorios";
 import { RelatoriosFilters } from "./relatorios-filters";
 import { RelatoriosStats } from "./relatorios-stats";
 import { RelatoriosTable } from "./relatorios-table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ChartSkeleton, PageLoading } from "@/components/ui/loading";
 
 // 🚀 Otimização: Lazy loading do componente de gráficos (Recharts é pesado ~200KB)
 const RelatoriosCharts = dynamic(
@@ -13,10 +13,10 @@ const RelatoriosCharts = dynamic(
   {
     loading: () => (
       <div className="space-y-6">
-        <Skeleton className="w-full h-[300px] rounded-xl" />
+        <ChartSkeleton className="w-full" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Skeleton className="w-full h-[300px] rounded-xl" />
-          <Skeleton className="w-full h-[300px] rounded-xl" />
+          <ChartSkeleton className="w-full" />
+          <ChartSkeleton className="w-full" />
         </div>
       </div>
     ),
@@ -42,11 +42,7 @@ export default function RelatoriosClient({
   } = useRelatorios({ companyId });
 
   if (loading && !analytics) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        Carregando relatórios...
-      </div>
-    );
+    return <PageLoading />;
   }
 
   return (

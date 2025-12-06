@@ -440,8 +440,8 @@ export default function MovimentacoesClient({
 
       <div className="space-y-4">
         {loading ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            Carregando movimentações...
+          <div className="flex justify-center py-12">
+            <div className="flex h-12 w-12 animate-spin items-center justify-center rounded-full border-4 border-primary border-t-transparent" />
           </div>
         ) : filteredMovements.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400 border rounded-lg bg-gray-50 dark:bg-zinc-800 dark:border-zinc-700">
