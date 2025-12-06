@@ -6,6 +6,35 @@ import { getFileUrl } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
 
+// 🚀 Otimização: Função helper para processar em batches (consistente com /api/products)
+async function signUrlsInBatches(products: any[], batchSize = 10) {
+  const results: any[] = [];
+
+  for (let i = 0; i < products.length; i += batchSize) {
+    const batch = products.slice(i, i + batchSize);
+    const batchResults = await Promise.all(
+      batch.map(async (product: any) => {
+        let signedUrl = null;
+        if (product.imagemUrl) {
+          try {
+            signedUrl = await getFileUrl(product.imagemUrl, 3600);
+          } catch (e) {
+            console.error(`Erro ao assinar URL para produto ${product.id}`, e);
+          }
+        }
+        return {
+          ...product,
+          precoVenda: Number(product.precoVenda),
+          imagemUrl: signedUrl || product.imagemUrl,
+        };
+      })
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -39,24 +68,8 @@ export async function GET(request: NextRequest) {
       take: 20,
     });
 
-    const formattedProducts = await Promise.all(
-      products.map(async (p) => {
-        let signedUrl = null;
-        if (p.imagemUrl) {
-          try {
-            signedUrl = await getFileUrl(p.imagemUrl, 3600);
-          } catch (e) {
-            console.error(`Erro ao assinar URL para produto ${p.id}`, e);
-          }
-        }
-
-        return {
-          ...p,
-          precoVenda: Number(p.precoVenda),
-          imagemUrl: signedUrl || p.imagemUrl,
-        };
-      })
-    );
+    // 🚀 Otimização: Processar URLs em batches
+    const formattedProducts = await signUrlsInBatches(products, 10);
 
     return NextResponse.json(formattedProducts);
   } catch (error) {
