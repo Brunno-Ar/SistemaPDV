@@ -2,8 +2,39 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getFileUrl } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
+
+// 🚀 Otimização: Função helper para processar em batches
+async function signUrlsInBatches(products: any[], batchSize = 10) {
+  const results: any[] = [];
+
+  for (let i = 0; i < products.length; i += batchSize) {
+    const batch = products.slice(i, i + batchSize);
+    const batchResults = await Promise.all(
+      batch.map(async (product: any) => {
+        let signedUrl = null;
+        if (product.imagemUrl) {
+          try {
+            signedUrl = await getFileUrl(product.imagemUrl, 3600);
+          } catch (e) {
+            // Silently fail - use original URL
+            console.error(`Erro ao assinar URL para produto ${product.id}`, e);
+          }
+        }
+        return {
+          ...product,
+          precoVenda: Number(product.precoVenda),
+          imagemUrl: signedUrl || product.imagemUrl,
+        };
+      })
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
+}
 
 export async function GET() {
   try {
@@ -34,14 +65,8 @@ export async function GET() {
       orderBy: { nome: "asc" },
     });
 
-    // 🚀 Otimização: Retornar produtos diretamente sem assinar URLs S3 síncronamente
-    // A assinatura de URLs S3 é feita sob demanda no frontend quando a imagem é requisitada
-    // Isso reduz drasticamente o tempo de resposta da API
-    const serializedProducts = products.map((product: any) => ({
-      ...product,
-      precoVenda: Number(product.precoVenda),
-      // imagemUrl mantida como está - frontend pode assinar sob demanda se necessário
-    }));
+    // 🚀 Otimização: Processar URLs em batches de 10 para evitar sobrecarga
+    const serializedProducts = await signUrlsInBatches(products, 10);
 
     return NextResponse.json(serializedProducts);
   } catch (error: any) {
