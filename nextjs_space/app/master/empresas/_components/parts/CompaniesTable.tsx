@@ -17,6 +17,7 @@ import {
   Key,
   MoreVertical,
   Calendar,
+  RefreshCw,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Empresa } from "./types";
@@ -118,6 +119,12 @@ export function CompaniesTable({
                       Pausada
                     </span>
                   )}
+                  {empresa.status === "EM_TESTE" && (
+                    <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      <span className="size-2 inline-block bg-blue-500 rounded-full"></span>
+                      Em Teste
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 align-middle">
                   {formatDate(empresa.vencimentoPlano)}
@@ -173,6 +180,25 @@ export function CompaniesTable({
                       </InteractiveHoverButton>
                     )}
 
+                    {empresa.status === "EM_TESTE" && (
+                      <>
+                        <InteractiveHoverButton
+                          className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 border-gray-200 flex items-center justify-center"
+                          title="Alterar Data/Ativar"
+                          onClick={() => onUpdatePlan(empresa)}
+                        >
+                          <Calendar className="h-5 w-5" />
+                        </InteractiveHoverButton>
+                        <InteractiveHoverButton
+                          className="w-10 min-w-10 px-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-yellow-600 border-yellow-200 flex items-center justify-center"
+                          title="Pausar"
+                          onClick={() => onAction("pausar", empresa.id)}
+                        >
+                          <PauseCircle className="h-5 w-5" />
+                        </InteractiveHoverButton>
+                      </>
+                    )}
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <InteractiveHoverButton
@@ -199,6 +225,13 @@ export function CompaniesTable({
                         >
                           <MessageSquare className="mr-2 h-4 w-4" /> Enviar
                           Aviso
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onAction("syncAsaas", empresa.id)}
+                          className="text-blue-600 focus:text-blue-600"
+                        >
+                          <RefreshCw className="mr-2 h-4 w-4" /> Sincronizar
+                          Asaas
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem

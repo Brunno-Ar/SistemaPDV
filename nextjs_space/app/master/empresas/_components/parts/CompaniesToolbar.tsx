@@ -37,41 +37,47 @@ export function CompaniesToolbar({
           <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mr-2 hidden md:block">
             Filtros:
           </p>
-          {["Todos", "Pendente", "Ativa", "Inadimplente", "Pausada"].map(
-            (status) => {
-              let activeClass =
-                "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"; // Default (Todos)
-              if (status === "Pendente")
-                activeClass =
-                  "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-              if (status === "Ativa")
-                activeClass =
-                  "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-              if (status === "Inadimplente")
-                activeClass =
-                  "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-              if (status === "Pausada")
-                activeClass =
-                  "bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200";
+          {[
+            "Todos",
+            "Pendente",
+            "Ativa",
+            "Inadimplente",
+            "Pausada",
+            "Em Teste",
+          ].map((status) => {
+            let activeClass =
+              "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"; // Default (Todos)
+            if (status === "Pendente")
+              activeClass =
+                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+            if (status === "Ativa")
+              activeClass =
+                "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+            if (status === "Inadimplente")
+              activeClass =
+                "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+            if (status === "Pausada")
+              activeClass =
+                "bg-gray-200 text-gray-800 dark:bg-gray-600 dark:text-gray-200";
+            if (status === "Em Teste")
+              activeClass =
+                "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
 
-              return (
-                <button
-                  key={status}
-                  onClick={() => setFilterStatus(status)}
-                  className={`flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full px-4 text-sm font-medium transition-colors ${
-                    filterStatus === status
-                      ? activeClass
-                      : "bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-400"
-                  }`}
-                >
-                  {status}
-                  {filterStatus === status && (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </button>
-              );
-            }
-          )}
+            return (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-full px-4 text-sm font-medium transition-colors ${
+                  filterStatus === status
+                    ? activeClass
+                    : "bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-400"
+                }`}
+              >
+                {status}
+                {filterStatus === status && <ChevronDown className="h-4 w-4" />}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

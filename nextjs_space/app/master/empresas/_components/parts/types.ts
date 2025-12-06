@@ -1,7 +1,7 @@
 export interface Empresa {
   id: string;
   nome: string;
-  status: "PENDENTE" | "ATIVO" | "PAUSADO";
+  status: "PENDENTE" | "ATIVO" | "PAUSADO" | "EM_TESTE";
   vencimentoPlano: string | null;
   diaVencimento: number;
   telefone: string | null;

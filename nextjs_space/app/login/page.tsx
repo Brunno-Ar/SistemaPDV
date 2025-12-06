@@ -49,6 +49,27 @@ export default function LoginPage() {
       if (result?.error) {
         if (result.error === "CredentialsSignin") {
           setError("Email ou senha inválidos");
+        } else if (result.error.includes("aguardando aprovação")) {
+          // Redirecionar para página de bloqueio - empresa pendente
+          router.push(
+            `/bloqueado?reason=pendente&email=${encodeURIComponent(email)}`
+          );
+        } else if (
+          result.error.includes("Acesso suspenso") ||
+          result.error.includes("Pagamento não identificado")
+        ) {
+          // Redirecionar para página de bloqueio - empresa pausada
+          router.push(
+            `/bloqueado?reason=pausado&email=${encodeURIComponent(email)}`
+          );
+        } else if (
+          result.error.includes("Acesso bloqueado") ||
+          result.error.includes("mensalidade")
+        ) {
+          // Redirecionar para página de bloqueio - mensalidade vencida
+          router.push(
+            `/bloqueado?reason=vencido&email=${encodeURIComponent(email)}`
+          );
         } else {
           setError(result.error);
         }

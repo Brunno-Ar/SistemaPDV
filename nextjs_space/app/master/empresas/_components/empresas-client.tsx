@@ -33,7 +33,8 @@ export default function EmpresasClient() {
     useState(false);
   const [empresaToReset, setEmpresaToReset] = useState<Empresa | null>(null);
   const [updatePlanDialogOpen, setUpdatePlanDialogOpen] = useState(false);
-  const [empresaToUpdatePlan, setEmpresaToUpdatePlan] = useState<Empresa | null>(null);
+  const [empresaToUpdatePlan, setEmpresaToUpdatePlan] =
+    useState<Empresa | null>(null);
   const [avisoData, setAvisoData] = useState({
     mensagem: "",
     importante: false,
@@ -324,7 +325,8 @@ export default function EmpresasClient() {
         empresa.status === "ATIVO" &&
         !isInadimplente(empresa)) ||
       (filterStatus === "Inadimplente" && isInadimplente(empresa)) ||
-      (filterStatus === "Pausada" && empresa.status === "PAUSADO");
+      (filterStatus === "Pausada" && empresa.status === "PAUSADO") ||
+      (filterStatus === "Em Teste" && empresa.status === "EM_TESTE");
 
     return matchesSearch && matchesFilter;
   });

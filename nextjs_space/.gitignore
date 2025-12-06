@@ -27,6 +27,10 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.test
+.env.production
+.env.production.backup
+.env*.backup
 
 # vercel
 .vercel
@@ -40,3 +44,16 @@ public/sw.js
 public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
+
+# Logs
+*.log
+build_output.log
+start_log.txt
+start_log_full.txt
+
+# Scripts de ambiente (contém informações sensíveis)
+scripts/use-test-db.ps1
+scripts/use-prod-db.ps1
+
+# Agent/AI folder
+.agent/

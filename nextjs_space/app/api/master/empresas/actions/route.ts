@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { asaas } from "@/lib/asaas";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -46,8 +47,28 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        const empresaParaAprovar = await prisma.empresa.findUnique({
+          where: { id: empresaId },
+        });
+
         const vencimento = new Date();
         vencimento.setDate(vencimento.getDate() + 30);
+
+        // Se tem assinatura no Asaas, reativar
+        if (empresaParaAprovar?.asaasSubscriptionId) {
+          try {
+            await asaas.reactivateSubscription(
+              empresaParaAprovar.asaasSubscriptionId
+            );
+            await asaas.updateSubscriptionDueDate(
+              empresaParaAprovar.asaasSubscriptionId,
+              vencimento
+            );
+          } catch (asaasError) {
+            console.error("Erro ao reativar no Asaas:", asaasError);
+            // Continua mesmo se falhar no Asaas
+          }
+        }
 
         const empresaAprovada = await prisma.empresa.update({
           where: { id: empresaId },
@@ -90,6 +111,19 @@ export async function POST(request: NextRequest) {
             )
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+        // Atualizar no Asaas
+        if (empresa.asaasSubscriptionId) {
+          try {
+            await asaas.updateSubscriptionDueDate(
+              empresa.asaasSubscriptionId,
+              novoVencimentoCalculado
+            );
+            await asaas.reactivateSubscription(empresa.asaasSubscriptionId);
+          } catch (asaasError) {
+            console.error("Erro ao renovar no Asaas:", asaasError);
+          }
+        }
+
         const empresaRenovada = await prisma.empresa.update({
           where: { id: empresaId },
           data: {
@@ -113,8 +147,32 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        const empresaParaAtualizar = await prisma.empresa.findUnique({
+          where: { id: empresaId },
+        });
+
+        const novaDataVencimento = new Date(novoVencimento);
+
+        // Atualizar no Asaas
+        if (empresaParaAtualizar?.asaasSubscriptionId) {
+          try {
+            await asaas.updateSubscriptionDueDate(
+              empresaParaAtualizar.asaasSubscriptionId,
+              novaDataVencimento
+            );
+            // Se estava pausado, reativar no Asaas
+            if (empresaParaAtualizar.status === "PAUSADO") {
+              await asaas.reactivateSubscription(
+                empresaParaAtualizar.asaasSubscriptionId
+              );
+            }
+          } catch (asaasError) {
+            console.error("Erro ao atualizar vencimento no Asaas:", asaasError);
+          }
+        }
+
         const dataUpdate: any = {
-          vencimentoPlano: new Date(novoVencimento),
+          vencimentoPlano: novaDataVencimento,
           status: "ATIVO", // Reativa caso esteja pausado
         };
 
@@ -142,6 +200,22 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        const empresaParaPausar = await prisma.empresa.findUnique({
+          where: { id: empresaId },
+        });
+
+        // Pausar no Asaas também
+        if (empresaParaPausar?.asaasSubscriptionId) {
+          try {
+            await asaas.pauseSubscription(
+              empresaParaPausar.asaasSubscriptionId
+            );
+          } catch (asaasError) {
+            console.error("Erro ao pausar no Asaas:", asaasError);
+            // Continua mesmo se falhar no Asaas
+          }
+        }
+
         const empresaPausada = await prisma.empresa.update({
           where: { id: empresaId },
           data: { status: "PAUSADO" },
@@ -160,6 +234,22 @@ export async function POST(request: NextRequest) {
             { error: "empresaId obrigatório" },
             { status: 400 }
           );
+        }
+
+        const empresaParaReativar = await prisma.empresa.findUnique({
+          where: { id: empresaId },
+        });
+
+        // Reativar no Asaas também
+        if (empresaParaReativar?.asaasSubscriptionId) {
+          try {
+            await asaas.reactivateSubscription(
+              empresaParaReativar.asaasSubscriptionId
+            );
+          } catch (asaasError) {
+            console.error("Erro ao reativar no Asaas:", asaasError);
+            // Continua mesmo se falhar no Asaas
+          }
         }
 
         const empresaReativada = await prisma.empresa.update({
@@ -316,6 +406,63 @@ export async function POST(request: NextRequest) {
           success: true,
           message: "Dados de teste limpos com sucesso! Estoque zerado.",
         });
+
+      case "syncAsaas":
+        // Sincronizar dados do Asaas para o sistema local
+        if (!empresaId) {
+          return NextResponse.json(
+            { error: "empresaId obrigatório" },
+            { status: 400 }
+          );
+        }
+
+        const empresaParaSync = await prisma.empresa.findUnique({
+          where: { id: empresaId },
+        });
+
+        if (!empresaParaSync?.asaasSubscriptionId) {
+          return NextResponse.json(
+            { error: "Empresa não tem assinatura no Asaas" },
+            { status: 400 }
+          );
+        }
+
+        try {
+          const subscription = await asaas.getSubscription(
+            empresaParaSync.asaasSubscriptionId
+          );
+
+          // Mapear status do Asaas para status do sistema
+          let novoStatus = empresaParaSync.status;
+          if (subscription.status === "ACTIVE") {
+            novoStatus = "ATIVO";
+          } else if (subscription.status === "INACTIVE") {
+            novoStatus = "PAUSADO";
+          }
+
+          // Atualizar vencimento e status
+          const empresaSincronizada = await prisma.empresa.update({
+            where: { id: empresaId },
+            data: {
+              vencimentoPlano: subscription.nextDueDate
+                ? new Date(subscription.nextDueDate)
+                : empresaParaSync.vencimentoPlano,
+              status: novoStatus,
+            },
+          });
+
+          return NextResponse.json({
+            success: true,
+            message: `Sincronizado! Vencimento: ${subscription.nextDueDate}, Status Asaas: ${subscription.status}`,
+            empresa: empresaSincronizada,
+          });
+        } catch (syncError) {
+          console.error("Erro ao sincronizar com Asaas:", syncError);
+          return NextResponse.json(
+            { error: "Erro ao buscar dados do Asaas" },
+            { status: 500 }
+          );
+        }
 
       default:
         return NextResponse.json({ error: "Ação inválida." }, { status: 400 });

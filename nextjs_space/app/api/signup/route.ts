@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
           nome,
           role: "admin", // Primeiro usuário é admin
           empresaId: empresa.id,
+          tourCompleted: false, // Garantir que o tour será exibido
         },
       });
       console.log("Usuário admin criado:", admin.id);

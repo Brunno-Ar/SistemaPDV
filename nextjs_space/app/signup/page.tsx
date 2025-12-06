@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Phone,
+  FileText,
 } from "lucide-react";
 import { ThemeToggle } from "../(landing)/_components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,41 @@ export default function SignupPage() {
   const [nome, setNome] = useState("");
   const [nomeEmpresa, setNomeEmpresa] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [cpfCnpj, setCpfCnpj] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+  // Função para formatar telefone: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+  const formatTelefone = (value: string): string => {
+    const numbers = value.replace(/\D/g, "").slice(0, 11);
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    if (numbers.length <= 10) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  };
+
+  // Função para formatar CPF/CNPJ automaticamente
+  const formatCpfCnpj = (value: string): string => {
+    const numbers = value.replace(/\D/g, "");
+    if (numbers.length <= 11) {
+      // CPF: XXX.XXX.XXX-XX
+      if (numbers.length <= 3) return numbers;
+      if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+      if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+    } else {
+      // CNPJ: XX.XXX.XXX/XXXX-XX
+      const cnpj = numbers.slice(0, 14);
+      if (cnpj.length <= 2) return cnpj;
+      if (cnpj.length <= 5) return `${cnpj.slice(0, 2)}.${cnpj.slice(2)}`;
+      if (cnpj.length <= 8) return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5)}`;
+      if (cnpj.length <= 12) return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8)}`;
+      return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12)}`;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +88,8 @@ export default function SignupPage() {
           password,
           nome,
           nomeEmpresa,
-          telefone,
+          telefone: telefone.replace(/\D/g, ""),
+          cpfCnpj: cpfCnpj.replace(/\D/g, ""),
         }),
       });
 
@@ -76,6 +108,7 @@ export default function SignupPage() {
       setNome("");
       setNomeEmpresa("");
       setTelefone("");
+      setCpfCnpj("");
 
       setTimeout(() => {
         router.push("/login");
@@ -139,6 +172,23 @@ export default function SignupPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                CPF ou CNPJ
+              </label>
+              <div className="relative">
+                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  value={cpfCnpj}
+                  onChange={(e) => setCpfCnpj(formatCpfCnpj(e.target.value))}
+                  className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-12 py-3.5 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all placeholder:text-gray-400"
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Telefone / WhatsApp
               </label>
               <div className="relative">
@@ -146,7 +196,7 @@ export default function SignupPage() {
                 <input
                   type="tel"
                   value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
+                  onChange={(e) => setTelefone(formatTelefone(e.target.value))}
                   className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-12 py-3.5 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all placeholder:text-gray-400"
                   placeholder="(11) 99999-9999"
                 />

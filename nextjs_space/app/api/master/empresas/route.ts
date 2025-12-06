@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { asaas } from "@/lib/asaas";
 import bcrypt from "bcryptjs";
 
 // GET - Listar todas as empresas (apenas master)
@@ -207,6 +208,29 @@ export async function DELETE(request: NextRequest) {
         { error: "Empresa não encontrada" },
         { status: 404 }
       );
+    }
+
+    // Cancelar assinatura e cliente no Asaas antes de excluir
+    if (empresa.asaasSubscriptionId) {
+      try {
+        await asaas.cancelSubscription(empresa.asaasSubscriptionId);
+        console.log(
+          `Assinatura ${empresa.asaasSubscriptionId} cancelada no Asaas`
+        );
+      } catch (asaasError) {
+        console.error("Erro ao cancelar assinatura no Asaas:", asaasError);
+        // Continua mesmo se falhar - não bloqueia exclusão local
+      }
+    }
+
+    if (empresa.asaasCustomerId) {
+      try {
+        await asaas.deleteCustomer(empresa.asaasCustomerId);
+        console.log(`Cliente ${empresa.asaasCustomerId} deletado do Asaas`);
+      } catch (asaasError) {
+        console.error("Erro ao deletar cliente no Asaas:", asaasError);
+        // Continua mesmo se falhar
+      }
     }
 
     // Excluir empresa e todos os dados relacionados em uma transação
