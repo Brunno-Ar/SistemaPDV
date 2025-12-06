@@ -138,8 +138,15 @@ try {
 | Validação de Forms     | Básica        | ✅ Zod Schemas            |
 | Error Handling         | Básico        | ✅ ErrorBoundary + useApi |
 | Loading States         | Inconsistente | ✅ Padronizado            |
+| Páginas Ausentes       | 3             | ✅ Criadas (/termos, etc) |
 
 ---
+
+## 📅 Próximos Passos Sugeridos
+
+1. **Substituir Forms por Zod:** Começar a usar os schemas criados em `lib/validations.ts` nos formulários.
+2. **Refatorar Catches:** Substituir `error: any` por `getErrorMessage` globalmente.
+3. **Testes:** Adicionar testes unitários para os novos utils e hooks.
 
 ## ⚠️ AÇÃO NECESSÁRIA
 
