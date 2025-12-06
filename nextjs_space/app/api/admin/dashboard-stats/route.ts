@@ -30,13 +30,30 @@ export async function GET() {
       );
     }
 
-    // Data de hoje às 00:00:00
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
+    // Ajuste de Timezone para Brasil (UTC-3)
+    // O servidor roda em UTC. Se for 22h no BR, é 01h do dia seguinte em UTC.
+    // Precisamos pegar o dia correto no BR.
+    const nowOriginal = new Date();
+    // Subtrai 3 horas para obter a data/hora no Brasil
+    const nowBrasil = new Date(nowOriginal.getTime() - 3 * 60 * 60 * 1000);
 
-    // Data de início da semana (domingo)
-    const inicioSemana = new Date(hoje);
-    inicioSemana.setDate(hoje.getDate() - hoje.getDay());
+    // Zera as horas para pegar o início do dia no Brasil (00:00:00 BRT)
+    const inicioDiaBrasil = new Date(nowBrasil);
+    inicioDiaBrasil.setHours(0, 0, 0, 0);
+
+    // Converte de volta para UTC para comparar com o banco (00:00 BRT = 03:00 UTC)
+    // Precisamos somar 3 horas.
+    const hoje = new Date(inicioDiaBrasil.getTime() + 3 * 60 * 60 * 1000);
+
+    // Data de início da semana (domingo) baseada no dia correto do Brasil
+    const diaSemana = inicioDiaBrasil.getDay(); // 0 (Domingo) a 6 (Sábado)
+    const inicioSemanaBrasil = new Date(inicioDiaBrasil);
+    inicioSemanaBrasil.setDate(inicioDiaBrasil.getDate() - diaSemana);
+
+    // Converte início da semana para UTC também
+    const inicioSemana = new Date(
+      inicioSemanaBrasil.getTime() + 3 * 60 * 60 * 1000
+    );
 
     // Total de produtos
     const totalProdutos = await prisma.product.count({

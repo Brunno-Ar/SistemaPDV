@@ -23,13 +23,29 @@ export async function GET() {
       );
     }
 
-    const now = new Date();
-    const startOfDay = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
+    // Ajuste de Timezone para Brasil (UTC-3)
+    const nowOriginal = new Date();
+    // Subtrai 3 horas para data Brasil
+    const nowBrasil = new Date(nowOriginal.getTime() - 3 * 60 * 60 * 1000);
+
+    // Início do dia (Brasil)
+    const inicioDiaBrasil = new Date(nowBrasil);
+    inicioDiaBrasil.setHours(0, 0, 0, 0);
+
+    // Converte de volta para UTC (soma 3h) para query no banco
+    const startOfDay = new Date(inicioDiaBrasil.getTime() + 3 * 60 * 60 * 1000);
+
+    // Início do Mês (Brasil)
+    const inicioMesBrasil = new Date(
+      nowBrasil.getFullYear(),
+      nowBrasil.getMonth(),
+      1
     );
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    inicioMesBrasil.setHours(0, 0, 0, 0);
+    // Converte para UTC
+    const startOfMonth = new Date(
+      inicioMesBrasil.getTime() + 3 * 60 * 60 * 1000
+    );
 
     // 1. Vendas Hoje
     const salesTodayAgg = await prisma.sale.aggregate({
@@ -97,16 +113,20 @@ export async function GET() {
     });
 
     // 5. Weekly Sales (Últimos 7 dias para o gráfico)
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(now.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = new Date(inicioDiaBrasil); // Usa data BR como base
+    sevenDaysAgo.setDate(inicioDiaBrasil.getDate() - 6);
+    // Converter para UTC query: como inicioDiaBrasil é 00:00 BR, soma 3h = 03:00 UTC
+    // Mas o sevenDaysAgo original zerava horas UTC. Vamos manter consistência com 'startOfDay'
+    const sevenDaysAgoUTC = new Date(
+      sevenDaysAgo.getTime() + 3 * 60 * 60 * 1000
+    );
 
     const weeklySalesRaw = await prisma.sale.findMany({
       where: {
         userId: userId,
         empresaId: empresaId,
         createdAt: {
-          gte: sevenDaysAgo,
+          gte: sevenDaysAgoUTC,
         },
       },
       select: {
@@ -134,7 +154,13 @@ export async function GET() {
 
     // Preencher com dados reais
     weeklySalesRaw.forEach((sale) => {
-      const dayKey = new Date(sale.createdAt).toLocaleDateString("pt-BR", {
+      // Ajustar data da venda para BR (-3h) antes de pegar o dia da semana
+      const saleDateOriginal = new Date(sale.createdAt);
+      const saleDateBR = new Date(
+        saleDateOriginal.getTime() - 3 * 60 * 60 * 1000
+      );
+
+      const dayKey = saleDateBR.toLocaleDateString("pt-BR", {
         weekday: "short",
       });
       const current = weeklySalesMap.get(dayKey) || 0;
