@@ -1,23 +1,24 @@
+"use client";
 
-'use client'
-
-import { SessionProvider } from 'next-auth/react'
-import { ThemeProvider } from '@/components/theme-provider'
-import { ReactNode, useEffect, useState } from 'react'
+import { SessionProvider } from "next-auth/react";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { Toaster } from "@/components/ui/toaster";
+import { ReactNode, useEffect, useState } from "react";
 
 interface ProvidersProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function Providers({ children }: ProvidersProps) {
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   if (!mounted) {
-    return null
+    return null;
   }
 
   return (
@@ -28,8 +29,9 @@ export function Providers({ children }: ProvidersProps) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
+        <Toaster />
       </ThemeProvider>
     </SessionProvider>
-  )
+  );
 }
