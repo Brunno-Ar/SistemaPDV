@@ -1,7 +1,19 @@
+/**
+ * @fileoverview Tipos TypeScript centralizados do Sistema PDV
+ *
+ * Este arquivo contém todas as interfaces e tipos utilizados
+ * em todo o sistema. Use estes tipos em vez de 'any' para
+ * garantir tipagem segura e melhor experiência de desenvolvimento.
+ *
+ * @example
+ * import { Product, Sale, User } from "@/lib/types";
+ *
+ * const products: Product[] = await fetchProducts();
+ */
+
 // ===========================================
 // TIPOS CENTRALIZADOS DO SISTEMA PDV
 // ===========================================
-// Use estes tipos em vez de 'any' para tipagem segura
 
 // --- USUÁRIO E AUTENTICAÇÃO ---
 export interface User {

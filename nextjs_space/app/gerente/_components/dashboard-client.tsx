@@ -20,6 +20,35 @@ import { MuralAvisos } from "@/components/mural-avisos";
 import { MeuCaixa } from "@/app/(funcionario)/dashboard/_components/meu-caixa";
 import { formatCurrency } from "@/lib/utils";
 import { StockAlerts } from "@/app/admin/_components/parts/StockAlerts";
+import { ProductWithCategory } from "@/lib/types";
+
+// Interface local para caixa (compatível com MeuCaixa)
+interface CaixaData {
+  id: string;
+  status: "ABERTO" | "FECHADO";
+  saldoInicial: number;
+  dataAbertura: string;
+  movimentacoes: Array<{
+    id: string;
+    tipo: "SANGRIA" | "SUPRIMENTO" | "ABERTURA" | "VENDA";
+    valor: number;
+    descricao: string;
+    dataHora: string;
+  }>;
+}
+
+// Interface local para lotes (com data em string como vem da API)
+interface LoteVencimentoData {
+  id: string;
+  numeroLote: string;
+  quantidade: number;
+  dataValidade: string;
+  produto: {
+    id: string;
+    nome: string;
+    sku: string;
+  };
+}
 
 interface DashboardData {
   salesToday: number;
@@ -40,15 +69,17 @@ interface DashboardData {
     importante: boolean;
     criadoEm: string;
   }[];
-  produtosEstoqueBaixo: any[];
-  lotesVencimentoProximo: any[];
-  topLowStock?: any[];
+  produtosEstoqueBaixo: ProductWithCategory[];
+  lotesVencimentoProximo: LoteVencimentoData[];
+  topLowStock?: ProductWithCategory[];
 }
 
 export default function GerenteDashboardClient() {
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [caixaData, setCaixaData] = useState<any>(undefined); // undefined = ainda não buscou
+  const [caixaData, setCaixaData] = useState<CaixaData | null | undefined>(
+    undefined
+  ); // undefined = ainda não buscou
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
