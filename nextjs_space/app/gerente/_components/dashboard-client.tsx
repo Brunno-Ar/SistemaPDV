@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import Link from "next/link";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { MuralAvisos } from "@/components/mural-avisos";
@@ -152,7 +152,11 @@ export default function GerenteDashboardClient() {
     currentDate.charAt(0).toUpperCase() + currentDate.slice(1);
 
   if (loading) {
-    return <DashboardSkeleton />;
+    return (
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
+      </div>
+    );
   }
 
   return (
@@ -329,27 +333,6 @@ export default function GerenteDashboardClient() {
           topLowStock={(data as any)?.topLowStock}
         />
       </div>
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <div className="space-y-2">
-        <Skeleton className="h-10 w-64" />
-        <Skeleton className="h-5 w-48" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        <Skeleton className="h-32 rounded-xl" />
-        <Skeleton className="h-32 rounded-xl" />
-        <Skeleton className="h-32 rounded-xl" />
-      </div>
-      <div className="grid gap-4 md:grid-cols-7">
-        <Skeleton className="md:col-span-2 h-[300px] rounded-xl" />
-        <Skeleton className="md:col-span-5 h-[300px] rounded-xl" />
-      </div>
-      <Skeleton className="h-64 rounded-xl" />
     </div>
   );
 }

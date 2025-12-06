@@ -1,7 +1,7 @@
 "use client";
 
 import { PageHeader } from "@/components/ui/page-header";
-import { PageLoading } from "@/components/ui/loading";
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard";
 import { StatsCards, StockAlerts, QuickAccess } from "./parts";
 import { useSession } from "next-auth/react";
@@ -78,7 +78,11 @@ export default function DashboardClient() {
   };
 
   if (loading) {
-    return <PageLoading />;
+    return (
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
+      </div>
+    );
   }
 
   return (

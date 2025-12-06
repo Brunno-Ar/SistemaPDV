@@ -1,3 +1,4 @@
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -301,8 +302,8 @@ export function LotManagerDialog({
         ) : (
           <>
             {loadingLots ? (
-              <div className="flex justify-center py-8">
-                <div className="flex h-10 w-10 animate-spin items-center justify-center rounded-full border-4 border-primary border-t-transparent" />
+              <div className="py-4">
+                <AnimatedLoadingSkeleton />
               </div>
             ) : (
               <div className="space-y-4">

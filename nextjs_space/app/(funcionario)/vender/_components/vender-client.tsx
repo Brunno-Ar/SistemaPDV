@@ -3,7 +3,10 @@
 import { PageHeader } from "@/components/ui/page-header";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ClassicLoader, PageLoading } from "@/components/ui/loading";
+import {
+  ClassicLoader,
+  AnimatedLoadingSkeleton,
+} from "@/components/ui/loading";
 import { usePOS } from "@/hooks/use-pos";
 import { useRouter } from "next/navigation";
 import {
@@ -130,7 +133,11 @@ export default function VenderClient() {
   }
 
   if (loading || verificandoCaixa) {
-    return <PageLoading />;
+    return (
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
+      </div>
+    );
   }
 
   const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
