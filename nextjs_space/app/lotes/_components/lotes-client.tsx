@@ -40,7 +40,7 @@ import {
   Edit,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { PageLoading } from "@/components/ui/loading";
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { parseCurrency } from "@/lib/utils";
 
 interface Product {
@@ -434,7 +434,11 @@ export default function LotesClient() {
     });
 
   if (loading) {
-    return <PageLoading />;
+    return (
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
+      </div>
+    );
   }
 
   return (

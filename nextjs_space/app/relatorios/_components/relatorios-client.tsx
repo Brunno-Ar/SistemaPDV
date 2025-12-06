@@ -5,7 +5,10 @@ import { useRelatorios } from "@/hooks/use-relatorios";
 import { RelatoriosFilters } from "./relatorios-filters";
 import { RelatoriosStats } from "./relatorios-stats";
 import { RelatoriosTable } from "./relatorios-table";
-import { ChartSkeleton, PageLoading } from "@/components/ui/loading";
+import {
+  ChartSkeleton,
+  AnimatedLoadingSkeleton,
+} from "@/components/ui/loading";
 
 // 🚀 Otimização: Lazy loading do componente de gráficos (Recharts é pesado ~200KB)
 const RelatoriosCharts = dynamic(
@@ -42,7 +45,11 @@ export default function RelatoriosClient({
   } = useRelatorios({ companyId });
 
   if (loading && !analytics) {
-    return <PageLoading />;
+    return (
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
+      </div>
+    );
   }
 
   return (

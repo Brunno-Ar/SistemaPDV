@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import { PageLoading } from "@/components/ui/loading";
+import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { ProductFormDialog } from "./product-form-dialog";
 import { LotManagerDialog } from "./lot-manager-dialog";
 import {
@@ -132,7 +132,11 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
     });
 
   if (loading) {
-    return <PageLoading />;
+    return (
+      <div className="container mx-auto py-10">
+        <AnimatedLoadingSkeleton />
+      </div>
+    );
   }
 
   return (

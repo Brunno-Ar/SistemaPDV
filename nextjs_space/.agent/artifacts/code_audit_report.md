@@ -128,17 +128,17 @@ try {
 
 ## 📈 Impacto Final
 
-| Métrica                | Antes         | Depois                    |
-| ---------------------- | ------------- | ------------------------- |
-| Rotas API              | 38            | 34                        |
-| Componentes Mortos     | 2             | 0                         |
-| Dependências Pesadas   | ~5MB          | 0                         |
-| Falhas de Segurança    | 1             | 0                         |
-| Tipos `any` corrigidos | ~10           | Substituídos              |
-| Validação de Forms     | Básica        | ✅ Zod Schemas            |
-| Error Handling         | Básico        | ✅ ErrorBoundary + useApi |
-| Loading States         | Inconsistente | ✅ Padronizado            |
-| Páginas Ausentes       | 3             | ✅ Criadas (/termos, etc) |
+| Métrica                | Antes         | Depois                         |
+| ---------------------- | ------------- | ------------------------------ |
+| Rotas API              | 38            | 34                             |
+| Componentes Mortos     | 2             | 0                              |
+| Dependências Pesadas   | ~5MB          | 0                              |
+| Falhas de Segurança    | 1             | 0                              |
+| Tipos `any` corrigidos | ~10           | Substituídos                   |
+| Validação de Forms     | Básica        | ✅ Zod Schemas                 |
+| Error Handling         | Básico        | ✅ ErrorBoundary + useApi      |
+| Loading States         | Inconsistente | ✅ Padronizado (Busca Animada) |
+| Páginas Ausentes       | 3             | ✅ Criadas (/termos, etc)      |
 
 ---
 
