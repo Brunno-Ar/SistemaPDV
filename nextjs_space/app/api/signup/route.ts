@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { generateVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
 import { Prisma } from "@prisma/client";
+import { asaas } from "@/lib/asaas";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +13,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     // Separe email para permitir reatribuição, use const para os outros
     let { email } = body;
-    const { password, nome, nomeEmpresa, telefone } = body;
+    const { password, nome, nomeEmpresa, telefone, cpfCnpj } = body;
 
     if (email) {
       email = email.toLowerCase();
     }
 
     // Validações
-    if (!email || !password || !nome || !nomeEmpresa) {
+    if (!email || !password || !nome || !nomeEmpresa || !cpfCnpj) {
       return NextResponse.json(
-        { error: "Email, senha, nome e nome da empresa são obrigatórios" },
+        { error: "Email, senha, nome, nome da empresa e CPF/CNPJ são obrigatórios" },
         { status: 400 }
       );
     }
@@ -60,17 +61,46 @@ export async function POST(request: NextRequest) {
     console.log("Gerando hash da senha");
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Criar empresa PENDENTE + Admin em transação
-    console.log("Iniciando transação de criação");
+    // --- INTEGRACAO ASAAS ---
+    console.log("Iniciando integração com Asaas...");
+    let asaasCustomer;
+    let asaasSubscription;
+
+    try {
+      // 1. Criar Cliente
+      asaasCustomer = await asaas.createCustomer(nomeEmpresa, cpfCnpj, email, telefone);
+      console.log("Cliente Asaas criado:", asaasCustomer.id);
+
+      // 2. Criar Assinatura (Trial)
+      asaasSubscription = await asaas.createSubscription(asaasCustomer.id);
+      console.log("Assinatura Asaas criada:", asaasSubscription.id);
+    } catch (asaasError: any) {
+      console.error("Erro na integração Asaas:", asaasError);
+      return NextResponse.json(
+        { error: "Erro ao configurar pagamento: " + asaasError.message },
+        { status: 400 }
+      );
+    }
+
+    // Criar empresa EM_TESTE + Admin em transação
+    console.log("Iniciando transação de criação local");
     const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // 1. Criar empresa com status PENDENTE (aguardando aprovação do master)
+      // Calcular vencimento (Hoje + Trial Days)
+      const trialDays = parseInt(process.env.NEXT_PUBLIC_TRIAL_DAYS || "14", 10);
+      const vencimento = new Date();
+      vencimento.setDate(vencimento.getDate() + trialDays);
+
+      // 1. Criar empresa
       console.log("Criando empresa:", nomeEmpresa);
       const empresa = await tx.empresa.create({
         data: {
           nome: nomeEmpresa,
           telefone,
-          status: "PENDENTE", // Será aprovada pelo master
-          // vencimentoPlano será definido quando aprovado
+          cpfCnpj,
+          status: "EM_TESTE",
+          vencimentoPlano: vencimento,
+          asaasCustomerId: asaasCustomer.id,
+          asaasSubscriptionId: asaasSubscription.id,
         },
       });
       console.log("Empresa criada:", empresa.id);
@@ -106,7 +136,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message:
-        "Cadastro realizado com sucesso! Verifique seu email para ativar sua conta e aguarde a aprovação do administrador.",
+        "Cadastro realizado com sucesso! Seu período de teste de 14 dias começou.",
       empresa: {
         id: result.empresa.id,
         nome: result.empresa.nome,

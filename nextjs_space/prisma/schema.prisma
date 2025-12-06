@@ -24,6 +24,7 @@ enum StatusEmpresa {
   PENDENTE
   ATIVO
   PAUSADO
+  EM_TESTE
 }
 
 enum StatusCaixa {
@@ -123,6 +124,11 @@ model Empresa {
   vencimentoPlano DateTime?     @map("vencimento_plano")
   diaVencimento   Int           @default(10) @map("dia_vencimento")
   telefone        String?
+  cpfCnpj         String?       @map("cpf_cnpj")
+  asaasCustomerId String?       @unique @map("asaas_customer_id")
+  asaasSubscriptionId String?   @unique @map("asaas_subscription_id")
+  cicloPagamento  String        @default("MENSAL") @map("ciclo_pagamento")
+  formaPagamento  String        @default("BOLETO_PIX") @map("forma_pagamento")
   createdAt       DateTime      @default(now()) @map("created_at")
   dataCriacao     DateTime      @default(now()) @map("data_criacao") // Redundante mas solicitado
 

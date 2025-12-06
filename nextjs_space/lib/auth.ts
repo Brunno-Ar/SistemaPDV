@@ -62,13 +62,17 @@ export const authOptions: AuthOptions = {
             );
           }
 
-          // 3. Mensalidade vencida (apenas para empresas ativas)
+          // 3. Mensalidade vencida (apenas para empresas ativas ou em teste)
           if (
-            empresa.status === "ATIVO" &&
+            (empresa.status === "ATIVO" || empresa.status === "EM_TESTE") &&
             empresa.vencimentoPlano
           ) {
             const toleranceDate = new Date(empresa.vencimentoPlano);
-            toleranceDate.setDate(toleranceDate.getDate() + 10);
+            // Tolerância de 10 dias apenas para ATIVO. EM_TESTE bloqueia imediatamente?
+            // User disse: "O bloqueio só acontece se ele não pagar após 14 dias" (referindo-se ao trial)
+            // Vou dar 1 dia de tolerância para o trial para evitar bloqueio no minuto exato
+            const toleranceDays = empresa.status === "EM_TESTE" ? 1 : 10;
+            toleranceDate.setDate(toleranceDate.getDate() + toleranceDays);
 
             if (now > toleranceDate) {
               throw new Error(
