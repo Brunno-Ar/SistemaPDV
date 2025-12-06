@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getFileUrl } from "@/lib/s3";
 
 export const dynamic = "force-dynamic";
 
@@ -35,25 +34,14 @@ export async function GET() {
       orderBy: { nome: "asc" },
     });
 
-    // Converter Decimal para number e assinar URLs de imagem
-    const serializedProducts = await Promise.all(
-      products.map(async (product: any) => {
-        let signedUrl = null;
-        if (product.imagemUrl) {
-          try {
-            signedUrl = await getFileUrl(product.imagemUrl, 3600); // 1 hora de validade
-          } catch (e) {
-            console.error(`Erro ao assinar URL para produto ${product.id}`, e);
-          }
-        }
-
-        return {
-          ...product,
-          precoVenda: Number(product.precoVenda),
-          imagemUrl: signedUrl || product.imagemUrl, // Substitui pela URL assinada ou mantém a original se falhar
-        };
-      })
-    );
+    // 🚀 Otimização: Retornar produtos diretamente sem assinar URLs S3 síncronamente
+    // A assinatura de URLs S3 é feita sob demanda no frontend quando a imagem é requisitada
+    // Isso reduz drasticamente o tempo de resposta da API
+    const serializedProducts = products.map((product: any) => ({
+      ...product,
+      precoVenda: Number(product.precoVenda),
+      // imagemUrl mantida como está - frontend pode assinar sob demanda se necessário
+    }));
 
     return NextResponse.json(serializedProducts);
   } catch (error: any) {

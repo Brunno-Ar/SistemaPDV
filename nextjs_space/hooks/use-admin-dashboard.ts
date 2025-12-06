@@ -51,22 +51,25 @@ export function useAdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Buscar produtos com estoque baixo
-      const estoqueBaixoResponse = await fetch("/api/admin/estoque-baixo");
+      // 🚀 Otimização: Executar todas as chamadas em paralelo
+      const [estoqueBaixoResponse, vencimentoResponse, statsResponse] =
+        await Promise.all([
+          fetch("/api/admin/estoque-baixo"),
+          fetch("/api/admin/vencimento-proximo"),
+          fetch("/api/admin/dashboard-stats"),
+        ]);
+
+      // Processar respostas
       if (estoqueBaixoResponse.ok) {
         const estoqueBaixoData = await estoqueBaixoResponse.json();
         setProdutosEstoqueBaixo(estoqueBaixoData);
       }
 
-      // Buscar lotes com vencimento próximo
-      const vencimentoResponse = await fetch("/api/admin/vencimento-proximo");
       if (vencimentoResponse.ok) {
         const vencimentoData = await vencimentoResponse.json();
         setLotesVencimentoProximo(vencimentoData);
       }
 
-      // Buscar estatísticas do dashboard
-      const statsResponse = await fetch("/api/admin/dashboard-stats");
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData.stats);
