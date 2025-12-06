@@ -129,6 +129,26 @@ export function usePOS() {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   };
 
+  // Função auxiliar para aguardar com retry
+  const waitForProducts = async (
+    maxRetries: number = 5,
+    initialDelay: number = 500
+  ): Promise<Product[]> => {
+    let delay = initialDelay;
+    for (let i = 0; i < maxRetries; i++) {
+      const results = await db.products.limit(50).toArray();
+      if (results.length > 0) {
+        return results;
+      }
+      // Se não encontrou produtos, aguarda antes de tentar novamente
+      // (provavelmente o sync ainda está em andamento)
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= 1.5; // Backoff exponencial suave
+    }
+    // Após todas as tentativas, retorna vazio (pode ser que realmente não haja produtos)
+    return [];
+  };
+
   const searchProducts = async (term: string, isInitial: boolean = false) => {
     try {
       // Só mostra loading no carregamento inicial, não durante pesquisa
@@ -137,8 +157,13 @@ export function usePOS() {
       const normalizedTerm = removeAccents(term.trim().toLowerCase());
 
       if (normalizedTerm === "") {
-        // Limit to 50 items for initial view to avoid performance issues
-        results = await db.products.limit(50).toArray();
+        if (isInitial) {
+          // No carregamento inicial, aguarda o sync popular o banco
+          results = await waitForProducts(5, 500);
+        } else {
+          // Limit to 50 items for initial view to avoid performance issues
+          results = await db.products.limit(50).toArray();
+        }
       } else {
         // Improved search: "Contains" instead of "StartsWith"
         // Also accent-insensitive: "cafe" finds "Café", "acucar" finds "Açúcar"
@@ -164,11 +189,15 @@ export function usePOS() {
       if (normalizedTerm === "") setProducts(results);
     } catch (error) {
       console.error("Erro ao buscar produtos localmente:", error);
-      toast({
-        title: "Erro na busca",
-        description: "Falha ao buscar produtos no banco local.",
-        variant: "destructive",
-      });
+      // Só exibe toast de erro se não for carregamento inicial
+      // (durante o inicial, pode ser race condition com o sync)
+      if (!isInitial) {
+        toast({
+          title: "Erro na busca",
+          description: "Falha ao buscar produtos no banco local.",
+          variant: "destructive",
+        });
+      }
     } finally {
       // Só desliga o loading inicial
       if (isInitial) {
