@@ -103,6 +103,13 @@ export async function POST(request: NextRequest) {
       adminNome,
       telefone,
       diaVencimento,
+      cpfCnpj,
+      cep,
+      logradouro,
+      numero,
+      bairro,
+      cidade,
+      estado,
     } = body;
 
     // Validações
@@ -133,6 +140,13 @@ export async function POST(request: NextRequest) {
           nome: nomeEmpresa,
           telefone: telefone || null,
           diaVencimento: diaVencimento ? parseInt(diaVencimento) : 10,
+          cpfCnpj: cpfCnpj ? cpfCnpj.replace(/\D/g, "") : null,
+          enderecoCep: cep,
+          enderecoLogradouro: logradouro,
+          enderecoNumero: numero,
+          enderecoBairro: bairro,
+          enderecoCidade: cidade,
+          enderecoUf: estado,
         },
       });
 

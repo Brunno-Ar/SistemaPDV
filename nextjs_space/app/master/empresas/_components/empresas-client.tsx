@@ -41,12 +41,20 @@ export default function EmpresasClient() {
   });
   const [formData, setFormData] = useState({
     nomeEmpresa: "",
+    cpfCnpj: "",
     adminEmail: "",
     adminSenha: "",
     adminNome: "",
     telefone: "",
     diaVencimento: 10,
+    cep: "",
+    logradouro: "",
+    numero: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
   });
+  const [loadingCep, setLoadingCep] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("Todos");
   const [searchTerm, setSearchTerm] = useState("");
@@ -59,6 +67,30 @@ export default function EmpresasClient() {
   useEffect(() => {
     fetchEmpresas();
   }, []);
+
+  const handleCepBlur = async () => {
+    const cep = formData.cep.replace(/\D/g, "");
+    if (cep.length !== 8) return;
+
+    setLoadingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      if (!data.erro) {
+        setFormData((prev) => ({
+          ...prev,
+          logradouro: data.logradouro,
+          bairro: data.bairro,
+          cidade: data.localidade,
+          estado: data.uf,
+        }));
+      }
+    } catch (error) {
+      console.error("Erro ao buscar CEP", error);
+    } finally {
+      setLoadingCep(false);
+    }
+  };
 
   const fetchEmpresas = async () => {
     try {
@@ -84,11 +116,18 @@ export default function EmpresasClient() {
     if (!open) {
       setFormData({
         nomeEmpresa: "",
+        cpfCnpj: "",
         adminEmail: "",
         adminSenha: "",
         adminNome: "",
         telefone: "",
         diaVencimento: 10,
+        cep: "",
+        logradouro: "",
+        numero: "",
+        bairro: "",
+        cidade: "",
+        estado: "",
       });
     }
   };
@@ -306,7 +345,12 @@ export default function EmpresasClient() {
 
   const formatDate = (date: string | null) => {
     if (!date) return "-";
-    return new Date(date).toLocaleDateString("pt-BR");
+    const d = new Date(date);
+    // Usar UTC para evitar problemas de fuso horário, pois vencimentos são datas puras
+    const day = d.getUTCDate().toString().padStart(2, "0");
+    const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const isInadimplente = (empresa: Empresa) => {
@@ -359,6 +403,8 @@ export default function EmpresasClient() {
             formData={formData}
             setFormData={setFormData}
             submitting={submitting}
+            loadingCep={loadingCep}
+            onCepBlur={handleCepBlur}
           />
         </Dialog>
       </header>

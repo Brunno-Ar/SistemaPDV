@@ -9,10 +9,21 @@ import {
   Mail,
   ExternalLink,
   Loader2,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface BillingInfo {
   value: number;
@@ -23,11 +34,18 @@ interface BillingInfo {
 
 export default function BloqueadoPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const email = searchParams.get("email");
   const reason = searchParams.get("reason") || "vencido";
 
   const [billing, setBilling] = useState<BillingInfo | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // States para modal de desbloqueio
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockPassword, setUnlockPassword] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState("");
 
   useEffect(() => {
     // Buscar informações de pagamento se tiver email
@@ -46,6 +64,30 @@ export default function BloqueadoPage() {
     }
   }, [email]);
 
+  const handleUnlock = async () => {
+    setUnlocking(true);
+    setUnlockError("");
+    try {
+      const res = await fetch("/api/public/unlock-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: unlockPassword }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setShowUnlockModal(false);
+        router.push("/login?message=desbloqueado");
+      } else {
+        setUnlockError(data.error || "Erro ao desbloquear");
+      }
+    } catch (error) {
+      setUnlockError("Erro de conexão ao tentar desbloquear");
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
   const getReasonContent = () => {
     switch (reason) {
       case "pendente":
@@ -55,6 +97,7 @@ export default function BloqueadoPage() {
           description:
             "Nosso time está analisando seu cadastro. Você será notificado por email assim que for aprovado.",
           color: "yellow",
+          showUnlock: false,
         };
       case "pausado":
         return {
@@ -62,6 +105,7 @@ export default function BloqueadoPage() {
           subtitle: "Pagamento não identificado.",
           description: "Regularize sua situação para voltar a usar o sistema.",
           color: "red",
+          showUnlock: true,
         };
       default:
         return {
@@ -69,6 +113,7 @@ export default function BloqueadoPage() {
           subtitle: "Sua mensalidade está em atraso.",
           description: "Renove seu plano para continuar usando o FlowPDV.",
           color: "orange",
+          showUnlock: true,
         };
     }
   };
@@ -175,11 +220,36 @@ export default function BloqueadoPage() {
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </a>
                 </Button>
+
+                {content.showUnlock && (
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 text-base font-medium mt-2"
+                    onClick={() => setShowUnlockModal(true)}
+                  >
+                    <Lock className="mr-2 h-4 w-4" />
+                    Já paguei, liberar acesso
+                  </Button>
+                )}
               </div>
             ) : (
               reason !== "pendente" && (
-                <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                  Entre em contato com o suporte para atualizar seu pagamento.
+                <div className="space-y-4">
+                  <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+                    Entre em contato com o suporte para atualizar seu pagamento
+                    ou tente liberar o acesso temporário se já efetuou o
+                    pagamento.
+                  </div>
+                  {content.showUnlock && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-12 text-base font-medium mt-2"
+                      onClick={() => setShowUnlockModal(true)}
+                    >
+                      <Lock className="mr-2 h-4 w-4" />
+                      Já paguei, liberar acesso
+                    </Button>
+                  )}
                 </div>
               )
             )}
@@ -222,6 +292,49 @@ export default function BloqueadoPage() {
           </Link>
         </div>
       </motion.div>
+
+      <Dialog open={showUnlockModal} onOpenChange={setShowUnlockModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Liberar Acesso Temporário</DialogTitle>
+            <DialogDescription>
+              Se você já realizou o pagamento, podemos liberar seu acesso por 24
+              horas enquanto a compensação é processada pelo banco. <br />
+              <br />
+              Confirme sua senha para continuar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="unlock-password">Senha</Label>
+              <Input
+                id="unlock-password"
+                type="password"
+                placeholder="Sua senha de acesso"
+                value={unlockPassword}
+                onChange={(e) => setUnlockPassword(e.target.value)}
+              />
+            </div>
+            {unlockError && (
+              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md border border-red-200">
+                {unlockError}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowUnlockModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleUnlock}
+              disabled={unlocking || !unlockPassword}
+            >
+              {unlocking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmar Liberação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

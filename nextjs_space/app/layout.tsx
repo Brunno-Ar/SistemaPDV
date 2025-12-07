@@ -5,6 +5,7 @@ import { Providers } from "@/components/providers";
 import { InactivityMonitor } from "@/components/inactivity-monitor";
 import { PasswordChangeAlert } from "@/components/PasswordChangeAlert";
 import { OnboardingTour } from "@/components/onboarding-tour";
+import { TrialBanner } from "@/components/trial-banner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SyncManager } from "@/components/sync-manager";
@@ -49,6 +50,7 @@ export default async function RootLayout({
           <SyncManager />
           <InactivityMonitor />
           <PasswordChangeAlert />
+          <TrialBanner />
           {session?.user && (
             <OnboardingTour
               role={session.user.role || "funcionario"}

@@ -39,6 +39,14 @@ interface EmpresaDetalheClientProps {
     nome: string;
     status: string;
     vencimentoPlano: Date | null;
+    cpfCnpj?: string | null;
+    telefone?: string | null;
+    enderecoCep?: string | null;
+    enderecoLogradouro?: string | null;
+    enderecoNumero?: string | null;
+    enderecoBairro?: string | null;
+    enderecoCidade?: string | null;
+    enderecoUf?: string | null;
     _count: {
       users: number;
       products: number;
@@ -188,22 +196,84 @@ export default function EmpresaDetalheClient({
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-gray-600">Status</p>
-              <p className="font-semibold">{empresa.status}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
+              <p className="font-semibold dark:text-gray-100">
+                {empresa.status}
+              </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Vencimento</p>
-              <p className="font-semibold">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Vencimento
+              </p>
+              <p className="font-semibold dark:text-gray-100">
                 {formatDate(empresa.vencimentoPlano)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Usuários</p>
-              <p className="font-semibold">{empresa._count.users}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Usuários
+              </p>
+              <p className="font-semibold dark:text-gray-100">
+                {empresa._count.users}
+              </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Produtos</p>
-              <p className="font-semibold">{empresa._count.products}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Produtos
+              </p>
+              <p className="font-semibold dark:text-gray-100">
+                {empresa._count.products}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dados Cadastrais Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados Cadastrais</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Documento (CNPJ/CPF)
+              </p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">
+                {empresa.cpfCnpj || "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Contato
+              </p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">
+                {empresa.telefone || "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Endereço
+              </p>
+              <div className="text-gray-900 dark:text-gray-100 font-semibold">
+                {empresa.enderecoLogradouro ? (
+                  <>
+                    <p>
+                      {empresa.enderecoLogradouro}, {empresa.enderecoNumero}
+                    </p>
+                    <p>
+                      {empresa.enderecoBairro} - {empresa.enderecoCidade}/
+                      {empresa.enderecoUf}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      CEP: {empresa.enderecoCep}
+                    </p>
+                  </>
+                ) : (
+                  "-"
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
