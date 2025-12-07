@@ -176,6 +176,9 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
       continuous
       showSkipButton
       showProgress
+      scrollToFirstStep={false}
+      disableScrollParentFix={true}
+      spotlightClicks={true}
       callback={handleJoyrideCallback}
       styles={{
         options: {
