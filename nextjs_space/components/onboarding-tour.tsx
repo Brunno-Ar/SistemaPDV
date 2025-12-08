@@ -1,48 +1,102 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { TOUR_RESET_EVENT } from "@/lib/events";
 
-interface OnboardingTourProps {
-  role: string;
-  tourCompleted: boolean;
-}
-
-export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
+export function OnboardingTour() {
   const [run, setRun] = useState(false);
   const { data: session, update, status: sessionStatus } = useSession();
   const pathname = usePathname();
 
+  // Use ref para controlar se o tour já foi iniciado nesta sessão
+  const hasInitialized = useRef(false);
+
+  // Obter valores diretamente da sessão cliente
+  const role = session?.user?.role || "funcionario";
+  const tourCompleted = session?.user?.tourCompleted ?? true; // Default true para evitar mostrar tour indevidamente
+
   // Bloqueio imediato de renderização em páginas públicas
-  const publicPages = ["/login", "/forgot-password", "/register", "/signup"];
+  const publicPages = [
+    "/login",
+    "/forgot-password",
+    "/register",
+    "/signup",
+    "/bloqueado",
+  ];
   const isPublicPage = publicPages.some((page) => pathname?.startsWith(page));
 
+  // Função para iniciar o tour
+  const startTour = useCallback(() => {
+    if (
+      role !== "master" &&
+      sessionStatus === "authenticated" &&
+      session?.user
+    ) {
+      console.log("Iniciando tour...");
+      setRun(true);
+    }
+  }, [role, sessionStatus, session?.user]);
+
+  // Listener para o evento de reset do tour (vindo do botão)
   useEffect(() => {
-    // NUNCA rodar em páginas públicas
-    if (isPublicPage) {
+    const handleTourReset = () => {
+      console.log("Tour reset event received");
+      hasInitialized.current = false;
+      // Pequeno delay para garantir que a sessão foi atualizada
+      setTimeout(() => {
+        startTour();
+      }, 500);
+    };
+
+    window.addEventListener(TOUR_RESET_EVENT, handleTourReset);
+    return () => window.removeEventListener(TOUR_RESET_EVENT, handleTourReset);
+  }, [startTour]);
+
+  // Lógica principal para decidir quando iniciar o tour
+  useEffect(() => {
+    // NUNCA rodar em páginas públicas ou enquanto carregando
+    if (isPublicPage || sessionStatus === "loading") {
       setRun(false);
       return;
     }
 
-    // Só executa se o usuário estiver autenticado, tour não completado e não for master
+    // Só executa se o usuário estiver autenticado
     if (sessionStatus !== "authenticated" || !session?.user) {
       setRun(false);
       return;
     }
 
-    if (!tourCompleted && role !== "master") {
-      // Small delay to ensure DOM is fully ready and hydration is complete
+    // Se é master, não iniciar
+    if (role === "master") {
+      setRun(false);
+      return;
+    }
+
+    // Se o tour já foi completado, não iniciar
+    if (tourCompleted) {
+      setRun(false);
+      return;
+    }
+
+    // Iniciar o tour apenas na primeira vez se não está completado
+    if (!hasInitialized.current && !tourCompleted) {
+      hasInitialized.current = true;
+
+      // Delay para garantir que o DOM está pronto
       const timer = setTimeout(() => {
+        console.log("Iniciando tour (inicial)...", { role, tourCompleted });
         setRun(true);
-      }, 1000);
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
-  }, [tourCompleted, role, sessionStatus, session, isPublicPage]);
+  }, [tourCompleted, role, sessionStatus, session?.user, isPublicPage]);
 
-  if (isPublicPage) {
+  // Não renderizar em páginas públicas ou enquanto carregando sessão
+  if (isPublicPage || sessionStatus !== "authenticated" || !session?.user) {
     return null;
   }
 
@@ -52,6 +106,8 @@ export function OnboardingTour({ role, tourCompleted }: OnboardingTourProps) {
 
     if (finishedStatuses.includes(status)) {
       setRun(false);
+      hasInitialized.current = true; // Marcar como inicializado para evitar re-trigger
+
       try {
         await fetch("/api/user/complete-tour", {
           method: "POST",

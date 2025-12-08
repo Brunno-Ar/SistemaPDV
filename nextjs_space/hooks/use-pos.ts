@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "@/hooks/use-toast";
 import { db, ProductLocal } from "@/lib/local-db";
+import { PRODUCTS_SYNCED_EVENT } from "@/lib/events";
 
 export interface Product extends ProductLocal {}
 
@@ -62,6 +63,18 @@ export function usePOS() {
   const [isOffline, setIsOffline] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const hasLoadedProducts = useRef(false);
+
+  // Função para garantir que o banco está pronto
+  const ensureDbReady = async (): Promise<boolean> => {
+    try {
+      await db.open();
+      return true;
+    } catch (error) {
+      console.error("Erro ao abrir banco local:", error);
+      return false;
+    }
+  };
 
   // Carregar dados iniciais e configurar listeners
   useEffect(() => {
@@ -86,14 +99,56 @@ export function usePOS() {
     window.addEventListener("offline", handleOffline);
     setIsOffline(!navigator.onLine);
 
-    // Initial load from Dexie
-    searchProducts("", true);
+    // Listener para quando os produtos forem sincronizados
+    const handleProductsSynced = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log("Products synced event received:", customEvent.detail);
+      // Recarregar produtos do banco local
+      loadProductsFromDb();
+    };
+
+    window.addEventListener(PRODUCTS_SYNCED_EVENT, handleProductsSynced);
+
+    // Tentar carregar produtos iniciais
+    loadProductsFromDb();
 
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener(PRODUCTS_SYNCED_EVENT, handleProductsSynced);
     };
   }, []);
+
+  // Função principal para carregar produtos do banco local
+  const loadProductsFromDb = async () => {
+    try {
+      const dbReady = await ensureDbReady();
+      if (!dbReady) {
+        console.log("Banco não está pronto, aguardando...");
+        // Aguardar um pouco e tentar novamente
+        setTimeout(loadProductsFromDb, 500);
+        return;
+      }
+
+      // Aguardar com retry para dar tempo do sync popular o banco
+      const results = await waitForProducts(8, 300);
+
+      setSearchResults(results);
+      setProducts(results);
+      hasLoadedProducts.current = true;
+
+      if (results.length === 0) {
+        console.log("Nenhum produto encontrado no banco local");
+      } else {
+        console.log(`${results.length} produtos carregados do banco local`);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar produtos:", error);
+      // Não exibir toast de erro aqui pois pode ser race condition normal
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   // Persistência
   useEffect(() => {
@@ -131,35 +186,56 @@ export function usePOS() {
 
   // Função auxiliar para aguardar com retry
   const waitForProducts = async (
-    maxRetries: number = 5,
-    initialDelay: number = 500
+    maxRetries: number = 8,
+    initialDelay: number = 300
   ): Promise<Product[]> => {
     let delay = initialDelay;
+
     for (let i = 0; i < maxRetries; i++) {
-      const results = await db.products.limit(50).toArray();
-      if (results.length > 0) {
-        return results;
+      try {
+        const dbReady = await ensureDbReady();
+        if (!dbReady) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          delay = Math.min(delay * 1.5, 2000); // Cap at 2 seconds
+          continue;
+        }
+
+        const results = await db.products.limit(50).toArray();
+        if (results.length > 0) {
+          return results;
+        }
+
+        // Se não encontrou produtos, aguarda antes de tentar novamente
+        // (provavelmente o sync ainda está em andamento)
+        console.log(`Tentativa ${i + 1}/${maxRetries}: aguardando produtos...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay = Math.min(delay * 1.5, 2000); // Backoff exponencial com cap
+      } catch (error) {
+        console.error(`Tentativa ${i + 1}/${maxRetries} falhou:`, error);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay = Math.min(delay * 1.5, 2000);
       }
-      // Se não encontrou produtos, aguarda antes de tentar novamente
-      // (provavelmente o sync ainda está em andamento)
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      delay *= 1.5; // Backoff exponencial suave
     }
+
     // Após todas as tentativas, retorna vazio (pode ser que realmente não haja produtos)
     return [];
   };
 
   const searchProducts = async (term: string, isInitial: boolean = false) => {
     try {
-      // Só mostra loading no carregamento inicial, não durante pesquisa
-      // Isso evita o "piscar" da tela durante digitação
+      const dbReady = await ensureDbReady();
+      if (!dbReady) {
+        console.log("Banco não está pronto para busca");
+        return;
+      }
+
       let results: Product[];
       const normalizedTerm = removeAccents(term.trim().toLowerCase());
 
       if (normalizedTerm === "") {
         if (isInitial) {
           // No carregamento inicial, aguarda o sync popular o banco
-          results = await waitForProducts(5, 500);
+          results = await waitForProducts(8, 300);
         } else {
           // Limit to 50 items for initial view to avoid performance issues
           results = await db.products.limit(50).toArray();
@@ -189,9 +265,8 @@ export function usePOS() {
       if (normalizedTerm === "") setProducts(results);
     } catch (error) {
       console.error("Erro ao buscar produtos localmente:", error);
-      // Só exibe toast de erro se não for carregamento inicial
-      // (durante o inicial, pode ser race condition com o sync)
-      if (!isInitial) {
+      // Só exibe toast de erro se já temos produtos carregados (não é race condition)
+      if (hasLoadedProducts.current && !isInitial) {
         toast({
           title: "Erro na busca",
           description: "Falha ao buscar produtos no banco local.",
