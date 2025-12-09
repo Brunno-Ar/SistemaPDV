@@ -193,6 +193,7 @@ export default function EstoqueClient({ companyId }: EstoqueClientProps = {}) {
         open={lotsDialogOpen}
         onOpenChange={setLotsDialogOpen}
         product={selectedProductForLots}
+        onSuccess={fetchProducts}
       />
 
       {/* Dialog de Nova Categoria */}

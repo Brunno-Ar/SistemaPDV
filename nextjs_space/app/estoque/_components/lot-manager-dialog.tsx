@@ -44,39 +44,64 @@ interface LotManagerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   product: Product | null;
+  onSuccess?: () => void;
 }
 
 export function LotManagerDialog({
   open,
   onOpenChange,
   product,
+  onSuccess,
 }: LotManagerDialogProps) {
   const [productLots, setProductLots] = useState<Lote[]>([]);
   const [loadingLots, setLoadingLots] = useState(false);
   const [hideFinishedLots, setHideFinishedLots] = useState(true);
   const [showNewLoteForm, setShowNewLoteForm] = useState(false);
   const [creatingLote, setCreatingLote] = useState(false);
+
+  const [semValidade, setSemValidade] = useState(false);
   const [newLoteData, setNewLoteData] = useState({
     numeroLote: "",
     dataValidade: "",
     quantidade: "",
     precoCompra: "",
     dataCompra: "",
+    valorTotalLote: "",
   });
 
   useEffect(() => {
     if (open && product) {
       fetchProductLots(product.id);
       setShowNewLoteForm(false);
-      setNewLoteData({
-        numeroLote: "",
-        dataValidade: "",
-        quantidade: "",
-        precoCompra: "",
-        dataCompra: "",
-      });
+      resetForm();
     }
   }, [open, product]);
+
+  // Cálculo automático do Custo Unitário
+  useEffect(() => {
+    const qtd = parseCurrency(newLoteData.quantidade);
+    const total = parseCurrency(newLoteData.valorTotalLote);
+
+    if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
+      const unitario = total / qtd;
+      setNewLoteData((prev) => ({
+        ...prev,
+        precoCompra: unitario.toFixed(2),
+      }));
+    }
+  }, [newLoteData.quantidade, newLoteData.valorTotalLote]);
+
+  const resetForm = () => {
+    setNewLoteData({
+      numeroLote: "",
+      dataValidade: "",
+      quantidade: "",
+      precoCompra: "",
+      dataCompra: "",
+      valorTotalLote: "",
+    });
+    setSemValidade(false);
+  };
 
   const fetchProductLots = async (productId: string) => {
     setLoadingLots(true);
@@ -111,7 +136,23 @@ export function LotManagerDialog({
   };
 
   const handleCreateLote = async () => {
-    if (!product || !newLoteData.quantidade) return;
+    if (!product || !newLoteData.quantidade) {
+      toast({
+        title: "Erro",
+        description: "Preencha a quantidade.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!semValidade && !newLoteData.dataValidade) {
+      toast({
+        title: "Erro",
+        description: "Preencha a data de validade ou marque 'Sem validade'.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setCreatingLote(true);
     try {
@@ -121,7 +162,7 @@ export function LotManagerDialog({
         body: JSON.stringify({
           produtoId: product.id,
           numeroLote: newLoteData.numeroLote,
-          dataValidade: newLoteData.dataValidade || null,
+          dataValidade: semValidade ? null : newLoteData.dataValidade,
           quantidade: parseInt(newLoteData.quantidade),
           precoCompra: newLoteData.precoCompra
             ? parseCurrency(newLoteData.precoCompra)
@@ -142,14 +183,9 @@ export function LotManagerDialog({
       });
 
       fetchProductLots(product.id);
-      setNewLoteData({
-        numeroLote: "",
-        dataValidade: "",
-        quantidade: "",
-        precoCompra: "",
-        dataCompra: "",
-      });
+      resetForm();
       setShowNewLoteForm(false);
+      onSuccess?.();
     } catch (error) {
       toast({
         title: "Erro",
@@ -219,44 +255,49 @@ export function LotManagerDialog({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="dataCompraLote"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Data Compra
+              </Label>
+              <Input
+                id="dataCompraLote"
+                type="date"
+                value={newLoteData.dataCompra}
+                onChange={(e) =>
+                  setNewLoteData({
+                    ...newLoteData,
+                    dataCompra: e.target.value,
+                  })
+                }
+                max={new Date().toISOString().split("T")[0]}
+                className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label
-                  htmlFor="dataCompraLote"
+                  htmlFor="valorTotalLote"
                   className="text-gray-700 dark:text-gray-300"
                 >
-                  Data Compra
+                  Valor Total do Lote (R$)
                 </Label>
                 <Input
-                  id="dataCompraLote"
-                  type="date"
-                  value={newLoteData.dataCompra}
+                  id="valorTotalLote"
+                  type="number"
+                  step="0.01"
+                  value={newLoteData.valorTotalLote}
                   onChange={(e) =>
                     setNewLoteData({
                       ...newLoteData,
-                      dataCompra: e.target.value,
+                      valorTotalLote: e.target.value,
                     })
                   }
-                  className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="validadeLote"
-                  className="text-gray-700 dark:text-gray-300"
-                >
-                  Validade
-                </Label>
-                <Input
-                  id="validadeLote"
-                  type="date"
-                  value={newLoteData.dataValidade}
-                  onChange={(e) =>
-                    setNewLoteData({
-                      ...newLoteData,
-                      dataValidade: e.target.value,
-                    })
-                  }
+                  placeholder="0.00"
                   className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
@@ -272,17 +313,58 @@ export function LotManagerDialog({
                   type="number"
                   step="0.01"
                   value={newLoteData.precoCompra}
-                  onChange={(e) =>
-                    setNewLoteData({
-                      ...newLoteData,
-                      precoCompra: e.target.value,
-                    })
-                  }
-                  placeholder="0.00"
-                  className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
+                  readOnly
+                  placeholder="Calculado auto"
+                  className="bg-gray-100 dark:bg-zinc-800 dark:text-gray-300 cursor-not-allowed"
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="validadeLote"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Data de Validade
+                </Label>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="semValidade"
+                    checked={semValidade}
+                    onCheckedChange={(checked) => {
+                      setSemValidade(checked as boolean);
+                      if (checked) {
+                        setNewLoteData((prev) => ({
+                          ...prev,
+                          dataValidade: "",
+                        }));
+                      }
+                    }}
+                  />
+                  <Label
+                    htmlFor="semValidade"
+                    className="text-sm font-normal cursor-pointer text-gray-700 dark:text-gray-300"
+                  >
+                    Sem validade
+                  </Label>
+                </div>
+              </div>
+              <Input
+                id="validadeLote"
+                type="date"
+                value={newLoteData.dataValidade}
+                onChange={(e) =>
+                  setNewLoteData({
+                    ...newLoteData,
+                    dataValidade: e.target.value,
+                  })
+                }
+                disabled={semValidade}
+                className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <InteractiveHoverButton
                 className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
