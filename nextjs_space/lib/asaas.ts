@@ -1,11 +1,8 @@
 // Define environment variables with fallbacks for type safety
-const ASAAS_API_URL =
-  process.env.ASAAS_API_URL || "https://sandbox.asaas.com/api/v3";
+const ASAAS_API_URL = process.env.ASAAS_API_URL || "https://api.asaas.com/v3"; // Produção por padrão
 
-// Para produção, use variáveis de ambiente
-const ASAAS_API_KEY =
-  process.env.ASAAS_API_KEY ||
-  "$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmJlODAyMDc1LTFjNTEtNDA5NC05N2ZkLTUxYWRmNjg4ODA0Njo6JGFhY2hfZjA3MzllMjgtNWE2MC00NjM4LWI1NDctNThmMWIxNDliNTg4";
+// API Key DEVE vir do ambiente - sem fallback por segurança
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
 
 const PLAN_PRICE = parseFloat(process.env.NEXT_PUBLIC_PLAN_PRICE || "49.90");
 const TRIAL_DAYS = parseInt(process.env.NEXT_PUBLIC_TRIAL_DAYS || "14", 10);
@@ -14,13 +11,11 @@ const TRIAL_DAYS = parseInt(process.env.NEXT_PUBLIC_TRIAL_DAYS || "14", 10);
 const FINE_PERCENT = parseFloat(process.env.ASAAS_FINE_PERCENT || "2"); // 2%
 const INTEREST_PERCENT = parseFloat(process.env.ASAAS_INTEREST_PERCENT || "1"); // 1% a.m.
 
-console.log(
-  "ASAAS_API_KEY loaded:",
-  ASAAS_API_KEY ? "***" + ASAAS_API_KEY.slice(-10) : "EMPTY"
-);
-
+// Validação na inicialização (apenas log, não quebra o build)
 if (!ASAAS_API_KEY) {
-  console.warn("⚠️ ASAAS_API_KEY is not defined. Integration calls will fail.");
+  console.warn(
+    "⚠️ ASAAS_API_KEY não está definida. As chamadas de integração irão falhar."
+  );
 }
 
 interface AsaasCustomer {
