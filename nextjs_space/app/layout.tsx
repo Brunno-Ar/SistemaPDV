@@ -51,12 +51,7 @@ export default async function RootLayout({
           <InactivityMonitor />
           <PasswordChangeAlert />
           <TrialBanner />
-          {session?.user && (
-            <OnboardingTour
-              role={session.user.role || "funcionario"}
-              tourCompleted={session.user.tourCompleted ?? false}
-            />
-          )}
+          {session?.user && <OnboardingTour />}
           {children}
         </Providers>
       </body>
