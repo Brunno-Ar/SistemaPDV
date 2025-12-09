@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "@/components/Sparkles";
-import { ThemeToggle } from "../(landing)/_components/ThemeToggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

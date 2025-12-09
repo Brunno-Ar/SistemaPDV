@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-import { ThemeToggle } from "../(landing)/_components/ThemeToggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "@/components/Sparkles";
 
