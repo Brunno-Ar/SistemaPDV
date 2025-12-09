@@ -36,7 +36,7 @@ export default function DashboardClient() {
       try {
         // 🚀 Otimização: Buscar TODOS os dados em paralelo
         // Isso inclui analytics, caixa e avisos
-        const [resAnalytics, resCaixa, _] = await Promise.all([
+        const [resAnalytics, resCaixa] = await Promise.all([
           fetch("/api/employee/analytics"),
           fetch("/api/caixa", { cache: "no-store" }),
           fetch("/api/avisos"),

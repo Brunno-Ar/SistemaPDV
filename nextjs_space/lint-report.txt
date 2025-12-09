@@ -1,0 +1,469 @@
+﻿
+> lint
+> next lint
+
+npm : 
+No linha:1 caractere:1
++ npm run lint 2>&1 | Out-File -FilePath 
+lint-report.txt -Encoding utf8
++ ~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified 
+   : (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeComman 
+   dError
+ 
+./app/(funcionario)/dashboard/_components/d
+ashboard-client.tsx
+39:40  Error: '_' is assigned a value but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./app/(funcionario)/minha-conta/page.tsx
+5:17  Error: 'ArrowRight' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./app/(funcionario)/vender/_components/part
+s/CartSummary.tsx
+311:6  Warning: React Hook useEffect has a 
+missing dependency: 'localValue'. Either 
+include it or remove the dependency array. 
+ react-hooks/exhaustive-deps
+
+./app/(funcionario)/vender/_components/part
+s/ProductGrid.tsx
+23:15  Error: '_sortOption' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+24:17  Error: '_onSortChange' is defined 
+but never used.  
+@typescript-eslint/no-unused-vars
+
+./app/(funcionario)/vender/_components/part
+s/SaleSuccessScreen.tsx
+96:7  Error: 'ShiningText' is assigned a 
+value but never used.  
+@typescript-eslint/no-unused-vars
+
+./app/admin/_components/dashboard-client.ts
+x
+9:29  Error: 'CardHeader' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+9:41  Error: 'CardTitle' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+12:17  Error: 'session' is assigned a 
+value but never used.  
+@typescript-eslint/no-unused-vars
+
+./app/api/admin/assinatura/cancel/route.ts
+35:33  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+54:35  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+72:32  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/admin/assinatura/info/route.ts
+7:27  Error: 'req' is defined but never 
+used.  @typescript-eslint/no-unused-vars
+
+./app/api/admin/categories/route.ts
+6:27  Error: 'request' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./app/api/admin/estoque-baixo/route.ts
+9:27  Error: 'request' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./app/api/admin/lotes/route.ts
+86:45  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+247:57  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+434:22  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+501:57  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/admin/movimentacoes/route.ts
+38:23  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+47:16  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+72:29  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+79:20  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+100:24  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+119:23  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+146:42  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+295:57  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+357:19  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/admin/products/route.ts
+73:55  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+189:57  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/admin/sales/route.ts
+52:23  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+91:45  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+95:70  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/company/status/route.ts
+14:20  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+22:10  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/master/empresas/actions/route.ts
+174:27  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/master/empresas/route.ts
+136:57  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+251:42  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+267:47  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+281:41  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/master/sync-all/route.ts
+54:13  Error: 'novoVencimento' is never 
+reassigned. Use 'const' instead.  
+prefer-const
+
+./app/api/products/route.ts
+10:44  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+11:18  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+16:33  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+72:19  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/products/search/route.ts
+10:44  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+11:18  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+16:33  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/public/unlock-account/route.ts
+46:20  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/sales/route.ts
+13:7  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+178:41  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+194:41  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+213:18  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+227:45  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+302:19  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/signup/route.ts
+18:18  Error: 'cupom' is never reassigned. 
+Use 'const' instead.  prefer-const
+
+./app/api/sync/products/route.ts
+8:44  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+9:18  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+14:33  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/equipe/[id]/_components/funcionario-d
+etalhes.tsx
+29:50  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+56:21  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+148:29  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/equipe/[id]/_components/parts/Employe
+eActions.tsx
+20:16  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+81:21  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/estoque/_components/lot-manager-dialo
+g.tsx
+114:27  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+114:35  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/forgot-password/page.tsx
+46:21  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/gerente/_components/dashboard-client.
+tsx
+64:50  Error: '_' is assigned a value but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./app/login/page.tsx
+17:10  Error: 'ThemeToggle' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+19:10  Error: 'Sparkles' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./app/lotes/_components/lotes-client.tsx
+486:40  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/master/empresas/_components/parts/Avi
+soDialog.tsx
+14:20  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+15:14  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+16:24  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/master/empresas/_components/parts/Cle
+arDataAlert.tsx
+16:19  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+17:32  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/master/empresas/_components/parts/Cre
+ateCompanyDialog.tsx
+39:23  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/master/empresas/_components/parts/Del
+eteCompanyAlert.tsx
+15:20  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+16:33  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/master/empresas/_components/parts/Res
+etPasswordDialog.tsx
+14:19  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+15:32  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/master/page.tsx
+79:33  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+115:33  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/master/usuarios/_components/usuarios-
+client.tsx
+23:10  Error: 'cn' is defined but never 
+used.  @typescript-eslint/no-unused-vars
+101:21  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+130:21  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/movimentacoes/_components/movimentaco
+es-client.tsx
+228:44  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+229:38  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/relatorios/_components/relatorios-cha
+rts.tsx
+73:42  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+152:38  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+194:34  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+210:38  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./app/signup/page.tsx
+23:10  Error: 'ThemeToggle' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+25:10  Error: 'Sparkles' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./app/suporte/page.tsx
+7:3  Error: 'Phone' is defined but never 
+used.  @typescript-eslint/no-unused-vars
+10:3  Error: 'Book' is defined but never 
+used.  @typescript-eslint/no-unused-vars
+11:3  Error: 'AlertCircle' is defined but 
+never used.  
+@typescript-eslint/no-unused-vars
+
+./components/layout/role-based-layout.tsx
+29:50  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+60:14  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./components/onboarding-tour.tsx
+14:10  Error: 'isReady' is assigned a 
+value but never used.  
+@typescript-eslint/no-unused-vars
+
+./components/PasswordChangeAlert.tsx
+17:43  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./components/pwa/install-prompt.tsx
+10:27  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+20:14  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+34:67  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+152:11  Error: `"` can be escaped with 
+`&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+152:38  Error: `"` can be escaped with 
+`&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+
+./components/shared/user-card.tsx
+8:33  Error: 'Shield' is defined but never 
+used.  @typescript-eslint/no-unused-vars
+27:3  Error: 'id' is defined but never 
+used.  @typescript-eslint/no-unused-vars
+
+./lib/asaas.ts
+208:20  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/auth.ts
+48:26  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+99:29  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/local-db.ts
+14:12  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/validation/product.ts
+3:43  Error: Unexpected any. Specify a 
+different type.  
+@typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? 
+Learn more here: https://nextjs.org/docs/ba
+sic-features/eslint#disabling-rules

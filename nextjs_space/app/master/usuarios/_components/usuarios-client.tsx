@@ -20,7 +20,6 @@ import {
 import { Plus, Trash2, Users, Shield, ArrowLeft, Calendar } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
-import { cn } from "@/lib/utils";
 import { UserCard } from "@/components/shared/user-card";
 import {
   UserFormDialog,

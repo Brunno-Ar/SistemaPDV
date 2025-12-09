@@ -4,11 +4,8 @@ import {
   ArrowLeft,
   Mail,
   MessageCircle,
-  Phone,
   Clock,
   HelpCircle,
-  Book,
-  AlertCircle,
   CheckCircle,
 } from "lucide-react";
 

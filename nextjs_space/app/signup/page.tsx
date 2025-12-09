@@ -20,9 +20,7 @@ import {
   Ticket,
   MapPin,
 } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "@/components/Sparkles";
 import { AuthLayout } from "@/components/auth/auth-layout";
 
 export default function SignupPage() {

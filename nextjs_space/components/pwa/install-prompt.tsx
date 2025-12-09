@@ -148,8 +148,8 @@ export function InstallPrompt({ variant = "floating" }: InstallPromptProps) {
           Instalar App
         </div>
         <p className="text-sm text-muted-foreground">
-          Para instalar no iOS, toque no botão de compartilhar e selecione
-          "Adicionar à Tela de Início".
+          Para instalar no iOS, toque no botão de compartilhar e selecione{" "}
+          «Adicionar à Tela de Início».
         </p>
         <Button variant="ghost" size="sm" onClick={() => setIsIOS(false)}>
           Entendi

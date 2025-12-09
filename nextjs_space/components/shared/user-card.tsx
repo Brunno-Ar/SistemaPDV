@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Mail, Calendar, Users, Shield } from "lucide-react";
+import { Mail, Calendar, Users } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,7 @@ interface UserCardProps {
 }
 
 export function UserCard({
-  id,
+  id: _id,
   name,
   email,
   createdAt,

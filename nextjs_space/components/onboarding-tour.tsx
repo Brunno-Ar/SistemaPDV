@@ -11,7 +11,7 @@ const TOUR_SHOWN_THIS_SESSION_KEY = "flowpdv_tour_shown_session";
 
 export function OnboardingTour() {
   const [run, setRun] = useState(false);
-  const [isReady, setIsReady] = useState(false);
+  const [_isReady, setIsReady] = useState(false);
   const { data: session, update, status: sessionStatus } = useSession();
   const pathname = usePathname();
 

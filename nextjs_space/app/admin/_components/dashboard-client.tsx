@@ -6,10 +6,10 @@ import { useAdminDashboard } from "@/hooks/use-admin-dashboard";
 import { StatsCards, StockAlerts, QuickAccess } from "./parts";
 import { useSession } from "next-auth/react";
 import { AlertTriangle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function DashboardClient() {
-  const { data: session } = useSession();
+  useSession(); // Manter para reatividade da sessão
   const { produtosEstoqueBaixo, lotesVencimentoProximo, stats, loading } =
     useAdminDashboard();
 

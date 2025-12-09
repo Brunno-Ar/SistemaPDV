@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    let { email, cupom } = body;
+    const cupom = body.cupom;
     const {
       password,
       nome,
@@ -31,9 +31,8 @@ export async function POST(request: NextRequest) {
       uf,
     } = body;
 
-    if (email) {
-      email = email.toLowerCase();
-    }
+    // Normalizar email para lowercase
+    const email = body.email?.toLowerCase();
 
     // ========== VALIDAÇÕES ==========
     if (!termsAccepted) {

@@ -51,7 +51,9 @@ export async function POST() {
 
         // Mapear status do Asaas para o sistema local
         let novoStatus = empresa.status;
-        let novoVencimento = sub.nextDueDate ? new Date(sub.nextDueDate) : null;
+        const novoVencimento = sub.nextDueDate
+          ? new Date(sub.nextDueDate)
+          : null;
 
         if (sub.status === "ACTIVE") novoStatus = "ATIVO";
         else if (sub.status === "OVERDUE") novoStatus = "PAUSADO";

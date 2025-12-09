@@ -93,7 +93,7 @@ const Confetti = ({
   );
 };
 
-const ShiningText = ({ text }: { text: string }) => {
+const _ShiningText = ({ text }: { text: string }) => {
   return (
     <motion.h1
       className="bg-[linear-gradient(110deg,#404040,35%,#fff,50%,#404040,75%,#404040)] bg-[length:200%_100%] bg-clip-text text-base font-regular text-transparent"

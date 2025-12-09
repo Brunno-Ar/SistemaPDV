@@ -61,7 +61,7 @@ export default function GerenteDashboardClient() {
       try {
         // 🚀 Otimização: Buscar TODOS os dados em paralelo
         // Isso inclui analytics, dashboard-stats, caixa e avisos
-        const [resAnalytics, resAdmin, resCaixa, _] = await Promise.all([
+        const [resAnalytics, resAdmin, resCaixa] = await Promise.all([
           fetch("/api/employee/analytics"),
           fetch("/api/admin/dashboard-stats"),
           fetch("/api/caixa", { cache: "no-store" }),

@@ -6,13 +6,15 @@ import { prisma } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 // GET - Listar produtos com estoque baixo (estoqueAtual <= estoqueMinimo)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
     if (
       !session ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores." },
