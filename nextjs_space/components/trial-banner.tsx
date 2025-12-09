@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { X, Clock, CreditCard, AlertTriangle } from "lucide-react";
 import { differenceInDays } from "date-fns";
 import Link from "next/link";
@@ -12,15 +13,47 @@ interface CompanyInfo {
   liberacaoTemporariaAte?: string | null;
 }
 
+// Páginas públicas onde o banner NÃO deve aparecer
+const PUBLIC_PATHS = [
+  "/",
+  "/login",
+  "/signup",
+  "/register",
+  "/forgot-password",
+  "/bloqueado",
+  "/termos",
+  "/privacidade",
+  "/suporte",
+];
+
 export function TrialBanner() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
+  const pathname = usePathname();
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Verificar se é página pública
+  const isPublicPath =
+    PUBLIC_PATHS.includes(pathname || "") ||
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/signup") ||
+    pathname?.startsWith("/bloqueado");
+
   useEffect(() => {
-    // Não mostrar para master
-    if (!session?.user || session.user.role === "master") {
+    // Não mostrar em páginas públicas
+    if (isPublicPath) {
+      setLoading(false);
+      return;
+    }
+
+    // Não mostrar para master ou se não há sessão
+    if (sessionStatus === "loading") return;
+    if (sessionStatus === "unauthenticated" || !session?.user) {
+      setLoading(false);
+      return;
+    }
+    if (session.user.role === "master") {
       setLoading(false);
       return;
     }
@@ -43,7 +76,7 @@ export function TrialBanner() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [session]);
+  }, [session, sessionStatus, isPublicPath]);
 
   const handleDismiss = () => {
     if (session?.user?.empresaId) {
@@ -56,6 +89,9 @@ export function TrialBanner() {
   };
 
   // Não renderizar em diversas situações
+  if (isPublicPath) return null;
+  if (sessionStatus === "loading" || sessionStatus === "unauthenticated")
+    return null;
   if (loading || dismissed || !companyInfo) return null;
   if (!session?.user || session.user.role === "master") return null;
 

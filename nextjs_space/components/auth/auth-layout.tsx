@@ -24,6 +24,13 @@ export function AuthLayout({
         formPosition === "right" ? "lg:flex-row-reverse" : ""
       }`}
     >
+      {/* Theme Toggle - Always top right of screen */}
+      {showThemeToggle && (
+        <div className="fixed top-8 right-8 z-50">
+          <ThemeToggle />
+        </div>
+      )}
+
       {/* Mobile Logo */}
       <div className="absolute top-8 left-8 lg:hidden z-20">
         <Link href="/" className="flex items-center gap-2 group">
@@ -33,13 +40,6 @@ export function AuthLayout({
           <span className="text-xl font-bold tracking-tight">Flow PDV</span>
         </Link>
       </div>
-
-      {/* Mobile Theme Toggle */}
-      {showThemeToggle && (
-        <div className="absolute top-8 right-8 lg:hidden z-20">
-          <ThemeToggle />
-        </div>
-      )}
 
       {/* Form Side */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-24 relative z-10 overflow-y-auto max-h-screen">
@@ -56,11 +56,6 @@ export function AuthLayout({
             <span className="text-xl font-bold tracking-tight">Flow PDV</span>
           </Link>
         </div>
-        {showThemeToggle && (
-          <div className="absolute top-8 right-8 z-20">
-            <ThemeToggle />
-          </div>
-        )}
         <div className="absolute inset-0 z-0">
           <Sparkles />
         </div>
