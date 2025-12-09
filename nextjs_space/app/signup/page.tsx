@@ -55,6 +55,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const router = useRouter();
 
   // Formatações
@@ -197,6 +198,8 @@ export default function SignupPage() {
         uf,
         // Cupom (apenas se validado ou preenchido)
         cupom: cupom && cupomStatus?.valid ? cupom : undefined,
+        // Termos
+        termsAccepted,
       };
 
       const signupResponse = await fetch("/api/signup", {
@@ -535,6 +538,8 @@ export default function SignupPage() {
               <input
                 type="checkbox"
                 id="terms"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
                 required
                 className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
               />
