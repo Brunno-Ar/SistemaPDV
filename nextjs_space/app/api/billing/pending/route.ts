@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
       // Procurar por faturas PENDING ou OVERDUE
       const pendingPayment = history.find(
-        (p: any) => p.status === "PENDING" || p.status === "OVERDUE"
+        (p) => p.status === "PENDING" || p.status === "OVERDUE"
       );
 
       if (pendingPayment) {

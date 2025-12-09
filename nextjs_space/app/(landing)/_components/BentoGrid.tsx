@@ -9,6 +9,8 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
+import { LucideIcon } from "lucide-react"; // Add import
+
 const BentoCard = ({
   children,
   className,
@@ -21,7 +23,7 @@ const BentoCard = ({
   className?: string;
   title: string;
   description: string;
-  icon: any;
+  icon: LucideIcon;
   delay?: number;
 }) => (
   <motion.div

@@ -34,7 +34,13 @@ export async function POST() {
 
     let updatedCount = 0;
     let errorCount = 0;
-    const details: any[] = [];
+    const details: {
+      empresa: string;
+      status: string;
+      oldStatus?: string;
+      newStatus?: string;
+      error?: string;
+    }[] = [];
 
     // 2. Iterar e atualizar (serialmente para evitar rate limit agressivo)
     for (const empresa of empresas) {
@@ -48,9 +54,8 @@ export async function POST() {
         let novoVencimento = sub.nextDueDate ? new Date(sub.nextDueDate) : null;
 
         if (sub.status === "ACTIVE") novoStatus = "ATIVO";
-        else if (sub.status === "OVERDUE")
-          novoStatus =
-            "PAUSADO"; // Ou manter ATIVO se dentro do grace period (mas aqui forçamos o status real)
+        else if (sub.status === "OVERDUE") novoStatus = "PAUSADO";
+        // Ou manter ATIVO se dentro do grace period (mas aqui forçamos o status real)
         else if (sub.status === "RECEIVED" || sub.status === "CONFIRMED")
           novoStatus = "ATIVO";
         else if (sub.status === "INACTIVE" || sub.status === "CANCELLED")
@@ -77,7 +82,7 @@ export async function POST() {
             status: novoStatus,
             vencimentoPlano: novoVencimento,
             plano: "PRO", // Garantir que tenha um plano setado
-            asaasCustomerId: sub.customer, // Atualizar customer ID se necessário
+            asaasCustomerId: sub.customerId, // Atualizar customer ID se necessário
           },
         });
 

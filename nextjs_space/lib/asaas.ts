@@ -53,6 +53,15 @@ interface BillingInfo {
   status?: string;
 }
 
+interface PaymentHistoryItem {
+  id: string;
+  status: string;
+  value: number;
+  dueDate: string;
+  invoiceUrl: string;
+  bankSlipUrl?: string;
+}
+
 interface AsaasError {
   errors?: { description: string; code: string }[];
 }
@@ -365,9 +374,11 @@ export const asaas = {
   /**
    * Fetches payment history for the subscription.
    */
-  async listPaymentHistory(subscriptionId: string) {
+  async listPaymentHistory(
+    subscriptionId: string
+  ): Promise<PaymentHistoryItem[]> {
     try {
-      const { ok, data } = await asaasRequest<{ data: unknown[] }>(
+      const { ok, data } = await asaasRequest<{ data: PaymentHistoryItem[] }>(
         `/payments?subscription=${subscriptionId}&limit=10`
       );
 

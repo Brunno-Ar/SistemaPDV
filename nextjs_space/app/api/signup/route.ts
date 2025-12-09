@@ -95,7 +95,13 @@ export async function POST(request: NextRequest) {
     }
 
     // ========== VALIDAR CUPOM ==========
-    let cupomDb = null;
+    let cupomDb: {
+      codigo: string;
+      descontoPorcentagem: number;
+      validoAte: Date | null;
+      usosAtuais: number;
+      limiteUsos: number | null;
+    } | null = null;
     let subscriptionPrice = parseFloat(
       process.env.NEXT_PUBLIC_PLAN_PRICE || "49.90"
     );
@@ -171,8 +177,19 @@ export async function POST(request: NextRequest) {
 
     // ========== INTEGRAÇÃO ASAAS ==========
     console.log("🔄 Iniciando integração com Asaas...");
-    let asaasCustomer;
-    let asaasSubscription;
+    let asaasCustomer:
+      | { id: string; name: string; email: string; cpfCnpj: string }
+      | undefined;
+    let asaasSubscription:
+      | {
+          id: string;
+          customerId: string;
+          value: number;
+          nextDueDate: string;
+          cycle: string;
+          status: string;
+        }
+      | undefined;
 
     try {
       // 1. Criar/Recuperar Cliente no Asaas
@@ -243,6 +260,14 @@ export async function POST(request: NextRequest) {
     // ========== CRIAR EMPRESA E ADMIN NO BANCO ==========
     console.log("🗄️ Iniciando transação de criação local");
 
+    // Ensure Asaas integration completed successfully
+    if (!asaasCustomer || !asaasSubscription) {
+      return NextResponse.json(
+        { error: "Erro ao configurar pagamento. Tente novamente." },
+        { status: 500 }
+      );
+    }
+
     try {
       const result = await prisma.$transaction(
         async (tx: Prisma.TransactionClient) => {
@@ -264,8 +289,9 @@ export async function POST(request: NextRequest) {
               status: "EM_TESTE",
               plano: "PRO",
               vencimentoPlano: vencimento,
-              asaasCustomerId: asaasCustomer.id,
-              asaasSubscriptionId: asaasSubscription.id,
+              asaasCustomerId: asaasCustomer!.id,
+              asaasSubscriptionId: asaasSubscription!.id,
+
               // Endereço
               enderecoLogradouro: logradouro,
               enderecoNumero: numero,

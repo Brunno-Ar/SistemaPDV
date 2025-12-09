@@ -68,10 +68,11 @@ export default function ConfiguracoesPage() {
       });
 
       setPasswords({ current: "", new: "", confirm: "" });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao alterar senha",
+        description:
+          error instanceof Error ? error.message : "Erro ao alterar senha",
         variant: "destructive",
       });
     } finally {
