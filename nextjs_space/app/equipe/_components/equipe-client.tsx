@@ -4,6 +4,7 @@ import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button
 import { useSession } from "next-auth/react";
 
 import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
+import { UserCard } from "@/components/shared/user-card";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -271,131 +272,34 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {usuarios.map((usuario) => {
           const isCurrentUser = usuario.id === session?.user?.id;
-
-          if (isCurrentUser) {
-            return (
-              <Card
-                key={usuario.id}
-                className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20 relative"
-              >
-                <div className="absolute top-2 right-2">
-                  <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs px-2 py-1 rounded-full font-medium">
-                    Você
-                  </span>
-                </div>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg text-gray-900 dark:text-gray-100">
-                        {usuario.nome ||
-                          usuario.name ||
-                          usuario.email.split("@")[0]}
-                      </CardTitle>
-                      <CardDescription className="flex items-center space-x-1 mt-1">
-                        <span
-                          className={`inline-block px-2 py-1 text-xs rounded ${
-                            usuario.role === "admin"
-                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                              : usuario.role === "master"
-                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                              : usuario.role === "gerente"
-                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                          }`}
-                        >
-                          {usuario.role === "admin"
-                            ? "Admin"
-                            : usuario.role === "master"
-                            ? "Master"
-                            : usuario.role === "gerente"
-                            ? "Gerente"
-                            : "Caixa"}
-                        </span>
-                      </CardDescription>
-                    </div>
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg opacity-50">
-                      <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{usuario.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        Desde{" "}
-                        {new Date(usuario.createdAt).toLocaleDateString(
-                          "pt-BR"
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          }
+          const displayName =
+            usuario.nome || usuario.name || usuario.email.split("@")[0];
 
           return (
-            <Link href={`/equipe/${usuario.id}`} key={usuario.id}>
-              <Card className="cursor-pointer hover:shadow-md transition-shadow h-full bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg text-gray-900 dark:text-gray-100">
-                        {usuario.nome ||
-                          usuario.name ||
-                          usuario.email.split("@")[0]}
-                      </CardTitle>
-                      <CardDescription className="flex items-center space-x-1 mt-1">
-                        <span
-                          className={`inline-block px-2 py-1 text-xs rounded ${
-                            usuario.role === "admin"
-                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                              : usuario.role === "master"
-                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                              : usuario.role === "gerente"
-                              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                              : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                          }`}
-                        >
-                          {usuario.role === "admin"
-                            ? "Admin"
-                            : usuario.role === "master"
-                            ? "Master"
-                            : usuario.role === "gerente"
-                            ? "Gerente"
-                            : "Caixa"}
-                        </span>
-                      </CardDescription>
-                    </div>
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate">{usuario.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        Desde{" "}
-                        {new Date(usuario.createdAt).toLocaleDateString(
-                          "pt-BR"
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+            <div key={usuario.id} className={!isCurrentUser ? "contents" : ""}>
+              {isCurrentUser ? (
+                <UserCard
+                  id={usuario.id}
+                  name={displayName}
+                  email={usuario.email}
+                  createdAt={usuario.createdAt}
+                  role={usuario.role}
+                  isCurrentUser={true}
+                />
+              ) : (
+                <Link href={`/equipe/${usuario.id}`} className="block h-full">
+                  <UserCard
+                    id={usuario.id}
+                    name={displayName}
+                    email={usuario.email}
+                    createdAt={usuario.createdAt}
+                    role={usuario.role}
+                    isCurrentUser={false}
+                    className="hover:shadow-md cursor-pointer"
+                  />
+                </Link>
+              )}
+            </div>
           );
         })}
       </div>

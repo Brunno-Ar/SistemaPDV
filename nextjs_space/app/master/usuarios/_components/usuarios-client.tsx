@@ -38,6 +38,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
+import { UserCard } from "@/components/shared/user-card";
 
 interface Master {
   id: string;
@@ -344,122 +345,78 @@ export default function UsuariosClient() {
           Lista de Usuários Master
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {masters.map((master) => (
-            <Card
-              key={master.id}
-              className={cn(
-                "hover:shadow-xl transition-all duration-200 border-2 bg-white dark:bg-zinc-900",
-                currentUserId === master.id
-                  ? "border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-zinc-900"
-                  : "border-gray-200 dark:border-zinc-800 hover:border-purple-200 dark:hover:border-purple-800"
-              )}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className={cn(
-                        "p-3 rounded-xl",
-                        currentUserId === master.id
-                          ? "bg-purple-200 dark:bg-purple-900/40"
-                          : "bg-purple-100 dark:bg-purple-900/20"
-                      )}
-                    >
-                      <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                        {master.nome || master.name}
-                      </CardTitle>
-                      {currentUserId === master.id && (
-                        <span className="inline-block px-2 py-0.5 text-xs font-semibold bg-purple-600 text-white rounded-full mt-1">
-                          Você
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-zinc-800 p-2 rounded">
-                    <Mail className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                    <span className="truncate">{master.email}</span>
-                  </div>
+          {masters.map((master) => {
+            const isCurrentUser = currentUserId === master.id;
+            const displayName = master.nome || master.name;
 
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-zinc-800 p-2 rounded">
-                    <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                    <span>
-                      Desde{" "}
-                      {new Date(master.createdAt).toLocaleDateString("pt-BR")}
+            const footerContent = !isCurrentUser ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <InteractiveHoverButton className="w-full bg-red-600 hover:bg-red-700 text-white border-red-600">
+                    <span className="flex items-center gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Excluir Master
                     </span>
-                  </div>
-
-                  {currentUserId !== master.id ? (
-                    <div className="pt-2">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <InteractiveHoverButton className="w-full bg-red-600 hover:bg-red-700 text-white border-red-600">
-                            <span className="flex items-center gap-2">
-                              <Trash2 className="h-4 w-4" />
-                              Excluir Master
-                            </span>
-                          </InteractiveHoverButton>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-2">
-                              <Trash2 className="h-5 w-5 text-red-600" />
-                              Confirmar Exclusão
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="space-y-3">
-                              <p>
-                                Tem certeza que deseja excluir o usuário master:
-                              </p>
-                              <div className="bg-gray-100 p-3 rounded border-l-4 border-red-500">
-                                <p className="font-semibold text-gray-900">
-                                  {master.nome || master.name}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  {master.email}
-                                </p>
-                              </div>
-                              <p className="text-red-600 font-semibold">
-                                ⚠️ Esta ação não pode ser desfeita!
-                              </p>
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel asChild>
-                              <InteractiveHoverButton className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700">
-                                Cancelar
-                              </InteractiveHoverButton>
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() =>
-                                handleDelete(master.id, master.email)
-                              }
-                              asChild
-                            >
-                              <InteractiveHoverButton className="bg-red-600 hover:bg-red-700 text-white border-red-600">
-                                Sim, Excluir Permanentemente
-                              </InteractiveHoverButton>
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  ) : (
-                    <div className="pt-2">
-                      <div className="text-sm text-center py-2.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded font-medium">
-                        🔒 Sua conta atual
+                  </InteractiveHoverButton>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <Trash2 className="h-5 w-5 text-red-600" />
+                      Confirmar Exclusão
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-3">
+                      <p>Tem certeza que deseja excluir o usuário master:</p>
+                      <div className="bg-gray-100 p-3 rounded border-l-4 border-red-500">
+                        <p className="font-semibold text-gray-900">
+                          {displayName}
+                        </p>
+                        <p className="text-sm text-gray-600">{master.email}</p>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                      <p className="text-red-600 font-semibold">
+                        ⚠️ Esta ação não pode ser desfeita!
+                      </p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel asChild>
+                      <InteractiveHoverButton className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700">
+                        Cancelar
+                      </InteractiveHoverButton>
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(master.id, master.email)}
+                      asChild
+                    >
+                      <InteractiveHoverButton className="bg-red-600 hover:bg-red-700 text-white border-red-600">
+                        Sim, Excluir Permanentemente
+                      </InteractiveHoverButton>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <div className="text-sm text-center py-2.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded font-medium">
+                🔒 Sua conta atual
+              </div>
+            );
+
+            return (
+              <UserCard
+                key={master.id}
+                id={master.id}
+                name={displayName}
+                email={master.email}
+                createdAt={master.createdAt}
+                isCurrentUser={isCurrentUser}
+                icon={
+                  <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                }
+                footer={footerContent}
+                role="master"
+              />
+            );
+          })}
         </div>
 
         {masters.length === 0 && (
