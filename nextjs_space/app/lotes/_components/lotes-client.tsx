@@ -267,8 +267,6 @@ export default function LotesClient() {
         dataCompra: formData.dataCompra || null,
       };
 
-      console.log("Submitting lot update:", body);
-
       const response = await fetch(url, {
         method,
         headers: {

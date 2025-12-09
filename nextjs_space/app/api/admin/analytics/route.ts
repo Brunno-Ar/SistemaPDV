@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     // Definir range global para busca no banco
     // Se não tiver filtro, pegamos os últimos 30 dias + hoje para cobrir tudo
     // Se tiver filtro, respeitamos o filtro
-    let dbQueryDateFilter: any = {};
+    const dbQueryDateFilter: any = {};
 
     // Datas de análise para os Cards (Hoje, Semana, Mês)
     // Precisamos definir os marcos em UTC para query
@@ -337,7 +337,7 @@ export async function GET(request: NextRequest) {
     >();
 
     // Dataset para produtos/métodos
-    let sourceSalesForDetails = salesTimeline; // Padrão: o que está no filtro/timeline
+    const sourceSalesForDetails = salesTimeline; // Padrão: o que está no filtro/timeline
     if (!startDate && !endDate) {
       // Se não tem filtro, o padrão do original era "Mês" ou "Tudo"?
       // Original: "Produtos mais vendidos ... dateFilter"

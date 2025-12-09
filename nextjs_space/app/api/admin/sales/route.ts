@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const empresaId = targetEmpresaId;
 
     // Filtro de data se fornecido - SEMPRE incluir empresaId
-    let dateFilter: any = {
+    const dateFilter: any = {
       empresaId: empresaId, // SEMPRE filtrar por empresa
     };
     if (startDate && endDate) {
