@@ -5,16 +5,7 @@ import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,19 +17,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Plus,
-  Trash2,
-  Mail,
-  Calendar,
-  Shield,
-  Users,
-  ArrowLeft,
-} from "lucide-react";
+import { Plus, Trash2, Users, Shield, ArrowLeft, Calendar } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { UserCard } from "@/components/shared/user-card";
+import {
+  UserFormDialog,
+  UserFormData,
+} from "@/components/shared/user-form-dialog";
 
 interface Master {
   id: string;
@@ -54,11 +41,6 @@ export default function UsuariosClient() {
   const [masters, setMasters] = useState<Master[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    senha: "",
-    nome: "",
-  });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -93,21 +75,20 @@ export default function UsuariosClient() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const createMaster = async (data: UserFormData) => {
     setSubmitting(true);
-
     try {
       const response = await fetch("/api/master/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        // Ensure role is sent if API needs it, though endpoint implies Master
+        body: JSON.stringify(data),
       });
 
-      const data = await response.json();
+      const resData = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar usuário master");
+        throw new Error(resData.error || "Erro ao criar usuário master");
       }
 
       toast({
@@ -115,10 +96,7 @@ export default function UsuariosClient() {
         description: "Usuário master criado com sucesso",
       });
 
-      // ✅ Fecha o dialog usando o handler que reseta o form
-      handleDialogChange(false);
-
-      // ✅ Re-fetch após fechar
+      setDialogOpen(false);
       fetchMasters();
     } catch (error: any) {
       toast({
@@ -168,18 +146,6 @@ export default function UsuariosClient() {
 
   const currentUserId = session?.user?.id;
 
-  const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open);
-    // Reset form quando o dialog é fechado
-    if (!open) {
-      setFormData({
-        email: "",
-        senha: "",
-        nome: "",
-      });
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header Section */}
@@ -202,83 +168,24 @@ export default function UsuariosClient() {
             Visualize e gerencie todos os usuários master do sistema
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-          <DialogTrigger asChild>
+        <UserFormDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          title="Criar Novo Usuário Master"
+          description="Preencha os dados do novo usuário master"
+          onSubmit={createMaster}
+          loading={submitting}
+          roles={[]} // No visible role selector
+          defaultRole="master"
+          trigger={
             <InteractiveHoverButton className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600">
               <span className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Criar Novo Master
               </span>
             </InteractiveHoverButton>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[450px]">
-            <DialogHeader>
-              <DialogTitle>Criar Novo Usuário Master</DialogTitle>
-              <DialogDescription>
-                Preencha os dados do novo usuário master
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nome: e.target.value })
-                  }
-                  placeholder="Nome do usuário master"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="master@email.com"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="senha">Senha *</Label>
-                <Input
-                  id="senha"
-                  type="password"
-                  value={formData.senha}
-                  onChange={(e) =>
-                    setFormData({ ...formData, senha: e.target.value })
-                  }
-                  placeholder="Senha do usuário master"
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <InteractiveHoverButton
-                  type="button"
-                  className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
-                  onClick={() => handleDialogChange(false)}
-                  disabled={submitting}
-                >
-                  Cancelar
-                </InteractiveHoverButton>
-                <InteractiveHoverButton
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
-                >
-                  {submitting ? "Criando..." : "Criar Master"}
-                </InteractiveHoverButton>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+          }
+        />
       </div>
 
       {/* Stats Section */}
