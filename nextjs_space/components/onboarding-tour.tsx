@@ -7,32 +7,23 @@ import { usePathname } from "next/navigation";
 import { TOUR_RESET_EVENT } from "@/lib/events";
 
 const TOUR_COMPLETED_KEY = "flowpdv_tour_completed";
+const TOUR_SHOWN_THIS_SESSION_KEY = "flowpdv_tour_shown_session";
 
 export function OnboardingTour() {
   const [run, setRun] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const { data: session, update, status: sessionStatus } = useSession();
   const pathname = usePathname();
 
-  // Use ref para controlar se o tour já foi iniciado nesta sessão
+  // Use ref para controlar se o tour já foi iniciado nesta sessão de componente
   const hasInitialized = useRef(false);
 
   // Obter valores diretamente da sessão cliente
   const role = session?.user?.role || "funcionario";
+  const userId = session?.user?.id;
+
+  // tourCompleted da sessão - undefined enquanto carrega, true/false quando carregado
   const tourCompletedFromSession = session?.user?.tourCompleted;
-
-  // Verificar localStorage como backup (para evitar flash durante carregamento)
-  const getTourCompletedFromStorage = useCallback(() => {
-    if (typeof window === "undefined") return true;
-    const userId = session?.user?.id;
-    if (!userId) return true; // Se não tem userId, assume completado
-    const stored = localStorage.getItem(`${TOUR_COMPLETED_KEY}_${userId}`);
-    return stored === "true";
-  }, [session?.user?.id]);
-
-  // Combina sessão + localStorage para determinar se tour foi completado
-  // Se qualquer um disser "completado", não mostra o tour
-  const tourCompleted =
-    tourCompletedFromSession || getTourCompletedFromStorage();
 
   // Bloqueio imediato de renderização em páginas públicas
   const publicPages = [
@@ -44,23 +35,41 @@ export function OnboardingTour() {
   ];
   const isPublicPage = publicPages.some((page) => pathname?.startsWith(page));
 
-  // Função para marcar tour como completado no localStorage
-  const markTourCompletedInStorage = useCallback(() => {
+  // Função para verificar se o tour foi mostrado nesta sessão do navegador (sessionStorage)
+  const wasShownThisSession = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem(TOUR_SHOWN_THIS_SESSION_KEY) === "true";
+  }, []);
+
+  // Função para marcar que o tour foi mostrado nesta sessão
+  const markShownThisSession = useCallback(() => {
     if (typeof window === "undefined") return;
-    const userId = session?.user?.id;
-    if (userId) {
-      localStorage.setItem(`${TOUR_COMPLETED_KEY}_${userId}`, "true");
-    }
-  }, [session?.user?.id]);
+    sessionStorage.setItem(TOUR_SHOWN_THIS_SESSION_KEY, "true");
+  }, []);
+
+  // Função para limpar o flag de sessão (usado no reset)
+  const clearShownThisSession = useCallback(() => {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem(TOUR_SHOWN_THIS_SESSION_KEY);
+  }, []);
+
+  // Função para marcar tour como completado no localStorage (por userId)
+  const markTourCompletedInStorage = useCallback(() => {
+    if (typeof window === "undefined" || !userId) return;
+    localStorage.setItem(`${TOUR_COMPLETED_KEY}_${userId}`, "true");
+  }, [userId]);
+
+  // Função para verificar se está completado no localStorage
+  const isTourCompletedInStorage = useCallback(() => {
+    if (typeof window === "undefined" || !userId) return false;
+    return localStorage.getItem(`${TOUR_COMPLETED_KEY}_${userId}`) === "true";
+  }, [userId]);
 
   // Função para resetar tour no localStorage
   const resetTourInStorage = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const userId = session?.user?.id;
-    if (userId) {
-      localStorage.removeItem(`${TOUR_COMPLETED_KEY}_${userId}`);
-    }
-  }, [session?.user?.id]);
+    if (typeof window === "undefined" || !userId) return;
+    localStorage.removeItem(`${TOUR_COMPLETED_KEY}_${userId}`);
+  }, [userId]);
 
   // Função para iniciar o tour
   const startTour = useCallback(() => {
@@ -69,17 +78,19 @@ export function OnboardingTour() {
       sessionStatus === "authenticated" &&
       session?.user
     ) {
-      console.log("Iniciando tour...");
+      console.log("🚀 Iniciando tour...");
+      markShownThisSession();
       setRun(true);
     }
-  }, [role, sessionStatus, session?.user]);
+  }, [role, sessionStatus, session?.user, markShownThisSession]);
 
   // Listener para o evento de reset do tour (vindo do botão)
   useEffect(() => {
     const handleTourReset = () => {
-      console.log("Tour reset event received");
+      console.log("🔄 Tour reset event received");
       hasInitialized.current = false;
       resetTourInStorage();
+      clearShownThisSession();
       // Pequeno delay para garantir que a sessão foi atualizada
       setTimeout(() => {
         startTour();
@@ -88,47 +99,87 @@ export function OnboardingTour() {
 
     window.addEventListener(TOUR_RESET_EVENT, handleTourReset);
     return () => window.removeEventListener(TOUR_RESET_EVENT, handleTourReset);
-  }, [startTour, resetTourInStorage]);
+  }, [startTour, resetTourInStorage, clearShownThisSession]);
 
   // Lógica principal para decidir quando iniciar o tour
   useEffect(() => {
-    // NUNCA rodar em páginas públicas ou enquanto carregando
-    if (isPublicPage || sessionStatus === "loading") {
+    // NUNCA rodar em páginas públicas
+    if (isPublicPage) {
       setRun(false);
+      setIsReady(false);
+      return;
+    }
+
+    // Aguardar sessão carregar completamente
+    if (sessionStatus === "loading") {
+      setIsReady(false);
       return;
     }
 
     // Só executa se o usuário estiver autenticado
     if (sessionStatus !== "authenticated" || !session?.user) {
       setRun(false);
+      setIsReady(false);
       return;
     }
 
-    // Se é master, não iniciar
+    // Agora a sessão está pronta
+    setIsReady(true);
+
+    // Se é master, NUNCA mostrar tour
     if (role === "master") {
       setRun(false);
       return;
     }
 
-    // Se o tour já foi completado (sessão OU localStorage), não iniciar
-    if (tourCompleted) {
+    // Se o tour já foi mostrado NESTA SESSÃO do navegador, não mostrar de novo
+    // Isso evita o problema de aparecer no F5
+    if (wasShownThisSession()) {
+      console.log("⏭️ Tour já foi mostrado nesta sessão do navegador");
       setRun(false);
       return;
     }
 
-    // Iniciar o tour apenas na primeira vez se não está completado
-    if (!hasInitialized.current && !tourCompleted) {
+    // Se o tour está marcado como completado na SESSÃO (do servidor), não mostrar
+    if (tourCompletedFromSession === true) {
+      console.log("✅ Tour já completado (sessão)");
+      setRun(false);
+      return;
+    }
+
+    // Se o tour está marcado como completado no localStorage, não mostrar
+    if (isTourCompletedInStorage()) {
+      console.log("✅ Tour já completado (localStorage)");
+      setRun(false);
+      return;
+    }
+
+    // Se tourCompleted é explicitamente FALSE (ou seja, nunca fez o tour), mostrar
+    if (tourCompletedFromSession === false && !hasInitialized.current) {
       hasInitialized.current = true;
 
       // Delay para garantir que o DOM está pronto
       const timer = setTimeout(() => {
-        console.log("Iniciando tour (inicial)...", { role, tourCompleted });
+        console.log("🎯 Iniciando tour pela primeira vez...", {
+          role,
+          tourCompletedFromSession,
+        });
+        markShownThisSession();
         setRun(true);
       }, 1500);
 
       return () => clearTimeout(timer);
     }
-  }, [tourCompleted, role, sessionStatus, session?.user, isPublicPage]);
+  }, [
+    tourCompletedFromSession,
+    role,
+    sessionStatus,
+    session?.user,
+    isPublicPage,
+    wasShownThisSession,
+    isTourCompletedInStorage,
+    markShownThisSession,
+  ]);
 
   // Não renderizar em páginas públicas ou enquanto carregando sessão
   if (isPublicPage || sessionStatus !== "authenticated" || !session?.user) {
