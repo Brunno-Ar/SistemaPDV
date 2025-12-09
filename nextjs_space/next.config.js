@@ -4,6 +4,7 @@ const withPWA = require("next-pwa")({
   register: true,
   skipWaiting: true,
   disable: false,
+  buildExcludes: [/middleware-manifest\.json$/, /react-floater/],
 });
 
 /** @type {import('next').NextConfig} */
