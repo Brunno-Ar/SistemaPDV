@@ -9,15 +9,21 @@ interface AuthLayoutProps {
   children: ReactNode;
   sideContent?: ReactNode;
   showThemeToggle?: boolean;
+  formPosition?: "left" | "right";
 }
 
 export function AuthLayout({
   children,
   sideContent,
   showThemeToggle = true,
+  formPosition = "left", // Default to left to match DOM order, but we can override
 }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen w-full flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-white overflow-hidden">
+    <div
+      className={`min-h-screen w-full flex bg-white dark:bg-zinc-950 text-gray-900 dark:text-white overflow-hidden ${
+        formPosition === "right" ? "lg:flex-row-reverse" : ""
+      }`}
+    >
       {/* Mobile Logo */}
       <div className="absolute top-8 left-8 lg:hidden z-20">
         <Link href="/" className="flex items-center gap-2 group">
