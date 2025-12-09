@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateProductData } from "@/lib/validation/product";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
@@ -34,7 +35,9 @@ export async function PUT(
     const session = await getServerSession(authOptions);
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         {
@@ -63,37 +66,9 @@ export async function PUT(
       categoryId,
     } = body;
     // Validate required fields
-    if (
-      !nome ||
-      precoVenda === undefined ||
-      precoCompra === undefined ||
-      estoqueAtual === undefined
-    ) {
-      return NextResponse.json(
-        { error: "Todos os campos obrigatórios devem ser preenchidos" },
-        { status: 400 }
-      );
-    }
-    if (precoVenda <= 0 || precoCompra < 0) {
-      return NextResponse.json(
-        {
-          error:
-            "Preços devem ser válidos (preço de venda > 0, preço de compra >= 0)",
-        },
-        { status: 400 }
-      );
-    }
-    if (estoqueAtual < 0) {
-      return NextResponse.json(
-        { error: "Estoque não pode ser negativo" },
-        { status: 400 }
-      );
-    }
-    if (estoqueMinimo !== undefined && estoqueMinimo < 0) {
-      return NextResponse.json(
-        { error: "Estoque mínimo não pode ser negativo" },
-        { status: 400 }
-      );
+    const validation = validateProductData(body);
+    if (!validation.isValid) {
+      return validation.response;
     }
     // Verify product belongs to the company
     const existingProduct = await prisma.product.findFirst({
@@ -241,7 +216,9 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         {
@@ -270,21 +247,21 @@ export async function DELETE(
 
     // Perform deletion in a transaction to ensure integrity
     await prisma.$transaction(async (tx) => {
-        // Delete associated sale items (WARNING: This alters historical sales data)
-        await tx.saleItem.deleteMany({
-          where: { productId: params.id },
-        });
-        // Delete associated stock movements first
-        await tx.movimentacaoEstoque.deleteMany({
-          where: { produtoId: params.id },
-        });
+      // Delete associated sale items (WARNING: This alters historical sales data)
+      await tx.saleItem.deleteMany({
+        where: { productId: params.id },
+      });
+      // Delete associated stock movements first
+      await tx.movimentacaoEstoque.deleteMany({
+        where: { produtoId: params.id },
+      });
 
-        // Delete associated lots (explicitly, though cascade might handle it)
-        await tx.lote.deleteMany({
-          where: { produtoId: params.id },
-        });
+      // Delete associated lots (explicitly, though cascade might handle it)
+      await tx.lote.deleteMany({
+        where: { produtoId: params.id },
+      });
 
-        await tx.product.delete({ where: { id: params.id } });
+      await tx.product.delete({ where: { id: params.id } });
     });
 
     return NextResponse.json({ message: "Produto excluído com sucesso" });

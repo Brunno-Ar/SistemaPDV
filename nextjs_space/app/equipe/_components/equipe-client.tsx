@@ -5,6 +5,10 @@ import { useSession } from "next-auth/react";
 
 import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
 import { UserCard } from "@/components/shared/user-card";
+import {
+  UserFormDialog,
+  UserFormData,
+} from "@/components/shared/user-form-dialog";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -14,24 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Users, Mail, Calendar } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface Usuario {
@@ -52,12 +39,6 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    senha: "",
-    nome: "",
-    role: "caixa", // Default role
-  });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchUsuarios = useCallback(async () => {
@@ -97,8 +78,7 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
     fetchUsuarios();
   }, [fetchUsuarios]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const createUser = async (data: UserFormData) => {
     setSubmitting(true);
 
     try {
@@ -111,24 +91,21 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(data),
       });
 
-      const data = await response.json();
+      const resData = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao criar usuário");
+        throw new Error(resData.error || "Erro ao criar usuário");
       }
 
       toast({
         title: "Sucesso!",
-        description: `Usuário ${formData.role} criado com sucesso`,
+        description: `Usuário ${data.role} criado com sucesso`,
       });
 
-      // ✅ Fecha o dialog usando o handler que reseta o form
-      handleDialogChange(false);
-
-      // ✅ Re-fetch após fechar
+      setDialogOpen(false);
       fetchUsuarios();
     } catch (error: unknown) {
       const errorMessage =
@@ -151,19 +128,6 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
     );
   }
 
-  const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open);
-    // Reset form quando o dialog é fechado
-    if (!open) {
-      setFormData({
-        email: "",
-        senha: "",
-        nome: "",
-        role: "caixa",
-      });
-    }
-  };
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
@@ -175,98 +139,27 @@ export default function EquipeClient({ companyId }: EquipeClientProps = {}) {
             Adicione e gerencie os usuários da sua empresa
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-          <DialogTrigger asChild>
+        <UserFormDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          title="Criar Novo Usuário"
+          description="Preencha os dados do novo membro da equipe"
+          onSubmit={createUser}
+          loading={submitting}
+          roles={[
+            { value: "caixa", label: "Caixa (Operacional)" },
+            { value: "gerente", label: "Gerente (Gestão)" },
+          ]}
+          defaultRole="caixa"
+          trigger={
             <InteractiveHoverButton className="bg-cta-bg hover:bg-cta-bg/90 text-white border-cta-bg w-full sm:w-auto">
               <span className="flex items-center justify-center gap-2">
                 <Plus className="h-4 w-4" />
                 Novo Usuário
               </span>
             </InteractiveHoverButton>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[450px]">
-            <DialogHeader>
-              <DialogTitle>Criar Novo Usuário</DialogTitle>
-              <DialogDescription>
-                Preencha os dados do novo membro da equipe
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nome: e.target.value })
-                  }
-                  placeholder="Nome do usuário"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="usuario@email.com"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Função *</Label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, role: value })
-                  }
-                >
-                  <SelectTrigger id="role">
-                    <SelectValue placeholder="Selecione a função" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="caixa">Caixa (Operacional)</SelectItem>
-                    <SelectItem value="gerente">Gerente (Gestão)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="senha">Senha *</Label>
-                <Input
-                  id="senha"
-                  type="password"
-                  value={formData.senha}
-                  onChange={(e) =>
-                    setFormData({ ...formData, senha: e.target.value })
-                  }
-                  placeholder="Senha do usuário"
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <InteractiveHoverButton
-                  type="button"
-                  className="bg-white hover:bg-gray-50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-zinc-700"
-                  onClick={() => handleDialogChange(false)}
-                  disabled={submitting}
-                >
-                  Cancelar
-                </InteractiveHoverButton>
-                <InteractiveHoverButton
-                  type="submit"
-                  disabled={submitting}
-                  className="bg-cta-bg hover:bg-cta-bg/90 text-white border-cta-bg"
-                >
-                  {submitting ? "Criando..." : "Criar Usuário"}
-                </InteractiveHoverButton>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+          }
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
