@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores podem acessar." },
@@ -114,7 +116,7 @@ export async function GET(request: NextRequest) {
           const qtd = item.quantidade;
 
           saleFaturamento += subtotal;
-          saleCusto += (custoUnit * qtd);
+          saleCusto += custoUnit * qtd;
         }
 
         faturamento += saleFaturamento;
@@ -129,7 +131,7 @@ export async function GET(request: NextRequest) {
         custoTotal,
         lucro,
         margem,
-        transacoes: sales.length
+        transacoes: sales.length,
       };
     };
 
@@ -151,10 +153,12 @@ export async function GET(request: NextRequest) {
 
     // Datas base (em BRL Time, representadas como Date object)
     const startOfTodayBRL = new Date(nowBrasilia);
-    startOfTodayBRL.setUTCHours(0,0,0,0);
+    startOfTodayBRL.setUTCHours(0, 0, 0, 0);
 
     const startOfWeekBRL = new Date(startOfTodayBRL);
-    startOfWeekBRL.setDate(startOfTodayBRL.getDate() - startOfTodayBRL.getDay()); // Domingo
+    startOfWeekBRL.setDate(
+      startOfTodayBRL.getDate() - startOfTodayBRL.getDay()
+    ); // Domingo
 
     const startOfMonthBRL = new Date(startOfTodayBRL);
     startOfMonthBRL.setDate(1);
@@ -168,16 +172,16 @@ export async function GET(request: NextRequest) {
     const [salesHoje, salesSemana, salesMes] = await Promise.all([
       prisma.sale.findMany({
         where: { empresaId, dataHora: { gte: queryTodayStart } },
-        include: { saleItems: true }
+        include: { saleItems: true },
       }),
       prisma.sale.findMany({
         where: { empresaId, dataHora: { gte: queryWeekStart } },
-        include: { saleItems: true }
+        include: { saleItems: true },
       }),
       prisma.sale.findMany({
         where: { empresaId, dataHora: { gte: queryMonthStart } },
-        include: { saleItems: true }
-      })
+        include: { saleItems: true },
+      }),
     ]);
 
     const statsHoje = calculateStats(salesHoje);
@@ -191,49 +195,56 @@ export async function GET(request: NextRequest) {
     let timelineEnd: Date;
 
     if (startDate && endDate) {
-        // startDate vem como YYYY-MM-DD
-        const startParts = startDate.split('-').map(Number);
-        const endParts = endDate.split('-').map(Number);
+      // startDate vem como YYYY-MM-DD
+      const startParts = startDate.split("-").map(Number);
+      const endParts = endDate.split("-").map(Number);
 
-        // Criar datas UTC que correspondem ao inicio do dia BRL (03:00 UTC)
-        timelineStart = new Date(Date.UTC(startParts[0], startParts[1]-1, startParts[2], 3, 0, 0));
+      // Criar datas UTC que correspondem ao inicio do dia BRL (03:00 UTC)
+      timelineStart = new Date(
+        Date.UTC(startParts[0], startParts[1] - 1, startParts[2], 3, 0, 0)
+      );
 
-        // Fim do dia BRL (23:59:59 BRL = 02:59:59 UTC do dia seguinte)
-        timelineEnd = new Date(Date.UTC(endParts[0], endParts[1]-1, endParts[2], 3, 0, 0));
-        timelineEnd.setDate(timelineEnd.getDate() + 1); // Dia seguinte 03:00 UTC (exclusive)
-        timelineEnd.setMilliseconds(-1); // Voltar 1ms
+      // Fim do dia BRL (23:59:59 BRL = 02:59:59 UTC do dia seguinte)
+      timelineEnd = new Date(
+        Date.UTC(endParts[0], endParts[1] - 1, endParts[2], 3, 0, 0)
+      );
+      timelineEnd.setDate(timelineEnd.getDate() + 1); // Dia seguinte 03:00 UTC (exclusive)
+      timelineEnd.setMilliseconds(-1); // Voltar 1ms
     } else {
-        // Padrão: Últimos 30 dias
-        timelineEnd = new Date(); // Agora
-        timelineStart = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-        // Ajustar para inicio do dia?
-        // Vamos pegar o range exato de 30 dias atrás até agora, ou dias fechados?
-        // "agrupado por dia (nos últimos 30 dias)"
-        // Vamos pegar D-30 00:00 BRL até D-0 23:59 BRL
-        const d30 = new Date(startOfTodayBRL);
-        d30.setDate(d30.getDate() - 29); // Hoje + 29 dias atrás = 30 dias
-        timelineStart = getBrasiliaStartOfDayInUTC(d30);
+      // Padrão: Últimos 30 dias
+      timelineEnd = new Date(); // Agora
+      timelineStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      // Ajustar para inicio do dia?
+      // Vamos pegar o range exato de 30 dias atrás até agora, ou dias fechados?
+      // "agrupado por dia (nos últimos 30 dias)"
+      // Vamos pegar D-30 00:00 BRL até D-0 23:59 BRL
+      const d30 = new Date(startOfTodayBRL);
+      d30.setDate(d30.getDate() - 29); // Hoje + 29 dias atrás = 30 dias
+      timelineStart = getBrasiliaStartOfDayInUTC(d30);
 
-        const dEnd = new Date(startOfTodayBRL);
-        dEnd.setDate(dEnd.getDate() + 1);
-        timelineEnd = getBrasiliaStartOfDayInUTC(dEnd); // Fim de hoje
+      const dEnd = new Date(startOfTodayBRL);
+      dEnd.setDate(dEnd.getDate() + 1);
+      timelineEnd = getBrasiliaStartOfDayInUTC(dEnd); // Fim de hoje
     }
 
     // Buscar Vendas da Timeline
     const salesTimeline = await prisma.sale.findMany({
-        where: {
-            empresaId,
-            dataHora: {
-                gte: timelineStart,
-                lte: timelineEnd
-            }
+      where: {
+        empresaId,
+        dataHora: {
+          gte: timelineStart,
+          lte: timelineEnd,
         },
-        include: { saleItems: true },
-        orderBy: { dataHora: 'asc' }
+      },
+      include: { saleItems: true },
+      orderBy: { dataHora: "asc" },
     });
 
     // Agrupar por dia (DD/MM)
-    const groupedData = new Map<string, { faturamento: number; custo: number; lucro: number }>();
+    const groupedData = new Map<
+      string,
+      { faturamento: number; custo: number; lucro: number }
+    >();
 
     // Inicializar o mapa com todos os dias do intervalo (Zero Fill)
     const currentDate = new Date(timelineStart);
@@ -246,60 +257,67 @@ export async function GET(request: NextRequest) {
     endDateLoop.setMinutes(endDateLoop.getMinutes() + 1);
 
     while (currentDate < endDateLoop) {
-        // Formatar DD/MM
-        // Lembre-se: currentDate está em UTC (03:00), que equivale a 00:00 BRL
-        // Então getUTCDate() aqui reflete o dia errado se não ajustarmos?
-        // Não, 03:00 UTC do dia 10 é dia 10.
-        // Espera, 00:00 BRL = 03:00 UTC.
-        // Se eu pegar getUTCDate() das 03:00 UTC, dá o dia certo.
-        // Se fosse 23:00 BRL = 02:00 UTC (dia seguinte).
-        // Então usar o toBrasiliaDate é mais seguro.
+      // Formatar DD/MM
+      // Lembre-se: currentDate está em UTC (03:00), que equivale a 00:00 BRL
+      // Então getUTCDate() aqui reflete o dia errado se não ajustarmos?
+      // Não, 03:00 UTC do dia 10 é dia 10.
+      // Espera, 00:00 BRL = 03:00 UTC.
+      // Se eu pegar getUTCDate() das 03:00 UTC, dá o dia certo.
+      // Se fosse 23:00 BRL = 02:00 UTC (dia seguinte).
+      // Então usar o toBrasiliaDate é mais seguro.
 
-        const dateBRL = toBrasiliaDate(currentDate);
-        const day = String(dateBRL.getUTCDate()).padStart(2, '0');
-        const month = String(dateBRL.getUTCMonth() + 1).padStart(2, '0');
-        const key = `${day}/${month}`;
+      const dateBRL = toBrasiliaDate(currentDate);
+      const day = String(dateBRL.getUTCDate()).padStart(2, "0");
+      const month = String(dateBRL.getUTCMonth() + 1).padStart(2, "0");
+      const key = `${day}/${month}`;
 
-        if (!groupedData.has(key)) {
-             groupedData.set(key, { faturamento: 0, custo: 0, lucro: 0 });
-        }
+      if (!groupedData.has(key)) {
+        groupedData.set(key, { faturamento: 0, custo: 0, lucro: 0 });
+      }
 
-        currentDate.setDate(currentDate.getDate() + 1);
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
     // Preencher com dados reais
-    salesTimeline.forEach(sale => {
-        const dateBRL = toBrasiliaDate(sale.dataHora);
-        const day = String(dateBRL.getUTCDate()).padStart(2, '0');
-        const month = String(dateBRL.getUTCMonth() + 1).padStart(2, '0');
-        const key = `${day}/${month}`;
+    salesTimeline.forEach((sale) => {
+      const dateBRL = toBrasiliaDate(sale.dataHora);
+      const day = String(dateBRL.getUTCDate()).padStart(2, "0");
+      const month = String(dateBRL.getUTCMonth() + 1).padStart(2, "0");
+      const key = `${day}/${month}`;
 
-        // Se a data estiver fora do range inicializado (pode acontecer se o loop tiver gap), inicializa
-        if (!groupedData.has(key)) {
-             groupedData.set(key, { faturamento: 0, custo: 0, lucro: 0 });
-        }
+      // Se a data estiver fora do range inicializado (pode acontecer se o loop tiver gap), inicializa
+      if (!groupedData.has(key)) {
+        groupedData.set(key, { faturamento: 0, custo: 0, lucro: 0 });
+      }
 
-        const stats = groupedData.get(key)!;
+      const stats = groupedData.get(key)!;
 
-        // Calcular valores desta venda
-        let saleFaturamento = 0;
-        let saleCusto = 0;
+      // Calcular valores desta venda
+      let saleFaturamento = 0;
+      let saleCusto = 0;
 
-        sale.saleItems.forEach(item => {
-            saleFaturamento += Number(item.subtotal || 0);
-            saleCusto += (Number(item.custoUnitario || 0) * item.quantidade);
-        });
+      sale.saleItems.forEach((item) => {
+        saleFaturamento += Number(item.subtotal || 0);
+        saleCusto += Number(item.custoUnitario || 0) * item.quantidade;
+      });
 
-        stats.faturamento += saleFaturamento;
-        stats.custo += saleCusto;
-        stats.lucro += (saleFaturamento - saleCusto);
+      stats.faturamento += saleFaturamento;
+      stats.custo += saleCusto;
+      stats.lucro += saleFaturamento - saleCusto;
     });
 
     // Converter Map para Array
-    const financialTimeline = Array.from(groupedData.entries()).map(([date, values]) => ({
+    const financialTimeline = Array.from(groupedData.entries()).map(
+      ([date, values]) => ({
         date,
-        ...values
-    }));
+        ...values,
+      })
+    );
+
+    // --- CÁLCULO DE ESTATÍSTICAS DO PERÍODO FILTRADO ---
+    // Quando o usuário aplica um filtro, calcular totais do período selecionado
+    const statsPeriodo =
+      startDate && endDate ? calculateStats(salesTimeline) : null;
 
     // --- 3. DADOS SECUNDÁRIOS (Produtos e Métodos) ---
     // Usar os filtros da Timeline para consistência com o que está sendo visto no gráfico?
@@ -313,15 +331,18 @@ export async function GET(request: NextRequest) {
     // O usuário pode querer ver "Produtos mais vendidos desta semana".
     // Se startDate/endDate existem, usamos eles.
 
-    const produtosMap = new Map<string, { nome: string, qtd: number, total: number }>();
+    const produtosMap = new Map<
+      string,
+      { nome: string; qtd: number; total: number }
+    >();
 
     // Dataset para produtos/métodos
     let sourceSalesForDetails = salesTimeline; // Padrão: o que está no filtro/timeline
     if (!startDate && !endDate) {
-        // Se não tem filtro, o padrão do original era "Mês" ou "Tudo"?
-        // Original: "Produtos mais vendidos ... dateFilter"
-        // Se não tinha dateFilter, pegava tudo?
-        // Vamos usar salesTimeline (últimos 30 dias) como base se não houver filtro, parece razoável.
+      // Se não tem filtro, o padrão do original era "Mês" ou "Tudo"?
+      // Original: "Produtos mais vendidos ... dateFilter"
+      // Se não tinha dateFilter, pegava tudo?
+      // Vamos usar salesTimeline (últimos 30 dias) como base se não houver filtro, parece razoável.
     }
 
     // Como já temos salesTimeline com items, podemos agregar em memória para evitar outra query pesada
@@ -331,55 +352,61 @@ export async function GET(request: NextRequest) {
     // SaleItem tem productId.
 
     const productIds = new Set<string>();
-    sourceSalesForDetails.forEach(sale => {
-        sale.saleItems.forEach(item => {
-            productIds.add(item.productId);
-        });
+    sourceSalesForDetails.forEach((sale) => {
+      sale.saleItems.forEach((item) => {
+        productIds.add(item.productId);
+      });
     });
 
     const products = await prisma.product.findMany({
-        where: { id: { in: Array.from(productIds) }, empresaId },
-        select: { id: true, nome: true }
+      where: { id: { in: Array.from(productIds) }, empresaId },
+      select: { id: true, nome: true },
     });
 
-    const productNameMap = new Map(products.map(p => [p.id, p.nome]));
+    const productNameMap = new Map(products.map((p) => [p.id, p.nome]));
 
-    sourceSalesForDetails.forEach(sale => {
-        sale.saleItems.forEach(item => {
-            const current = produtosMap.get(item.productId) || { nome: productNameMap.get(item.productId) || 'Desconhecido', qtd: 0, total: 0 };
-            current.qtd += item.quantidade;
-            current.total += Number(item.subtotal || 0);
-            produtosMap.set(item.productId, current);
-        });
+    sourceSalesForDetails.forEach((sale) => {
+      sale.saleItems.forEach((item) => {
+        const current = produtosMap.get(item.productId) || {
+          nome: productNameMap.get(item.productId) || "Desconhecido",
+          qtd: 0,
+          total: 0,
+        };
+        current.qtd += item.quantidade;
+        current.total += Number(item.subtotal || 0);
+        produtosMap.set(item.productId, current);
+      });
     });
 
     const produtosMaisVendidosFormatted = Array.from(produtosMap.values())
-        .sort((a, b) => b.qtd - a.qtd)
-        .slice(0, 10)
-        .map(p => ({
-            nome: p.nome,
-            totalVendido: p.qtd,
-            valorTotal: p.total
-        }));
+      .sort((a, b) => b.qtd - a.qtd)
+      .slice(0, 10)
+      .map((p) => ({
+        nome: p.nome,
+        totalVendido: p.qtd,
+        valorTotal: p.total,
+      }));
 
     // Vendas por Método
-    const metodoMap = new Map<string, { count: number, total: number }>();
-    sourceSalesForDetails.forEach(sale => {
-        const metodo = sale.metodoPagamento;
-        const current = metodoMap.get(metodo) || { count: 0, total: 0 };
-        current.count += 1;
-        // Para valor total por método, usamos Sale.valorTotal (que deve bater com soma items)
-        // Mas para consistência estrita, usamos a soma dos items que já calculamos?
-        // Sale.valorTotal é o que foi pago.
-        current.total += Number(sale.valorTotal || 0);
-        metodoMap.set(metodo, current);
+    const metodoMap = new Map<string, { count: number; total: number }>();
+    sourceSalesForDetails.forEach((sale) => {
+      const metodo = sale.metodoPagamento;
+      const current = metodoMap.get(metodo) || { count: 0, total: 0 };
+      current.count += 1;
+      // Para valor total por método, usamos Sale.valorTotal (que deve bater com soma items)
+      // Mas para consistência estrita, usamos a soma dos items que já calculamos?
+      // Sale.valorTotal é o que foi pago.
+      current.total += Number(sale.valorTotal || 0);
+      metodoMap.set(metodo, current);
     });
 
-    const vendasPorMetodoFormatted = Array.from(metodoMap.entries()).map(([metodo, values]) => ({
+    const vendasPorMetodoFormatted = Array.from(metodoMap.entries()).map(
+      ([metodo, values]) => ({
         metodo,
         total: values.count,
-        valor: values.total
-    }));
+        valor: values.total,
+      })
+    );
 
     return NextResponse.json({
       // Dados de hoje
@@ -403,6 +430,14 @@ export async function GET(request: NextRequest) {
       margemMes: statsMes.margem,
       transacoesMes: statsMes.transacoes,
 
+      // Dados do período filtrado (novo) - só quando há filtro
+      totalVendasPeriodo: statsPeriodo?.faturamento ?? null,
+      custoTotalPeriodo: statsPeriodo?.custoTotal ?? null,
+      lucroPeriodo: statsPeriodo?.lucro ?? null,
+      margemPeriodo: statsPeriodo?.margem ?? null,
+      transacoesPeriodo: statsPeriodo?.transacoes ?? null,
+      filtroAtivo: !!(startDate && endDate),
+
       // Timeline Financeira (NOVO)
       financialTimeline,
 
@@ -410,7 +445,6 @@ export async function GET(request: NextRequest) {
       produtosMaisVendidos: produtosMaisVendidosFormatted,
       vendasPorMetodo: vendasPorMetodoFormatted,
     });
-
   } catch (error) {
     console.error("Erro ao buscar analytics:", error);
     return NextResponse.json(

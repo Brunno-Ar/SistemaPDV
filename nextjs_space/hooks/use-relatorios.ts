@@ -17,6 +17,13 @@ export interface Analytics {
   transacoesHoje: number;
   transacoesSemana: number;
   transacoesMes: number;
+  // Dados do período filtrado
+  totalVendasPeriodo: number | null;
+  custoTotalPeriodo: number | null;
+  lucroPeriodo: number | null;
+  margemPeriodo: number | null;
+  transacoesPeriodo: number | null;
+  filtroAtivo: boolean;
   produtosMaisVendidos: Array<{
     nome: string;
     totalVendido: number;
