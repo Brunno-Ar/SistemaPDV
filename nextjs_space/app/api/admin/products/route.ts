@@ -3,41 +3,9 @@ import { validateProductData } from "@/lib/validation/product";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { generateUniqueSKU } from "@/lib/product-utils";
 
 export const dynamic = "force-dynamic";
-
-// Função para gerar SKU único por empresa
-async function generateUniqueSKU(empresaId: string): Promise<string> {
-  let sku = "";
-  let exists = true;
-
-  while (exists) {
-    // Gerar SKU: 3 letras maiúsculas + 6 dígitos
-    const letters = Array(3)
-      .fill(null)
-      .map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26)))
-      .join("");
-
-    const numbers = Array(6)
-      .fill(null)
-      .map(() => Math.floor(Math.random() * 10))
-      .join("");
-
-    sku = `${letters}-${numbers}`;
-
-    // Verificar se já existe na empresa
-    const existingProduct = await prisma.product.findFirst({
-      where: {
-        sku,
-        empresaId,
-      },
-    });
-
-    exists = !!existingProduct;
-  }
-
-  return sku;
-}
 
 export async function GET(request: NextRequest) {
   try {

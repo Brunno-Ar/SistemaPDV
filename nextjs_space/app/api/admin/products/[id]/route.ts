@@ -2,30 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateProductData } from "@/lib/validation/product";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { generateUniqueSKU } from "@/lib/product-utils";
 
 export const dynamic = "force-dynamic";
-
-// Função para gerar SKU único
-async function generateUniqueSKU(prisma: PrismaClient): Promise<string> {
-  let sku = "";
-  let exists = true;
-  while (exists) {
-    const letters = Array(3)
-      .fill(null)
-      .map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26)))
-      .join("");
-    const numbers = Array(6)
-      .fill(null)
-      .map(() => Math.floor(Math.random() * 10))
-      .join("");
-    sku = `${letters}-${numbers}`;
-    const existing = await prisma.product.findFirst({ where: { sku } });
-    exists = !!existing;
-  }
-  return sku;
-}
 
 export async function PUT(
   request: NextRequest,
@@ -104,7 +84,7 @@ export async function PUT(
       if (existingProduct.sku && existingProduct.sku.trim() !== "") {
         finalSku = existingProduct.sku;
       } else {
-        finalSku = await generateUniqueSKU(prisma);
+        finalSku = await generateUniqueSKU(empresaId);
       }
     }
     if (finalSku !== existingProduct.sku) {
