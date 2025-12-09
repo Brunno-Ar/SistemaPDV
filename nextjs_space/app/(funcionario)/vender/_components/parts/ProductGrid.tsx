@@ -10,6 +10,8 @@ interface ProductGridProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   searchInputRef: React.RefObject<HTMLInputElement>;
+  sortOption?: string;
+  onSortChange?: (value: string) => void;
 }
 
 export function ProductGrid({
@@ -18,6 +20,8 @@ export function ProductGrid({
   searchTerm,
   onSearchChange,
   searchInputRef,
+  sortOption: _sortOption,
+  onSortChange: _onSortChange,
 }: ProductGridProps) {
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
 
