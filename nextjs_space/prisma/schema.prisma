@@ -24,6 +24,8 @@ enum StatusEmpresa {
   PENDENTE
   ATIVO
   PAUSADO
+  EM_TESTE
+  CANCELADO
 }
 
 enum StatusCaixa {
@@ -50,6 +52,11 @@ enum TipoMovimentacaoCaixa {
   SANGRIA
   SUPRIMENTO
   ABERTURA
+}
+
+enum CicloPlano {
+  MENSAL
+  ANUAL
 }
 
 // Models
@@ -120,9 +127,30 @@ model Empresa {
   id              String        @id @default(cuid())
   nome            String
   status          StatusEmpresa @default(PENDENTE)
+  plano           String        @default("PRO") @map("plano")
   vencimentoPlano DateTime?     @map("vencimento_plano")
   diaVencimento   Int           @default(10) @map("dia_vencimento")
   telefone        String?
+  cpfCnpj         String?       @unique @map("cpf_cnpj")
+  asaasCustomerId String?       @unique @map("asaas_customer_id")
+  asaasSubscriptionId String?   @unique @map("asaas_subscription_id")
+  webhookEventId  String?       @map("webhook_event_id") // Idempotência do último webhook processado
+  
+  // Assinatura e Dados Fiscais
+  ciclo           CicloPlano    @default(MENSAL)
+  enderecoLogradouro String?    @default("") @map("endereco_logradouro")
+  enderecoNumero     String?    @default("") @map("endereco_numero")
+  enderecoBairro     String?    @default("") @map("endereco_bairro")
+  enderecoCidade     String?    @default("") @map("endereco_cidade")
+  enderecoUf         String?    @default("") @map("endereco_uf")
+  enderecoCep        String?    @default("") @map("endereco_cep")
+  
+  liberacaoTemporariaAte DateTime? @map("liberacao_temporaria_ate")
+  ultimoDesbloqueio      DateTime? @map("ultimo_desbloqueio")
+  cupomAplicado          String?   @map("cupom_aplicado")
+
+  cicloPagamento  String        @default("MENSAL") @map("ciclo_pagamento") // Mantido por legado, mas use 'ciclo'
+  formaPagamento  String        @default("BOLETO_PIX") @map("forma_pagamento")
   createdAt       DateTime      @default(now()) @map("created_at")
   dataCriacao     DateTime      @default(now()) @map("data_criacao") // Redundante mas solicitado
 
@@ -133,6 +161,7 @@ model Empresa {
   avisos        Aviso[]
   categories    Category[]
   Caixa         Caixa[]
+  cancelamentos Cancelamento[]
 
   @@map("empresas")
 }
@@ -312,4 +341,26 @@ model MovimentacaoCaixa {
   @@index([caixaId])
   @@index([usuarioId])
   @@map("movimentacoes_caixa")
+}
+
+model Cancelamento {
+  id        String   @id @default(cuid())
+  empresaId String   @map("empresa_id")
+  motivo    String
+  feedback  String?  @db.Text
+  data      DateTime @default(now())
+
+  empresa   Empresa  @relation(fields: [empresaId], references: [id])
+  
+  @@map("cancelamentos")
+}
+
+model Cupom {
+  codigo              String    @id
+  descontoPorcentagem Float     @map("desconto_porcentagem")
+  validoAte           DateTime? @map("valido_ate")
+  usosAtuais          Int       @default(0) @map("usos_atuais")
+  limiteUsos          Int?      @map("limite_usos")
+
+  @@map("cupons")
 }

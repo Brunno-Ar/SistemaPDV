@@ -22,6 +22,7 @@ import {
   LogOut,
   Store,
   Settings,
+  CreditCard,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -168,6 +169,11 @@ export default function RoleBasedLayout({
         label: "Minha Conta",
         href: "/minha-conta",
         icon: <User className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Assinatura",
+        href: "/admin/assinatura",
+        icon: <CreditCard className="h-5 w-5 flex-shrink-0" />,
       },
       {
         label: "Configurações",

@@ -3,6 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+import {
+  getBrasiliaStartOfDayInUTC,
+  getBrasiliaStartOfMonthInUTC,
+  toBrasiliaDate,
+} from "@/lib/date-utils";
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -23,29 +29,9 @@ export async function GET() {
       );
     }
 
-    // Ajuste de Timezone para Brasil (UTC-3)
-    const nowOriginal = new Date();
-    // Subtrai 3 horas para data Brasil
-    const nowBrasil = new Date(nowOriginal.getTime() - 3 * 60 * 60 * 1000);
-
-    // Início do dia (Brasil)
-    const inicioDiaBrasil = new Date(nowBrasil);
-    inicioDiaBrasil.setHours(0, 0, 0, 0);
-
-    // Converte de volta para UTC (soma 3h) para query no banco
-    const startOfDay = new Date(inicioDiaBrasil.getTime() + 3 * 60 * 60 * 1000);
-
-    // Início do Mês (Brasil)
-    const inicioMesBrasil = new Date(
-      nowBrasil.getFullYear(),
-      nowBrasil.getMonth(),
-      1
-    );
-    inicioMesBrasil.setHours(0, 0, 0, 0);
-    // Converte para UTC
-    const startOfMonth = new Date(
-      inicioMesBrasil.getTime() + 3 * 60 * 60 * 1000
-    );
+    // Datas base via lib (UTC-3 Safe)
+    const startOfDay = getBrasiliaStartOfDayInUTC();
+    const startOfMonth = getBrasiliaStartOfMonthInUTC();
 
     // 1. Vendas Hoje
     const salesTodayAgg = await prisma.sale.aggregate({
@@ -113,13 +99,9 @@ export async function GET() {
     });
 
     // 5. Weekly Sales (Últimos 7 dias para o gráfico)
-    const sevenDaysAgo = new Date(inicioDiaBrasil); // Usa data BR como base
-    sevenDaysAgo.setDate(inicioDiaBrasil.getDate() - 6);
-    // Converter para UTC query: como inicioDiaBrasil é 00:00 BR, soma 3h = 03:00 UTC
-    // Mas o sevenDaysAgo original zerava horas UTC. Vamos manter consistência com 'startOfDay'
-    const sevenDaysAgoUTC = new Date(
-      sevenDaysAgo.getTime() + 3 * 60 * 60 * 1000
-    );
+    // startOfDay é 03:00 UTC de hoje.
+    const sevenDaysAgoUTC = new Date(startOfDay);
+    sevenDaysAgoUTC.setDate(sevenDaysAgoUTC.getDate() - 6);
 
     const weeklySalesRaw = await prisma.sale.findMany({
       where: {
@@ -141,12 +123,16 @@ export async function GET() {
     // Agrupar por dia
     const weeklySalesMap = new Map<string, number>();
 
+    // Data base em BRL para o loop de exibição
+    const todayBRL = toBrasiliaDate(startOfDay);
+    const sevenDaysAgoBRL = new Date(todayBRL);
+    sevenDaysAgoBRL.setDate(sevenDaysAgoBRL.getDate() - 6);
+
     // Inicializar os últimos 7 dias com 0
     for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
+      const d = new Date(sevenDaysAgoBRL);
       d.setDate(d.getDate() + i);
       const dayKey = d.toLocaleDateString("pt-BR", { weekday: "short" }); // seg., ter.
-      // Manter a ordem correta pode ser tricky com Map, vamos usar array depois
       if (!weeklySalesMap.has(dayKey)) {
         weeklySalesMap.set(dayKey, 0);
       }
@@ -154,11 +140,8 @@ export async function GET() {
 
     // Preencher com dados reais
     weeklySalesRaw.forEach((sale) => {
-      // Ajustar data da venda para BR (-3h) antes de pegar o dia da semana
-      const saleDateOriginal = new Date(sale.createdAt);
-      const saleDateBR = new Date(
-        saleDateOriginal.getTime() - 3 * 60 * 60 * 1000
-      );
+      // Ajustar data da venda para BR (-3h) via util
+      const saleDateBR = toBrasiliaDate(sale.createdAt);
 
       const dayKey = saleDateBR.toLocaleDateString("pt-BR", {
         weekday: "short",
@@ -168,10 +151,9 @@ export async function GET() {
     });
 
     // Converter para array no formato do Recharts
-    // Nota: O Map itera na ordem de inserção, mas para garantir a ordem cronológica dos dias:
     const weeklySales = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
+      const d = new Date(sevenDaysAgoBRL);
       d.setDate(d.getDate() + i);
       const dayKey = d.toLocaleDateString("pt-BR", { weekday: "short" });
       // Capitalize first letter

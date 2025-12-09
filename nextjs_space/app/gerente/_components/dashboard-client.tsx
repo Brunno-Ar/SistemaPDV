@@ -2,40 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { ShoppingCart, Calendar, Package, DollarSign } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
-import Link from "next/link";
-import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
-import { MuralAvisos } from "@/components/mural-avisos";
-import { MeuCaixa } from "@/app/(funcionario)/dashboard/_components/meu-caixa";
-import { formatCurrency } from "@/lib/utils";
 import { StockAlerts } from "@/app/admin/_components/parts/StockAlerts";
 import { ProductWithCategory } from "@/lib/types";
-
-// Interface local para caixa (compatível com MeuCaixa)
-interface CaixaData {
-  id: string;
-  status: "ABERTO" | "FECHADO";
-  saldoInicial: number;
-  dataAbertura: string;
-  movimentacoes: Array<{
-    id: string;
-    tipo: "SANGRIA" | "SUPRIMENTO" | "ABERTURA" | "VENDA";
-    valor: number;
-    descricao: string;
-    dataHora: string;
-  }>;
-}
+import {
+  SharedDashboard,
+  DashboardMetrics,
+  CaixaData,
+} from "@/components/dashboard/shared-dashboard";
 
 // Interface local para lotes (com data em string como vem da API)
 interface LoteVencimentoData {
@@ -50,18 +23,11 @@ interface LoteVencimentoData {
   };
 }
 
-interface DashboardData {
-  salesToday: number;
-  salesMonth: number;
-  totalItemsSold: number;
+interface DashboardData extends DashboardMetrics {
   lastSales: {
     id: string;
     valorTotal: number;
     createdAt: string;
-  }[];
-  weeklySales: {
-    name: string;
-    total: number;
   }[];
   avisos: {
     id: string;
@@ -72,6 +38,14 @@ interface DashboardData {
   produtosEstoqueBaixo: ProductWithCategory[];
   lotesVencimentoProximo: LoteVencimentoData[];
   topLowStock?: ProductWithCategory[];
+}
+
+interface AdminStatsResponse {
+  stats?: {
+    topLowStock: ProductWithCategory[];
+  };
+  produtosEstoqueBaixo?: ProductWithCategory[];
+  lotesVencimentoProximo?: LoteVencimentoData[];
 }
 
 export default function GerenteDashboardClient() {
@@ -87,17 +61,15 @@ export default function GerenteDashboardClient() {
       try {
         // 🚀 Otimização: Buscar TODOS os dados em paralelo
         // Isso inclui analytics, dashboard-stats, caixa e avisos
-        const [resAnalytics, resAdmin, resCaixa, resAvisos] = await Promise.all(
-          [
-            fetch("/api/employee/analytics"),
-            fetch("/api/admin/dashboard-stats"),
-            fetch("/api/caixa", { cache: "no-store" }),
-            fetch("/api/avisos"),
-          ]
-        );
+        const [resAnalytics, resAdmin, resCaixa, _] = await Promise.all([
+          fetch("/api/employee/analytics"),
+          fetch("/api/admin/dashboard-stats"),
+          fetch("/api/caixa", { cache: "no-store" }),
+          fetch("/api/avisos"),
+        ]);
 
         let analyticsData = {};
-        let adminData: any = {};
+        let adminData: AdminStatsResponse = {};
 
         if (resAnalytics.ok) {
           analyticsData = await resAnalytics.json();
@@ -120,13 +92,13 @@ export default function GerenteDashboardClient() {
         }
 
         setData({
-          salesToday: 0,
+          salesToday: 0, // Fallbacks
           salesMonth: 0,
           totalItemsSold: 0,
           lastSales: [],
           weeklySales: [],
           avisos: [],
-          ...analyticsData,
+          ...analyticsData, // Override with analytics
           produtosEstoqueBaixo: adminData.produtosEstoqueBaixo || [],
           lotesVencimentoProximo: adminData.lotesVencimentoProximo || [],
           topLowStock: adminData.stats?.topLowStock || [],
@@ -151,15 +123,8 @@ export default function GerenteDashboardClient() {
   const formattedDate =
     currentDate.charAt(0).toUpperCase() + currentDate.slice(1);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto py-10">
-        <AnimatedLoadingSkeleton />
-      </div>
-    );
-  }
-
   return (
+<<<<<<< HEAD
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-1">
@@ -325,6 +290,15 @@ export default function GerenteDashboardClient() {
         <MuralAvisos />
       </div>
 
+=======
+    <SharedDashboard
+      title={`Painel do Gerente - ${session?.user?.name?.split(" ")[0]} 👋`}
+      subtitle={formattedDate}
+      metrics={data}
+      caixaData={caixaData}
+      loading={loading}
+    >
+>>>>>>> feat-asaas-subscription
       {/* Alertas de Estoque (Novo para Gerente) */}
       <div className="mt-2">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -333,9 +307,9 @@ export default function GerenteDashboardClient() {
         <StockAlerts
           produtosEstoqueBaixo={data?.produtosEstoqueBaixo || []}
           lotesVencimentoProximo={data?.lotesVencimentoProximo || []}
-          topLowStock={(data as any)?.topLowStock}
+          topLowStock={data?.topLowStock}
         />
       </div>
-    </div>
+    </SharedDashboard>
   );
 }

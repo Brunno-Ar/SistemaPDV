@@ -88,7 +88,7 @@ export function FechamentoCaixaDialog({
   const handleAction = async (action: "conferir" | "fechar") => {
     setProcessing(true);
     try {
-      const payload: any = { action };
+      const payload: Record<string, string | number> = { action };
 
       payload.valorInformadoDinheiro = parseCurrency(valorDinheiro);
       // New field: Maquininha (Pix + Card)
@@ -138,10 +138,11 @@ export function FechamentoCaixaDialog({
 
       onSuccess();
       handleOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Erro",
-        description: error.message,
+        description:
+          error instanceof Error ? error.message : "Erro na operação",
         variant: "destructive",
       });
     } finally {

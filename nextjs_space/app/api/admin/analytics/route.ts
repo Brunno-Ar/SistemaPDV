@@ -2,21 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import {
+  getBrasiliaStartOfDayInUTC,
+  getBrasiliaStartOfWeekInUTC,
+  getBrasiliaStartOfMonthInUTC,
+  toBrasiliaDate,
+  getNowBrasilia,
+} from "@/lib/date-utils";
 
 export const dynamic = "force-dynamic";
-
-interface SaleItem {
-  quantidade: number;
-  custoUnitario: number | null; // Prisma Decimal is often mapped to number in runtime or Decimal object
-  subtotal: number | null;
-}
-
-interface Sale {
-  id: string;
-  dataHora: Date;
-  valorTotal: number | null;
-  saleItems: SaleItem[];
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,10 +33,8 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    // 🔥 MODO DEUS: Lógica Híbrida (Sessão vs. Query Param)
-    let targetEmpresaId = session.user.empresaId; // Padrão: empresa do usuário logado
+    let targetEmpresaId = session.user.empresaId;
 
-    // Se vier um ID na URL, verifica se é MASTER tentando acessar
     if (queryCompanyId) {
       if (session.user.role !== "master") {
         return NextResponse.json(
@@ -50,10 +42,9 @@ export async function GET(request: NextRequest) {
           { status: 403 }
         );
       }
-      targetEmpresaId = queryCompanyId; // Sobrescreve o ID alvo
+      targetEmpresaId = queryCompanyId;
     }
 
-    // Validar que o ID alvo existe
     if (!targetEmpresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada." },
@@ -63,45 +54,59 @@ export async function GET(request: NextRequest) {
 
     const empresaId = targetEmpresaId;
 
-    // --- SETUP DE DATAS (UTC-3 Logic) ---
-    // Helper para converter UTC para Date em UTC-3 (apenas deslocando o tempo)
-    // Para agruparmos corretamente: 22h UTC do dia 1 -> 19h UTC-3 do dia 1.
-    // 02h UTC do dia 2 -> 23h UTC-3 do dia 1.
-    const toBrasiliaDate = (date: Date) => {
-      // Subtrai 3 horas (3 * 60 * 60 * 1000 = 10800000)
-      return new Date(date.getTime() - 10800000);
-    };
+    // --- 1. DATAS GLOBAIS (Cards Topo) ---
+    // Usar aggregations para performance (Hoje, Semana, Mês)
+    const queryTodayStart = getBrasiliaStartOfDayInUTC();
+    const queryWeekStart = getBrasiliaStartOfWeekInUTC();
+    const queryMonthStart = getBrasiliaStartOfMonthInUTC();
 
-    const now = new Date();
-    // Hoje em Brasilia (para comparações de "Hoje")
-    const nowBrasilia = toBrasiliaDate(now);
-    const todayBrasiliaStr = nowBrasilia.toISOString().split("T")[0]; // YYYY-MM-DD
+    // Queries de Agregação (Totais) - Muito mais leve que puxar tudo
+    const [statsHojeSum, statsSemanaSum, statsMesSum] = await Promise.all([
+      prisma.sale.aggregate({
+        where: { empresaId, dataHora: { gte: queryTodayStart } },
+        _count: { id: true },
+        _sum: { valorTotal: true },
+      }),
+      prisma.sale.aggregate({
+        where: { empresaId, dataHora: { gte: queryWeekStart } },
+        _count: { id: true },
+        _sum: { valorTotal: true },
+      }),
+      prisma.sale.aggregate({
+        where: { empresaId, dataHora: { gte: queryMonthStart } },
+        _count: { id: true },
+        _sum: { valorTotal: true },
+      }),
+    ]);
 
+<<<<<<< HEAD
     // Definir range global para busca no banco
     // Se não tiver filtro, pegamos os últimos 30 dias + hoje para cobrir tudo
     // Se tiver filtro, respeitamos o filtro
     const dbQueryDateFilter: any = {};
+=======
+    // Queries de Custo/Items (Otimizadas com Select)
+    // Precisamos iterar items para ter custo e lucro exatos
+    const fetchProfitStats = async (dateStart: Date) => {
+      const items = await prisma.saleItem.findMany({
+        where: {
+          sale: {
+            empresaId,
+            dataHora: { gte: dateStart },
+          },
+        },
+        select: {
+          subtotal: true,
+          quantidade: true,
+          custoUnitario: true,
+        },
+      });
+>>>>>>> feat-asaas-subscription
 
-    // Datas de análise para os Cards (Hoje, Semana, Mês)
-    // Precisamos definir os marcos em UTC para query
-
-    // "Hoje" (Brasilia): De YYYY-MM-DDT03:00:00Z até YYYY-MM-(DD+1)T02:59:59Z
-    // Mas simplificando: Vamos buscar um range amplo e filtrar em memória para garantir precisão
-    // ou fazer queries específicas.
-
-    // A estratégia aprovada foi: Queries Separadas para os Cards vs Timeline
-    // Mas para não explodir o banco, vamos tentar reutilizar se possível,
-    // ou fazer queries otimizadas.
-    // O usuário disse: "Queries Separadas. Motivo: Se o usuário filtrar a timeline... cards devem mostrar mês todo"
-    // OK, então vamos fazer queries separadas para os Cards Globais e para a Timeline.
-
-    // --- 1. CÁLCULO DOS CARDS GLOBAIS (Hoje, Semana, Mês) ---
-
-    // Helper de cálculo estrito em memória
-    const calculateStats = (sales: any[]) => {
       let faturamento = 0;
       let custoTotal = 0;
 
+<<<<<<< HEAD
       for (const sale of sales) {
         // Faturamento = Soma dos subtotais (já considera descontos)
         // Se sale.valorTotal existir, usamos ele, ou somamos itens?
@@ -122,10 +127,17 @@ export async function GET(request: NextRequest) {
         faturamento += saleFaturamento;
         custoTotal += saleCusto;
       }
+=======
+      items.forEach((item) => {
+        faturamento += Number(item.subtotal || 0);
+        custoTotal += Number(item.custoUnitario || 0) * item.quantidade;
+      });
+>>>>>>> feat-asaas-subscription
 
       const lucro = faturamento - custoTotal;
       const margem = faturamento > 0 ? (lucro / faturamento) * 100 : 0;
 
+<<<<<<< HEAD
       return {
         faturamento,
         custoTotal,
@@ -182,20 +194,41 @@ export async function GET(request: NextRequest) {
         where: { empresaId, dataHora: { gte: queryMonthStart } },
         include: { saleItems: true },
       }),
+=======
+      return { faturamento, custoTotal, lucro, margem };
+    };
+
+    const [profitHoje, profitSemana, profitMes] = await Promise.all([
+      fetchProfitStats(queryTodayStart),
+      fetchProfitStats(queryWeekStart),
+      fetchProfitStats(queryMonthStart),
+>>>>>>> feat-asaas-subscription
     ]);
 
-    const statsHoje = calculateStats(salesHoje);
-    const statsSemana = calculateStats(salesSemana);
-    const statsMes = calculateStats(salesMes);
+    // Combinar Stats (Count do aggregate, valores do profit calculation para precisão)
+    // Nota: statsHojeSum._sum.valorTotal deve bater com profitHoje.faturamento. Usaremos profit por consistência interna.
+    const statsHoje = {
+      ...profitHoje,
+      transacoes: statsHojeSum._count.id,
+    };
+    const statsSemana = {
+      ...profitSemana,
+      transacoes: statsSemanaSum._count.id,
+    };
+    const statsMes = {
+      ...profitMes,
+      transacoes: statsMesSum._count.id,
+    };
 
     // --- 2. TIMELINE FINANCEIRA E FILTROS ---
-
-    // Determinar range da Timeline
     let timelineStart: Date;
     let timelineEnd: Date;
 
     if (startDate && endDate) {
+<<<<<<< HEAD
       // startDate vem como YYYY-MM-DD
+=======
+>>>>>>> feat-asaas-subscription
       const startParts = startDate.split("-").map(Number);
       const endParts = endDate.split("-").map(Number);
 
@@ -208,6 +241,7 @@ export async function GET(request: NextRequest) {
       timelineEnd = new Date(
         Date.UTC(endParts[0], endParts[1] - 1, endParts[2], 3, 0, 0)
       );
+<<<<<<< HEAD
       timelineEnd.setDate(timelineEnd.getDate() + 1); // Dia seguinte 03:00 UTC (exclusive)
       timelineEnd.setMilliseconds(-1); // Voltar 1ms
     } else {
@@ -225,9 +259,26 @@ export async function GET(request: NextRequest) {
       const dEnd = new Date(startOfTodayBRL);
       dEnd.setDate(dEnd.getDate() + 1);
       timelineEnd = getBrasiliaStartOfDayInUTC(dEnd); // Fim de hoje
+=======
+      timelineEnd.setDate(timelineEnd.getDate() + 1);
+      timelineEnd.setMilliseconds(-1);
+    } else {
+      // Padrão: Últimos 30 dias (Range fechado D-30 a D-0)
+      const nowBRL = getNowBrasilia();
+      const endBRL = new Date(nowBRL);
+
+      const startBRL = new Date(nowBRL);
+      startBRL.setDate(startBRL.getDate() - 29);
+
+      timelineStart = getBrasiliaStartOfDayInUTC(startBRL);
+
+      const endD = new Date(endBRL);
+      endD.setDate(endD.getDate() + 1);
+      timelineEnd = getBrasiliaStartOfDayInUTC(endD);
+>>>>>>> feat-asaas-subscription
     }
 
-    // Buscar Vendas da Timeline
+    // Buscar Vendas da Timeline (Otimizado: Select apenas campos necessários)
     const salesTimeline = await prisma.sale.findMany({
       where: {
         empresaId,
@@ -236,7 +287,23 @@ export async function GET(request: NextRequest) {
           lte: timelineEnd,
         },
       },
+<<<<<<< HEAD
       include: { saleItems: true },
+=======
+      select: {
+        dataHora: true,
+        valorTotal: true,
+        metodoPagamento: true,
+        saleItems: {
+          select: {
+            subtotal: true,
+            custoUnitario: true,
+            quantidade: true,
+            productId: true,
+          },
+        },
+      },
+>>>>>>> feat-asaas-subscription
       orderBy: { dataHora: "asc" },
     });
 
@@ -246,17 +313,13 @@ export async function GET(request: NextRequest) {
       { faturamento: number; custo: number; lucro: number }
     >();
 
-    // Inicializar o mapa com todos os dias do intervalo (Zero Fill)
+    // Inicializar o mapa (Zero Fill)
     const currentDate = new Date(timelineStart);
-    // Ajuste para loop: vamos iterar em dias BRL
-    // timelineStart já é 03:00 UTC.
-    // Vamos usar um cursor que avança 24h
     const endDateLoop = new Date(timelineEnd);
-
-    // Pequena margem de segurança para o loop não perder o último dia se houver fração de segundos
-    endDateLoop.setMinutes(endDateLoop.getMinutes() + 1);
+    endDateLoop.setMinutes(endDateLoop.getMinutes() + 1); // Margem
 
     while (currentDate < endDateLoop) {
+<<<<<<< HEAD
       // Formatar DD/MM
       // Lembre-se: currentDate está em UTC (03:00), que equivale a 00:00 BRL
       // Então getUTCDate() aqui reflete o dia errado se não ajustarmos?
@@ -275,6 +338,16 @@ export async function GET(request: NextRequest) {
         groupedData.set(key, { faturamento: 0, custo: 0, lucro: 0 });
       }
 
+=======
+      const dateBRL = toBrasiliaDate(currentDate);
+      const day = String(dateBRL.getUTCDate()).padStart(2, "0");
+      const month = String(dateBRL.getUTCMonth() + 1).padStart(2, "0");
+      const key = `${day}/${month}`;
+
+      if (!groupedData.has(key)) {
+        groupedData.set(key, { faturamento: 0, custo: 0, lucro: 0 });
+      }
+>>>>>>> feat-asaas-subscription
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
@@ -285,14 +358,20 @@ export async function GET(request: NextRequest) {
       const month = String(dateBRL.getUTCMonth() + 1).padStart(2, "0");
       const key = `${day}/${month}`;
 
+<<<<<<< HEAD
       // Se a data estiver fora do range inicializado (pode acontecer se o loop tiver gap), inicializa
+=======
+>>>>>>> feat-asaas-subscription
       if (!groupedData.has(key)) {
         groupedData.set(key, { faturamento: 0, custo: 0, lucro: 0 });
       }
 
       const stats = groupedData.get(key)!;
 
+<<<<<<< HEAD
       // Calcular valores desta venda
+=======
+>>>>>>> feat-asaas-subscription
       let saleFaturamento = 0;
       let saleCusto = 0;
 
@@ -306,13 +385,17 @@ export async function GET(request: NextRequest) {
       stats.lucro += saleFaturamento - saleCusto;
     });
 
+<<<<<<< HEAD
     // Converter Map para Array
+=======
+>>>>>>> feat-asaas-subscription
     const financialTimeline = Array.from(groupedData.entries()).map(
       ([date, values]) => ({
         date,
         ...values,
       })
     );
+<<<<<<< HEAD
 
     // --- CÁLCULO DE ESTATÍSTICAS DO PERÍODO FILTRADO ---
     // Quando o usuário aplica um filtro, calcular totais do período selecionado
@@ -350,14 +433,30 @@ export async function GET(request: NextRequest) {
 
     // Buscar nomes de produtos (precisamos dos nomes, que não estão no SaleItem, só productId)
     // SaleItem tem productId.
+=======
 
+    // --- 3. DADOS SECUNDÁRIOS (Produtos e Métodos) ---
+    // Agregação baseada nos dados timeline (já carregados e otimizados)
+>>>>>>> feat-asaas-subscription
+
+    // Top Produtos
+    const produtosMap = new Map<
+      string,
+      { nome: string; qtd: number; total: number }
+    >();
     const productIds = new Set<string>();
+<<<<<<< HEAD
     sourceSalesForDetails.forEach((sale) => {
+=======
+
+    salesTimeline.forEach((sale) => {
+>>>>>>> feat-asaas-subscription
       sale.saleItems.forEach((item) => {
         productIds.add(item.productId);
       });
     });
 
+    // Bulk fetch nomes de produtos
     const products = await prisma.product.findMany({
       where: { id: { in: Array.from(productIds) }, empresaId },
       select: { id: true, nome: true },
@@ -365,7 +464,11 @@ export async function GET(request: NextRequest) {
 
     const productNameMap = new Map(products.map((p) => [p.id, p.nome]));
 
+<<<<<<< HEAD
     sourceSalesForDetails.forEach((sale) => {
+=======
+    salesTimeline.forEach((sale) => {
+>>>>>>> feat-asaas-subscription
       sale.saleItems.forEach((item) => {
         const current = produtosMap.get(item.productId) || {
           nome: productNameMap.get(item.productId) || "Desconhecido",
@@ -387,6 +490,7 @@ export async function GET(request: NextRequest) {
         valorTotal: p.total,
       }));
 
+<<<<<<< HEAD
     // Vendas por Método
     const metodoMap = new Map<string, { count: number; total: number }>();
     sourceSalesForDetails.forEach((sale) => {
@@ -396,6 +500,14 @@ export async function GET(request: NextRequest) {
       // Para valor total por método, usamos Sale.valorTotal (que deve bater com soma items)
       // Mas para consistência estrita, usamos a soma dos items que já calculamos?
       // Sale.valorTotal é o que foi pago.
+=======
+    // Métodos de Pagamento
+    const metodoMap = new Map<string, { count: number; total: number }>();
+    salesTimeline.forEach((sale) => {
+      const metodo = sale.metodoPagamento;
+      const current = metodoMap.get(metodo) || { count: 0, total: 0 };
+      current.count += 1;
+>>>>>>> feat-asaas-subscription
       current.total += Number(sale.valorTotal || 0);
       metodoMap.set(metodo, current);
     });
@@ -430,6 +542,7 @@ export async function GET(request: NextRequest) {
       margemMes: statsMes.margem,
       transacoesMes: statsMes.transacoes,
 
+<<<<<<< HEAD
       // Dados do período filtrado (novo) - só quando há filtro
       totalVendasPeriodo: statsPeriodo?.faturamento ?? null,
       custoTotalPeriodo: statsPeriodo?.custoTotal ?? null,
@@ -439,9 +552,12 @@ export async function GET(request: NextRequest) {
       filtroAtivo: !!(startDate && endDate),
 
       // Timeline Financeira (NOVO)
+=======
+      // Timeline Financeira
+>>>>>>> feat-asaas-subscription
       financialTimeline,
 
-      // Outros dados (Baseados na Timeline/Filtro)
+      // Outros dados
       produtosMaisVendidos: produtosMaisVendidosFormatted,
       vendasPorMetodo: vendasPorMetodoFormatted,
     });

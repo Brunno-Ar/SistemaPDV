@@ -45,30 +45,39 @@ export const authOptions: AuthOptions = {
 
         // ✅ BLOQUEIOS SaaS (apenas para não-masters)
         if (user.role !== "master" && user.empresa) {
-          const empresa = user.empresa;
+          const empresa: any = user.empresa;
+          const status = empresa.status as string;
           const now = new Date();
 
           // 1. Empresa pendente de aprovação
-          if (empresa.status === "PENDENTE") {
+          if (status === "PENDENTE") {
             throw new Error(
               "Sua empresa está aguardando aprovação do administrador. Tente novamente mais tarde."
             );
           }
 
           // 2. Empresa pausada/suspensa
-          if (empresa.status === "PAUSADO") {
-            throw new Error(
-              "Acesso suspenso. Pagamento não identificado. Entre em contato com o suporte."
-            );
+          if (status === "PAUSADO") {
+            const liberacaoAte = empresa.liberacaoTemporariaAte;
+            // Se tiver liberação temporária válida, permite o acesso
+            if (liberacaoAte && new Date(liberacaoAte) > now) {
+              // Acesso liberado temporariamente
+            } else {
+              throw new Error("Pagamento Pendente. Regularize para acessar.");
+            }
           }
 
-          // 3. Mensalidade vencida (apenas para empresas ativas)
+          // 3. Mensalidade vencida (apenas para empresas ativas ou em teste)
           if (
-            empresa.status === "ATIVO" &&
+            (status === "ATIVO" || status === "EM_TESTE") &&
             empresa.vencimentoPlano
           ) {
             const toleranceDate = new Date(empresa.vencimentoPlano);
-            toleranceDate.setDate(toleranceDate.getDate() + 10);
+            // Tolerância de 10 dias apenas para ATIVO. EM_TESTE bloqueia imediatamente?
+            // User disse: "O bloqueio só acontece se ele não pagar após 14 dias" (referindo-se ao trial)
+            // Vou dar 1 dia de tolerância para o trial para evitar bloqueio no minuto exato
+            const toleranceDays = status === "EM_TESTE" ? 1 : 10;
+            toleranceDate.setDate(toleranceDate.getDate() + toleranceDays);
 
             if (now > toleranceDate) {
               throw new Error(
@@ -86,6 +95,9 @@ export const authOptions: AuthOptions = {
           empresaId: user.empresaId,
           empresaNome: user.empresa?.nome,
           vencimentoPlano: user.empresa?.vencimentoPlano?.toISOString(),
+          liberacaoTemporariaAte: (
+            user.empresa as any
+          )?.liberacaoTemporariaAte?.toISOString(),
           tourCompleted: user.tourCompleted,
         };
       },
@@ -107,6 +119,7 @@ export const authOptions: AuthOptions = {
         token.empresaId = user.empresaId;
         token.empresaNome = user.empresaNome;
         token.vencimentoPlano = user.vencimentoPlano;
+        token.liberacaoTemporariaAte = user.liberacaoTemporariaAte;
         token.tourCompleted = user.tourCompleted;
         token.lastActivity = Date.now();
       }
@@ -128,6 +141,9 @@ export const authOptions: AuthOptions = {
         session.user.empresaId = token.empresaId as string;
         session.user.empresaNome = token.empresaNome as string;
         session.user.vencimentoPlano = token.vencimentoPlano as string;
+        session.user.liberacaoTemporariaAte = token.liberacaoTemporariaAte as
+          | string
+          | undefined;
         session.user.tourCompleted = token.tourCompleted as boolean;
         session.lastActivity = token.lastActivity as number;
       }

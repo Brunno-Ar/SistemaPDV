@@ -1,0 +1,99 @@
+Found 84 duplicates.
+| Index | File 1 | Lines | File 2 | Lines | Size (lines) |
+|---|---|---|---|---|---|
+| 1 | components\ui\context-menu.tsx | 67-147 | components\ui\menubar.tsx | 102-182 | 81 |
+| 2 | app\equipe\_components\equipe-client.tsx | 224-279 | app\master\usuarios\_components\usuarios-client.tsx | 241-388 | 56 |
+| 3 | app\api\admin\analytics\route.ts | 18-64 | app\api\admin\products\route.ts | 38-51 | 47 |
+| 4 | app\equipe\_components\equipe-client.tsx | 178-222 | app\master\usuarios\_components\usuarios-client.tsx | 205-253 | 45 |
+| 5 | app\login\page.tsx | 117-159 | app\signup\page.tsx | 429-470 | 43 |
+| 6 | app\api\admin\products\route.ts | 160-196 | app\api\admin\products\[id]\route.ts | 66-98 | 37 |
+| 7 | app\api\admin\lotes\route.ts | 469-500 | app\api\admin\lotes\route.ts | 215-246 | 32 |
+| 8 | components\layout\role-based-layout.tsx | 130-157 | components\layout\role-based-layout.tsx | 89-116 | 28 |
+| 9 | app\api\admin\products\route.ts | 130-154 | app\api\admin\products\[id]\route.ts | 42-63 | 25 |
+| 10 | app\api\admin\lotes\route.ts | 128-150 | app\api\admin\lotes\route.ts | 12-233 | 23 |
+| 11 | components\onboarding-tour.tsx | 83-105 | components\onboarding-tour.tsx | 45-67 | 23 |
+| 12 | components\nav-bar.tsx | 111-133 | components\nav-bar.tsx | 67-89 | 23 |
+| 13 | app\api\admin\lotes\route.ts | 397-418 | app\api\admin\lotes\route.ts | 12-56 | 22 |
+| 14 | app\api\admin\lotes\route.ts | 319-339 | app\api\admin\lotes\route.ts | 12-32 | 21 |
+| 15 | app\api\admin\equipe\route.ts | 137-157 | app\api\master\usuarios\route.ts | 63-83 | 21 |
+| 16 | app\api\admin\equipe\route.ts | 24-43 | app\api\admin\sales\route.ts | 25-44 | 20 |
+| 17 | app\api\admin\dashboard-stats\route.ts | 1-19 | app\api\master\analytics\route.ts | 1-42 | 19 |
+| 18 | app\signup\page.tsx | 252-270 | components\auth\auth-layout.tsx | 68-84 | 19 |
+| 19 | app\api\admin\equipe\route.ts | 87-104 | app\api\admin\estoque-baixo\route.ts | 15-32 | 18 |
+| 20 | app\api\admin\categories\route.ts | 30-47 | app\api\admin\products\route.ts | 114-42 | 18 |
+| 21 | app\gerente\_components\dashboard-client.tsx | 106-123 | app\(funcionario)\dashboard\_components\dashboard-client.tsx | 60-77 | 18 |
+| 22 | app\equipe\_components\equipe-client.tsx | 245-262 | app\master\usuarios\_components\usuarios-client.tsx | 257-274 | 18 |
+| 23 | app\privacidade\page.tsx | 18-35 | app\termos\page.tsx | 10-27 | 18 |
+| 24 | app\master\empresas\_components\parts\CreateCompanyDialog.tsx | 1-17 | app\master\empresas\_components\parts\UpdatePlanDialog.tsx | 1-17 | 17 |
+| 25 | app\api\admin\assinatura\cancel\route.ts | 7-23 | app\api\admin\assinatura\unlock\route.ts | 6-22 | 17 |
+| 26 | app\api\admin\estoque-baixo\route.ts | 16-32 | app\api\admin\recalculate-stock\route.ts | 17-32 | 17 |
+| 27 | app\api\admin\categories\route.ts | 47-63 | app\api\admin\products\[id]\route.ts | 42-56 | 17 |
+| 28 | app\lotes\_components\lotes-client.tsx | 780-796 | app\movimentacoes\_components\movimentacoes-client.tsx | 753-769 | 17 |
+| 29 | app\api\products\route.ts | 23-39 | app\api\products\search\route.ts | 22-38 | 17 |
+| 30 | app\master\empresas\_components\parts\CompaniesTable.tsx | 187-202 | app\master\empresas\_components\parts\CompaniesTable.tsx | 158-173 | 16 |
+| 31 | app\master\empresas\_components\empresas-client.tsx | 117-132 | app\master\empresas\_components\empresas-client.tsx | 42-57 | 16 |
+| 32 | app\api\admin\lotes\route.ts | 16-31 | app\api\admin\movimentacoes\route.ts | 217-232 | 16 |
+| 33 | app\api\admin\equipe\route.ts | 90-105 | app\api\admin\products\[id]\route.ts | 43-56 | 16 |
+| 34 | app\api\admin\equipe\route.ts | 193-208 | app\api\admin\equipe\route.ts | 9-24 | 16 |
+| 35 | app\lotes\_components\lotes-client.tsx | 666-681 | app\movimentacoes\_components\movimentacoes-client.tsx | 649-664 | 16 |
+| 36 | app\admin\page.tsx | 7-22 | app\relatorios\caixas\page.tsx | 9-24 | 16 |
+| 37 | app\api\admin\equipe\[id]\route.ts | 94-108 | app\api\admin\products\[id]\route.ts | 29-23 | 15 |
+| 38 | app\api\admin\products\route.ts | 41-55 | app\api\admin\sales\route.ts | 8-22 | 15 |
+| 39 | app\api\admin\movimentacoes\route.ts | 219-233 | app\api\admin\products\[id]\route.ts | 43-56 | 15 |
+| 40 | app\api\admin\equipe\route.ts | 81-95 | app\api\admin\equipe\route.ts | 9-23 | 15 |
+| 41 | app\(funcionario)\dashboard\_components\fechamento-caixa-dialog.tsx | 110-124 | app\(funcionario)\dashboard\_components\meu-caixa.tsx | 108-122 | 15 |
+| 42 | app\movimentacoes\_components\movimentacoes-client.tsx | 570-584 | app\movimentacoes\_components\movimentacoes-client.tsx | 475-489 | 15 |
+| 43 | app\estoque\_components\product-table.tsx | 293-307 | app\estoque\_components\product-table.tsx | 115-129 | 15 |
+| 44 | app\(landing)\_components\FooterCTA.tsx | 16-30 | app\(landing)\_components\Hero.tsx | 13-39 | 15 |
+| 45 | app\api\admin\products\[id]\route.ts | 236-249 | app\api\admin\products\[id]\route.ts | 29-42 | 14 |
+| 46 | app\api\master\empresas\route.ts | 87-100 | app\api\master\usuarios\route.ts | 46-58 | 14 |
+| 47 | app\api\admin\vencimento-proximo\route.ts | 1-14 | app\api\master\analytics\route.ts | 1-12 | 14 |
+| 48 | app\api\admin\products\route.ts | 15-27 | app\api\admin\products\[id]\route.ts | 14-23 | 13 |
+| 49 | app\equipe\_components\equipe-client.tsx | 203-215 | app\master\usuarios\_components\usuarios-client.tsx | 230-243 | 13 |
+| 50 | app\api\products\route.ts | 10-22 | app\api\products\search\route.ts | 10-22 | 13 |
+| 51 | app\api\master\usuarios\route.ts | 119-130 | app\api\master\usuarios\route.ts | 46-57 | 12 |
+| 52 | app\api\master\empresas\route.ts | 9-20 | app\api\master\usuarios\route.ts | 8-19 | 12 |
+| 53 | app\api\master\empresas\route.ts | 193-204 | app\api\master\usuarios\route.ts | 119-57 | 12 |
+| 54 | app\api\employee\analytics\route.ts | 1-12 | app\api\master\analytics\route.ts | 1-12 | 12 |
+| 55 | app\api\admin\movimentacoes\route.ts | 1-12 | app\api\admin\sales\route.ts | 1-13 | 12 |
+| 56 | app\api\admin\movimentacoes\route.ts | 208-219 | app\api\admin\products\route.ts | 120-42 | 12 |
+| 57 | app\equipe\_components\equipe-client.tsx | 192-203 | app\master\usuarios\_components\usuarios-client.tsx | 219-230 | 12 |
+| 58 | scripts\cleanup.ts | 39-50 | scripts\seed.ts | 238-249 | 12 |
+| 59 | hooks\use-api.ts | 149-160 | hooks\use-api.ts | 121-130 | 12 |
+| 60 | app\api\admin\products\[id]\route.ts | 261-271 | app\api\admin\products\[id]\route.ts | 99-108 | 11 |
+| 61 | app\api\admin\assinatura\info\route.ts | 7-17 | app\api\admin\users\[id]\reset-password\route.ts | 11-20 | 11 |
+| 62 | app\api\admin\products\route.ts | 120-130 | app\api\admin\sales\route.ts | 8-42 | 11 |
+| 63 | app\master\page.tsx | 116-126 | app\master\page.tsx | 80-90 | 11 |
+| 64 | app\login\page.tsx | 118-128 | app\signup\page.tsx | 438-448 | 11 |
+| 65 | app\api\admin\equipe\[id]\route.ts | 9-18 | app\api\admin\products\[id]\route.ts | 29-37 | 10 |
+| 66 | app\master\empresas\_components\empresas-client.tsx | 140-149 | app\master\usuarios\_components\usuarios-client.tsx | 101-110 | 10 |
+| 67 | app\api\admin\sales\route.ts | 8-17 | app\api\admin\products\[id]\route.ts | 32-42 | 10 |
+| 68 | app\estoque\_components\product-form-dialog.tsx | 125-134 | app\lotes\_components\lotes-client.tsx | 114-122 | 10 |
+| 69 | app\equipe\_components\equipe-client.tsx | 111-120 | app\master\usuarios\_components\usuarios-client.tsx | 101-110 | 10 |
+| 70 | app\api\products\route.ts | 39-48 | app\api\sales\route.ts | 71-81 | 10 |
+| 71 | app\admin\_components\stock-alerts.tsx | 25-34 | app\admin\_components\parts\StockAlerts.tsx | 56-65 | 10 |
+| 72 | app\api\admin\vencimento-proximo\route.ts | 8-16 | app\api\admin\products\[id]\route.ts | 32-42 | 9 |
+| 73 | app\api\avisos\route.ts | 78-86 | app\api\caixa\route.ts | 163-171 | 9 |
+| 74 | components\auth\auth-layout.tsx | 45-53 | components\auth\auth-layout.tsx | 22-31 | 9 |
+| 75 | app\forgot-password\page.tsx | 112-120 | app\login\page.tsx | 117-125 | 9 |
+| 76 | hooks\use-api.ts | 172-180 | hooks\use-api.ts | 149-128 | 9 |
+| 77 | app\master\empresas\_components\parts\CreateCompanyDialog.tsx | 293-300 | app\master\empresas\_components\parts\UpdatePlanDialog.tsx | 85-92 | 8 |
+| 78 | app\equipe\_components\equipe-client.tsx | 52-59 | app\master\usuarios\_components\usuarios-client.tsx | 54-61 | 8 |
+| 79 | components\ui\sidebar.tsx | 175-182 | components\ui\sidebar.tsx | 146-152 | 8 |
+| 80 | app\api\admin\lotes\route.ts | 12-18 | app\api\admin\recalculate-stock\route.ts | 13-19 | 7 |
+| 81 | app\master\_components\recent-companies-table.tsx | 82-88 | app\master\empresas\_components\empresas-client.tsx | 350-354 | 7 |
+| 82 | app\api\admin\analytics\route.ts | 272-277 | app\api\admin\analytics\route.ts | 258-263 | 6 |
+| 83 | app\gerente\_components\dashboard-client.tsx | 51-56 | app\(funcionario)\dashboard\_components\dashboard-client.tsx | 26-32 | 6 |
+| 84 | app\signup\page.tsx | 65-70 | app\master\empresas\_components\parts\CreateCompanyDialog.tsx | 49-54 | 6 |
+
+Top 5 Candidates for Refactoring:
+1. components\ui\context-menu.tsx & components\ui\menubar.tsx (81 lines)
+   Suggestion: Extract to src/shared/sharedLogic1.ts
+2. app\equipe\_components\equipe-client.tsx & app\master\usuarios\_components\usuarios-client.tsx (56 lines)
+   Suggestion: Extract to src/shared/sharedLogic2.ts
+3. app\api\admin\analytics\route.ts & app\api\admin\products\route.ts (47 lines)
+   Suggestion: Extract to src/shared/sharedLogic3.ts
+4. app\equipe\_components\equipe-client.tsx & app\master\usuarios\_components\usuarios-client.tsx (45 lines)
+   Suggestion: Extract to src/shared/sharedLogic4.ts
+5. app\login\page.tsx & app\signup\page.tsx (43 lines)
+   Suggestion: Extract to src/shared/sharedLogic5.ts

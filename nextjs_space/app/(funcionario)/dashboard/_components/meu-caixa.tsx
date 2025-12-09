@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,32 +27,9 @@ import {
 import { useRouter } from "next/navigation";
 
 import { useSession } from "next-auth/react";
-
-interface Movimentacao {
-  id: string;
-  tipo: "SANGRIA" | "SUPRIMENTO" | "ABERTURA" | "VENDA";
-  valor: number;
-  descricao: string;
-  dataHora: string;
-}
-
-interface CaixaStatus {
-  id: string;
-  status: "ABERTO" | "FECHADO";
-  saldoInicial: number;
-  dataAbertura: string;
-  movimentacoes: Movimentacao[];
-}
-
 import { FechamentoCaixaDialog } from "./fechamento-caixa-dialog";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { TransactionDialog } from "./transaction-dialog";
+import { CaixaData } from "@/components/dashboard/shared-dashboard";
 
 interface CaixaPayload {
   action: string;
@@ -63,13 +40,13 @@ interface CaixaPayload {
 }
 
 interface MeuCaixaProps {
-  initialData?: CaixaStatus | null;
+  initialData?: CaixaData | null;
 }
 
 export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
   const { data: session } = useSession();
-  const [caixa, setCaixa] = useState<CaixaStatus | null>(initialData ?? null);
-  const [loading, setLoading] = useState(initialData === undefined); // Só carrega se não tiver dados iniciais
+  const [caixa, setCaixa] = useState<CaixaData | null>(initialData ?? null);
+  const [loading, setLoading] = useState(initialData === undefined);
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
 
   // Inputs Gerais
@@ -80,7 +57,7 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
 
   const router = useRouter();
 
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/caixa", { cache: "no-store" });
       if (res.ok) {
@@ -92,14 +69,16 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    // 🚀 Otimização: Só busca se não tiver dados iniciais
     if (initialData === undefined) {
       fetchStatus();
+    } else {
+      setCaixa(initialData);
+      setLoading(false);
     }
-  }, [initialData]);
+  }, [initialData, fetchStatus]);
 
   const handleAction = async (action: string) => {
     setProcessing(true);
@@ -118,7 +97,6 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
         }
 
         const numericValue = parseCurrency(inputValue);
-        // Saldo inicial pode ser 0
         payload.saldoInicial = numericValue;
       } else if (action === "sangria" || action === "suprimento") {
         const numericValue = parseCurrency(inputValue);
@@ -179,9 +157,19 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
     }
   };
 
+  const handleDialogOpenChange = (isOpen: boolean, type: string) => {
+    if (!isOpen) {
+      setInputValue("");
+      setDescription("");
+      setPaymentMethod("dinheiro");
+      setDialogOpen(null);
+    } else {
+      setDialogOpen(type);
+    }
+  };
+
   if (loading) return null;
 
-  // Renderização: Caixa Fechado
   if (!caixa) {
     return (
       <Card className="border-l-4 border-l-red-500 bg-red-50 dark:bg-red-900/10 mb-6">
@@ -202,13 +190,7 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
 
           <Dialog
             open={dialogOpen === "abrir"}
-            onOpenChange={(o) => {
-              if (!o) {
-                setInputValue("");
-                setDescription("");
-              }
-              setDialogOpen(o ? "abrir" : null);
-            }}
+            onOpenChange={(o) => handleDialogOpenChange(o, "abrir")}
           >
             <DialogTrigger asChild>
               <Button
@@ -253,7 +235,6 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
     );
   }
 
-  // Renderização: Caixa Aberto
   return (
     <Card className="border-l-4 border-l-green-500 bg-green-50 dark:bg-green-900/10 mb-6">
       <CardContent className="pt-6">
@@ -310,14 +291,7 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
         <div className="flex flex-col sm:flex-row gap-2 mb-6">
           <Dialog
             open={dialogOpen === "suprimento"}
-            onOpenChange={(o) => {
-              if (!o) {
-                setInputValue("");
-                setDescription("");
-                setPaymentMethod("dinheiro");
-              }
-              setDialogOpen(o ? "suprimento" : null);
-            }}
+            onOpenChange={(o) => handleDialogOpenChange(o, "suprimento")}
           >
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -325,75 +299,28 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
                 Suprimento
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Realizar Suprimento</DialogTitle>
-                <DialogDescription>
-                  Adicione dinheiro ao caixa.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="valorSuprimento">Valor (R$)</Label>
-                  <Input
-                    id="valorSuprimento"
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="0,00"
-                    inputMode="decimal"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="metodoPagamentoSuprimento">
-                    Forma de Pagamento
-                  </Label>
-                  <Select
-                    value={paymentMethod}
-                    onValueChange={setPaymentMethod}
-                  >
-                    <SelectTrigger id="metodoPagamentoSuprimento">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="pix">Pix</SelectItem>
-                      <SelectItem value="debito">Débito</SelectItem>
-                      <SelectItem value="credito">Crédito</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="descricaoSuprimento">Descrição</Label>
-                  <Input
-                    id="descricaoSuprimento"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Ex: Troco inicial, reforço de caixa"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={() => handleAction("suprimento")}
-                  disabled={processing || !inputValue}
-                >
-                  {processing ? "Adicionando..." : "Confirmar Suprimento"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
           </Dialog>
+
+          <TransactionDialog
+            open={dialogOpen === "suprimento"}
+            onOpenChange={(o) => handleDialogOpenChange(o, "suprimento")}
+            title="Realizar Suprimento"
+            description="Adicione dinheiro ao caixa."
+            confirmLabel="Confirmar Suprimento"
+            processingLabel="Adicionando..."
+            onConfirm={() => handleAction("suprimento")}
+            processing={processing}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            descriptionValue={description}
+            setDescriptionValue={setDescription}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+          />
 
           <Dialog
             open={dialogOpen === "sangria"}
-            onOpenChange={(o) => {
-              if (!o) {
-                setInputValue("");
-                setDescription("");
-                setPaymentMethod("dinheiro");
-              }
-              setDialogOpen(o ? "sangria" : null);
-            }}
+            onOpenChange={(o) => handleDialogOpenChange(o, "sangria")}
           >
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -401,62 +328,24 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
                 Sangria
               </Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Realizar Sangria</DialogTitle>
-                <DialogDescription>Retire dinheiro do caixa.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="valorSangria">Valor (R$)</Label>
-                  <Input
-                    id="valorSangria"
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="0,00"
-                    inputMode="decimal"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="metodoPagamentoSangria">
-                    Forma de Pagamento
-                  </Label>
-                  <Select
-                    value={paymentMethod}
-                    onValueChange={setPaymentMethod}
-                  >
-                    <SelectTrigger id="metodoPagamentoSangria">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="pix">Pix</SelectItem>
-                      <SelectItem value="debito">Débito</SelectItem>
-                      <SelectItem value="credito">Crédito</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="descricaoSangria">Descrição</Label>
-                  <Input
-                    id="descricaoSangria"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Ex: Pagamento de despesa, retirada para banco"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={() => handleAction("sangria")}
-                  disabled={processing || !inputValue}
-                >
-                  {processing ? "Retirando..." : "Confirmar Sangria"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
           </Dialog>
+
+          <TransactionDialog
+            open={dialogOpen === "sangria"}
+            onOpenChange={(o) => handleDialogOpenChange(o, "sangria")}
+            title="Realizar Sangria"
+            description="Retire dinheiro do caixa."
+            confirmLabel="Confirmar Sangria"
+            processingLabel="Retirando..."
+            onConfirm={() => handleAction("sangria")}
+            processing={processing}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            descriptionValue={description}
+            setDescriptionValue={setDescription}
+            paymentMethod={paymentMethod}
+            setPaymentMethod={setPaymentMethod}
+          />
 
           <Button
             variant="destructive"

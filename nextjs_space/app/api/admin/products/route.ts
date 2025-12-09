@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateProductData } from "@/lib/validation/product";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -44,7 +45,9 @@ export async function GET(request: NextRequest) {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores podem acessar." },
@@ -123,7 +126,9 @@ export async function POST(request: NextRequest) {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         {
@@ -156,41 +161,10 @@ export async function POST(request: NextRequest) {
       categoryId,
       dataCompraInicial,
     } = body;
-
-    if (
-      !nome ||
-      precoVenda === undefined ||
-      precoCompra === undefined ||
-      estoqueAtual === undefined
-    ) {
-      return NextResponse.json(
-        { error: "Todos os campos obrigatórios devem ser preenchidos" },
-        { status: 400 }
-      );
-    }
-
-    if (precoVenda <= 0 || precoCompra < 0) {
-      return NextResponse.json(
-        {
-          error:
-            "Preços devem ser válidos (preço de venda > 0, preço de compra >= 0)",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (estoqueAtual < 0) {
-      return NextResponse.json(
-        { error: "Estoque não pode ser negativo" },
-        { status: 400 }
-      );
-    }
-
-    if (estoqueMinimo !== undefined && estoqueMinimo < 0) {
-      return NextResponse.json(
-        { error: "Estoque mínimo não pode ser negativo" },
-        { status: 400 }
-      );
+    // Validation
+    const validation = validateProductData(body);
+    if (!validation.isValid) {
+      return validation.response;
     }
 
     // 🔥 VALIDAÇÃO: Verificar se já existe produto com mesmo nome na empresa
