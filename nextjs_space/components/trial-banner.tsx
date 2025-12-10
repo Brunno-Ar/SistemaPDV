@@ -40,6 +40,10 @@ export function TrialBanner() {
     pathname?.startsWith("/signup") ||
     pathname?.startsWith("/bloqueado");
 
+  // Extrair valores primitivos da sessão para evitar re-renders infinitos
+  const userRole = session?.user?.role;
+  const empresaId = session?.user?.empresaId;
+
   useEffect(() => {
     // Não mostrar em páginas públicas
     if (isPublicPath) {
@@ -49,24 +53,30 @@ export function TrialBanner() {
 
     // Não mostrar para master ou se não há sessão
     if (sessionStatus === "loading") return;
-    if (sessionStatus === "unauthenticated" || !session?.user) {
+    if (sessionStatus === "unauthenticated" || !empresaId) {
       setLoading(false);
       return;
     }
-    if (session.user.role === "master") {
+    if (userRole === "master") {
+      setLoading(false);
+      return;
+    }
+
+    // Se já temos dados carregados, não buscar de novo
+    if (companyInfo !== null) {
       setLoading(false);
       return;
     }
 
     // Verificar se foi dismissado nesta sessão
-    const dismissedKey = `trial_banner_dismissed_${session.user.empresaId}`;
+    const dismissedKey = `trial_banner_dismissed_${empresaId}`;
     if (sessionStorage.getItem(dismissedKey)) {
       setDismissed(true);
       setLoading(false);
       return;
     }
 
-    // Buscar info da empresa
+    // Buscar info da empresa (apenas uma vez)
     fetch("/api/company/status")
       .then((res) => res.json())
       .then((data) => {
@@ -76,7 +86,7 @@ export function TrialBanner() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [session, sessionStatus, isPublicPath]);
+  }, [sessionStatus, isPublicPath, userRole, empresaId, companyInfo]);
 
   const handleDismiss = () => {
     if (session?.user?.empresaId) {
