@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
 import {
   Dialog,
@@ -18,22 +18,29 @@ const WARNING_TIME = 2 * 60 * 1000; // 2 minutos antes de deslogar
 const CHECK_INTERVAL = 60 * 1000; // Verificar a cada 1 minuto
 
 export function InactivityMonitor() {
-  const { data: session, update } = useSession() || {};
+  const { data: session } = useSession() || {};
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
-  // Atualizar última atividade
+  // Ref para evitar re-renders desnecessários e implementar debounce
+  const lastActivityRef = useRef(Date.now());
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Atualizar última atividade (com debounce de 5 segundos)
   const updateActivity = useCallback(() => {
     const now = Date.now();
-    setLastActivity(now);
-    setShowWarning(false);
+    lastActivityRef.current = now;
 
-    // Atualizar sessão no servidor
-    if (session) {
-      update();
-    }
-  }, [session, update]);
+    // Debounce: só atualiza o state a cada 5 segundos para evitar re-renders
+    if (debounceTimerRef.current) return;
+
+    debounceTimerRef.current = setTimeout(() => {
+      setLastActivity(lastActivityRef.current);
+      setShowWarning(false);
+      debounceTimerRef.current = null;
+    }, 5000);
+  }, []);
 
   // Eventos que indicam atividade do usuário
   useEffect(() => {
@@ -42,13 +49,17 @@ export function InactivityMonitor() {
     const events = ["mousedown", "keydown", "scroll", "touchstart", "click"];
 
     events.forEach((event) => {
-      window.addEventListener(event, updateActivity);
+      window.addEventListener(event, updateActivity, { passive: true });
     });
 
     return () => {
       events.forEach((event) => {
         window.removeEventListener(event, updateActivity);
       });
+      // Limpar debounce timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
   }, [session, updateActivity]);
 
