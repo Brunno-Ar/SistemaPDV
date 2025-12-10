@@ -175,7 +175,10 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ========== INTEGRAÇÃO ASAAS ==========
-    console.log("🔄 Iniciando integração com Asaas...");
+    // NOTA: Se o cupom for 100% (valor = 0), pulamos a integração Asaas
+    // Conta será gratuita permanentemente
+    const isFreeAccount = subscriptionPrice <= 0;
+
     let asaasCustomer:
       | { id: string; name: string; email: string; cpfCnpj: string }
       | undefined;
@@ -190,106 +193,126 @@ export async function POST(request: NextRequest) {
         }
       | undefined;
 
-    try {
-      // 1. Criar/Recuperar Cliente no Asaas
-      const existingAsaasCustomer = await asaas.findCustomerByCpfCnpj(
-        cpfCnpjClean
-      );
+    if (!isFreeAccount) {
+      console.log("🔄 Iniciando integração com Asaas...");
 
-      if (existingAsaasCustomer) {
-        console.log(
-          "ℹ️ Cliente já existe no Asaas, usando existente:",
-          existingAsaasCustomer.id
+      try {
+        // 1. Criar/Recuperar Cliente no Asaas
+        const existingAsaasCustomer = await asaas.findCustomerByCpfCnpj(
+          cpfCnpjClean
         );
-        asaasCustomer = existingAsaasCustomer;
-        isNewCustomer = false;
-      } else {
-        asaasCustomer = await asaas.createCustomer(
-          nomeEmpresa,
-          cpfCnpjClean,
-          email,
-          telefone,
-          {
-            logradouro,
-            numero,
-            bairro,
-            cep,
-            complemento: "", // Opcional
-          }
+
+        if (existingAsaasCustomer) {
+          console.log(
+            "ℹ️ Cliente já existe no Asaas, usando existente:",
+            existingAsaasCustomer.id
+          );
+          asaasCustomer = existingAsaasCustomer;
+          isNewCustomer = false;
+        } else {
+          asaasCustomer = await asaas.createCustomer(
+            nomeEmpresa,
+            cpfCnpjClean,
+            email,
+            telefone,
+            {
+              logradouro,
+              numero,
+              bairro,
+              cep,
+              complemento: "", // Opcional
+            }
+          );
+          console.log("✅ Cliente Asaas criado:", asaasCustomer.id);
+          createdAsaasCustomerId = asaasCustomer.id;
+          isNewCustomer = true;
+        }
+
+        // 2. Criar Assinatura (com preço ajustado pelo cupom)
+        asaasSubscription = await asaas.createSubscription(
+          asaasCustomer.id,
+          subscriptionPrice
         );
-        console.log("✅ Cliente Asaas criado:", asaasCustomer.id);
-        createdAsaasCustomerId = asaasCustomer.id;
-        isNewCustomer = true;
-      }
+        console.log("✅ Assinatura Asaas criada:", asaasSubscription.id);
+      } catch (asaasError: unknown) {
+        console.error("❌ Erro na integração Asaas:", asaasError);
 
-      // 2. Criar Assinatura (com preço ajustado pelo cupom)
-      asaasSubscription = await asaas.createSubscription(
-        asaasCustomer.id,
-        subscriptionPrice
-      );
-      console.log("✅ Assinatura Asaas criada:", asaasSubscription.id);
-    } catch (asaasError: unknown) {
-      console.error("❌ Erro na integração Asaas:", asaasError);
+        // ROLLBACK: Se criamos um cliente novo e ele falhou na assinatura, deletar
+        if (createdAsaasCustomerId && isNewCustomer) {
+          console.log("🔄 Executando rollback - deletando cliente Asaas...");
+          await asaas.deleteCustomer(createdAsaasCustomerId);
+        }
 
-      // ROLLBACK: Se criamos um cliente novo e ele falhou na assinatura, deletar
-      if (createdAsaasCustomerId && isNewCustomer) {
-        console.log("🔄 Executando rollback - deletando cliente Asaas...");
-        await asaas.deleteCustomer(createdAsaasCustomerId);
-      }
+        const errorMessage =
+          asaasError instanceof Error
+            ? asaasError.message
+            : "Erro desconhecido";
 
-      const errorMessage =
-        asaasError instanceof Error ? asaasError.message : "Erro desconhecido";
+        if (
+          errorMessage.toLowerCase().includes("cpf") ||
+          errorMessage.toLowerCase().includes("cnpj")
+        ) {
+          return NextResponse.json(
+            { error: "CPF/CNPJ inválido. Verifique os dados informados." },
+            { status: 400 }
+          );
+        }
 
-      if (
-        errorMessage.toLowerCase().includes("cpf") ||
-        errorMessage.toLowerCase().includes("cnpj")
-      ) {
         return NextResponse.json(
-          { error: "CPF/CNPJ inválido. Verifique os dados informados." },
+          { error: "Erro ao configurar pagamento: " + errorMessage },
           { status: 400 }
         );
       }
 
-      return NextResponse.json(
-        { error: "Erro ao configurar pagamento: " + errorMessage },
-        { status: 400 }
-      );
+      // Ensure Asaas integration completed successfully
+      if (!asaasCustomer || !asaasSubscription) {
+        return NextResponse.json(
+          { error: "Erro ao configurar pagamento. Tente novamente." },
+          { status: 500 }
+        );
+      }
+    } else {
+      console.log("🎁 Conta GRATUITA - Pulando integração Asaas (cupom 100%)");
     }
 
     // ========== CRIAR EMPRESA E ADMIN NO BANCO ==========
     console.log("🗄️ Iniciando transação de criação local");
 
-    // Ensure Asaas integration completed successfully
-    if (!asaasCustomer || !asaasSubscription) {
-      return NextResponse.json(
-        { error: "Erro ao configurar pagamento. Tente novamente." },
-        { status: 500 }
-      );
-    }
-
     try {
       const result = await prisma.$transaction(
         async (tx: Prisma.TransactionClient) => {
-          // Calcular vencimento (Hoje + Trial Days)
-          const trialDays = parseInt(
-            process.env.NEXT_PUBLIC_TRIAL_DAYS || "14",
-            10
-          );
-          const vencimento = new Date();
-          vencimento.setDate(vencimento.getDate() + trialDays);
+          // Para contas gratuitas: ATIVO sem vencimento
+          // Para contas normais: EM_TESTE com trial de X dias
+          let vencimento: Date | null = null;
+          let status: "ATIVO" | "EM_TESTE" = "EM_TESTE";
 
-          // 1. Criar empresa EM_TESTE
+          if (isFreeAccount) {
+            // Conta gratuita: ATIVO permanentemente, sem vencimento
+            status = "ATIVO";
+            vencimento = null;
+            console.log("🎁 Conta GRATUITA - Status ATIVO permanente");
+          } else {
+            // Conta normal: Trial de X dias
+            const trialDays = parseInt(
+              process.env.NEXT_PUBLIC_TRIAL_DAYS || "14",
+              10
+            );
+            vencimento = new Date();
+            vencimento.setDate(vencimento.getDate() + trialDays);
+          }
+
+          // 1. Criar empresa
           console.log("📦 Criando empresa:", nomeEmpresa);
           const empresa = await tx.empresa.create({
             data: {
               nome: nomeEmpresa,
               telefone,
               cpfCnpj: cpfCnpjClean,
-              status: "EM_TESTE",
+              status,
               plano: "PRO",
               vencimentoPlano: vencimento,
-              asaasCustomerId: asaasCustomer!.id,
-              asaasSubscriptionId: asaasSubscription!.id,
+              asaasCustomerId: asaasCustomer?.id || null,
+              asaasSubscriptionId: asaasSubscription?.id || null,
 
               // Endereço
               enderecoLogradouro: logradouro,
