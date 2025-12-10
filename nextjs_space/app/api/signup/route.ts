@@ -368,8 +368,9 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message:
-          "Cadastro realizado com sucesso! Seu período de teste de 14 dias começou.",
+        message: isFreeAccount
+          ? "🎉 Conta criada com sucesso! Aproveite o sistema gratuitamente!"
+          : "Cadastro realizado com sucesso! Seu período de teste de 14 dias começou.",
         empresa: {
           id: result.empresa.id,
           nome: result.empresa.nome,
