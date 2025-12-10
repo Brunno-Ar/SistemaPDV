@@ -226,25 +226,33 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Cancelar assinatura e cliente no Asaas antes de excluir
+    // FIX: Blindagem total contra erros do Asaas para não impedir exclusão local
     if (empresa.asaasSubscriptionId) {
       try {
+        // Tenta cancelar, mas se falhar (ex: já cancelada), segue o jogo
         await asaas.cancelSubscription(empresa.asaasSubscriptionId);
         console.log(
-          `Assinatura ${empresa.asaasSubscriptionId} cancelada no Asaas`
+          `✅ Assinatura ${empresa.asaasSubscriptionId} cancelada no Asaas`
         );
-      } catch (asaasError) {
-        console.error("Erro ao cancelar assinatura no Asaas:", asaasError);
-        // Continua mesmo se falhar - não bloqueia exclusão local
+      } catch (asaasError: any) {
+        // Loga mas não joga erro pra cima
+        console.warn(
+          `⚠️ Ignorando erro ao cancelar assinatura Asaas (${empresa.asaasSubscriptionId}):`,
+          asaasError.message || asaasError
+        );
       }
     }
 
     if (empresa.asaasCustomerId) {
       try {
         await asaas.deleteCustomer(empresa.asaasCustomerId);
-        console.log(`Cliente ${empresa.asaasCustomerId} deletado do Asaas`);
-      } catch (asaasError) {
-        console.error("Erro ao deletar cliente no Asaas:", asaasError);
-        // Continua mesmo se falhar
+        console.log(`✅ Cliente ${empresa.asaasCustomerId} deletado do Asaas`);
+      } catch (asaasError: any) {
+        // Loga mas não joga erro pra cima
+        console.warn(
+          `⚠️ Ignorando erro ao deletar cliente Asaas (${empresa.asaasCustomerId}):`,
+          asaasError.message || asaasError
+        );
       }
     }
 
