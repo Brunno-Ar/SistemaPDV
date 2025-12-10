@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
         });
 
       case "pausar":
-        // Pausar empresa
+        // Pausar empresa (salva status anterior para restaurar depois)
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
@@ -203,6 +203,17 @@ export async function POST(request: NextRequest) {
         const empresaParaPausar = await prisma.empresa.findUnique({
           where: { id: empresaId },
         });
+
+        if (!empresaParaPausar) {
+          return NextResponse.json(
+            { error: "Empresa não encontrada" },
+            { status: 404 }
+          );
+        }
+
+        // Salvar o status anterior no campo ultimoDesbloqueio (usando como marcador)
+        // Se era EM_TESTE, guardar essa info
+        const statusAnterior = empresaParaPausar.status;
 
         // Pausar no Asaas também
         if (empresaParaPausar?.asaasSubscriptionId) {
@@ -216,19 +227,29 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Guardar status anterior no campo liberacaoTemporariaAte como marcador
+        // Usamos uma data especial para indicar que era EM_TESTE
         const empresaPausada = await prisma.empresa.update({
           where: { id: empresaId },
-          data: { status: "PAUSADO" },
+          data: {
+            status: "PAUSADO",
+            // Salvar marcador: se era EM_TESTE, guardar data específica (1970-01-02)
+            // Se era ATIVO, guardar outra (1970-01-01)
+            liberacaoTemporariaAte:
+              statusAnterior === "EM_TESTE"
+                ? new Date("1970-01-02T00:00:00Z")
+                : new Date("1970-01-01T00:00:00Z"),
+          },
         });
 
         return NextResponse.json({
           success: true,
-          message: "Empresa pausada com sucesso!",
+          message: `Empresa pausada com sucesso! (Status anterior: ${statusAnterior})`,
           empresa: empresaPausada,
         });
 
       case "reativar":
-        // Reativar empresa pausada
+        // Reativar empresa pausada (restaura status anterior)
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
@@ -239,6 +260,13 @@ export async function POST(request: NextRequest) {
         const empresaParaReativar = await prisma.empresa.findUnique({
           where: { id: empresaId },
         });
+
+        if (!empresaParaReativar) {
+          return NextResponse.json(
+            { error: "Empresa não encontrada" },
+            { status: 404 }
+          );
+        }
 
         // Reativar no Asaas também
         if (empresaParaReativar?.asaasSubscriptionId) {
@@ -252,14 +280,28 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Restaurar status anterior baseado no marcador liberacaoTemporariaAte
+        // 1970-01-02 = era EM_TESTE, 1970-01-01 ou null = era ATIVO
+        let statusRestaurado = "ATIVO";
+        if (
+          empresaParaReativar.liberacaoTemporariaAte &&
+          empresaParaReativar.liberacaoTemporariaAte.getTime() ===
+            new Date("1970-01-02T00:00:00Z").getTime()
+        ) {
+          statusRestaurado = "EM_TESTE";
+        }
+
         const empresaReativada = await prisma.empresa.update({
           where: { id: empresaId },
-          data: { status: "ATIVO" },
+          data: {
+            status: statusRestaurado,
+            liberacaoTemporariaAte: null, // Limpar marcador
+          },
         });
 
         return NextResponse.json({
           success: true,
-          message: "Empresa reativada com sucesso!",
+          message: `Empresa reativada com sucesso! (Status: ${statusRestaurado})`,
           empresa: empresaReativada,
         });
 
@@ -433,8 +475,14 @@ export async function POST(request: NextRequest) {
           );
 
           // Mapear status do Asaas para status do sistema
+          // IMPORTANTE: Preservar EM_TESTE se a conta ainda está em período de trial
           let novoStatus = empresaParaSync.status;
-          if (subscription.status === "ACTIVE") {
+
+          // Se está EM_TESTE, NÃO alterar baseado no Asaas (trial não tem pagamento)
+          if (empresaParaSync.status === "EM_TESTE") {
+            // Manter EM_TESTE - a sincronização não deve alterar contas em trial
+            novoStatus = "EM_TESTE";
+          } else if (subscription.status === "ACTIVE") {
             novoStatus = "ATIVO";
           } else if (subscription.status === "INACTIVE") {
             novoStatus = "PAUSADO";
