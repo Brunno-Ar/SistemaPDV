@@ -104,7 +104,8 @@ export default withAuth(
           req.nextUrl.pathname.startsWith("/api/auth") ||
           req.nextUrl.pathname.startsWith("/login") ||
           req.nextUrl.pathname.startsWith("/signup") ||
-          req.nextUrl.pathname.startsWith("/api/signup")
+          req.nextUrl.pathname.startsWith("/api/signup") ||
+          req.nextUrl.pathname.startsWith("/api/webhooks")
         ) {
           return true;
         }
@@ -118,6 +119,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/((?!api/auth|api/profile|login|signup|_next/static|_next/image|favicon.ico|favicon.svg|sw.js|manifest.json|workbox-.*).*)",
+    "/((?!api/auth|api/profile|api/webhooks|login|signup|_next/static|_next/image|favicon.ico|favicon.svg|sw.js|manifest.json|workbox-.*).*)",
   ],
 };
