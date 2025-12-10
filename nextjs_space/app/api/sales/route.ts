@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { TransactionClient, SaleItemInput, Product } from "@/types/api";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Desconta a quantidade vendida dos lotes, priorizando os que vencem primeiro
  */
 async function descontarLotesFEFO(
-  tx: any,
+  tx: TransactionClient,
   produtoId: string,
   quantidadeNecessaria: number
 ): Promise<{
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { items, metodoPagamento, valorRecebido, troco } = body;
+    const itemsTyped = items as SaleItemInput[];
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -127,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     // Validar e calcular valor total baseados nos itens
     let valorTotal = 0;
-    for (const item of items) {
+    for (const item of itemsTyped) {
       if (!item.productId || !item.quantidade || !item.precoUnitario) {
         return NextResponse.json(
           {
@@ -175,7 +177,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const productIds = items.map((item: any) => item.productId);
+    const productIds = itemsTyped.map((item) => item.productId);
     const products = await prisma.product.findMany({
       where: {
         id: { in: productIds },
@@ -190,8 +192,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    for (const item of items) {
-      const product = products.find((p: any) => p.id === item.productId);
+    for (const item of itemsTyped) {
+      const product = products.find((p: Product) => p.id === item.productId);
       if (!product) {
         return NextResponse.json(
           { error: `Produto não encontrado: ${item.productId}` },
@@ -210,7 +212,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await prisma.$transaction(
-      async (tx: any) => {
+      async (tx: TransactionClient) => {
         const sale = await tx.sale.create({
           data: {
             userId: session.user.id,
@@ -223,8 +225,10 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        for (const item of items) {
-          const product = products.find((p: any) => p.id === item.productId)!;
+        for (const item of itemsTyped) {
+          const product = products.find(
+            (p: Product) => p.id === item.productId
+          )!;
           const descontoAplicado = item.descontoAplicado || 0;
           const subtotal =
             item.quantidade * item.precoUnitario - descontoAplicado;
@@ -299,6 +303,7 @@ export async function POST(request: NextRequest) {
         dataHora: result.dataHora,
       },
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Erro detalhado ao finalizar venda:", error);
 

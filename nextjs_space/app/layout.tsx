@@ -4,13 +4,21 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { InactivityMonitor } from "@/components/inactivity-monitor";
 import { PasswordChangeAlert } from "@/components/PasswordChangeAlert";
-import { OnboardingTour } from "@/components/onboarding-tour";
+
 import { TrialBanner } from "@/components/trial-banner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SyncManager } from "@/components/sync-manager";
 
-const inter = Inter({ subsets: ["latin"] });
+import dynamicLoader from "next/dynamic";
+
+const OnboardingTour = dynamicLoader(
+  () =>
+    import("@/components/onboarding-tour").then((mod) => mod.OnboardingTour),
+  { ssr: false }
+);
+
+const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const dynamic = "force-dynamic";
 

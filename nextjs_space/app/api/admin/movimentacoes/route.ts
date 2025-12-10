@@ -2,8 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+
+type SaleWithDetails = Prisma.SaleGetPayload<{
+  include: {
+    user: { select: { name: true; email: true } };
+    saleItems: {
+      include: {
+        product: { select: { nome: true; sku: true } };
+      };
+    };
+  };
+}>;
+
+type MovementWithDetails = Prisma.MovimentacaoEstoqueGetPayload<{
+  include: {
+    produto: { select: { nome: true; sku: true } };
+    usuario: { select: { name: true; email: true } };
+  };
+}>;
+
+type CashMovementWithDetails = Prisma.MovimentacaoCaixaGetPayload<{
+  include: {
+    usuario: { select: { name: true; email: true } };
+  };
+}>;
+
+type ClosedCaixaWithDetails = Prisma.CaixaGetPayload<{
+  include: {
+    usuario: { select: { name: true; email: true } };
+  };
+}>;
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +66,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type"); // 'VENDA', 'ENTRADA', 'PERDA', 'AJUSTE', 'TODOS'
 
     // Filtro de Data
-    const dateFilter: any = {};
+    const dateFilter: Prisma.DateTimeFilter = {};
     if (startDate && endDate) {
       dateFilter.gte = new Date(startDate);
       dateFilter.lte = new Date(endDate);
@@ -44,7 +75,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 1. Buscar Vendas (Se o tipo for TODOS ou VENDA)
-    let sales: any[] = [];
+    let sales: SaleWithDetails[] = [];
     if (!type || type === "TODOS" || type === "VENDA") {
       sales = await prisma.sale.findMany({
         where: {
@@ -69,14 +100,16 @@ export async function GET(request: NextRequest) {
 
     // 2. Buscar Movimentações de Estoque (Se o tipo for TODOS ou OUTROS)
     // Mapeamento de filtros do frontend para tipos do banco
-    let stockMovementTypes: any = undefined;
+    let stockMovementTypes:
+      | Prisma.MovimentacaoEstoqueWhereInput["tipo"]
+      | undefined = undefined;
     if (type && type !== "TODOS" && type !== "VENDA") {
       if (type === "ENTRADA") stockMovementTypes = "ENTRADA";
       if (type === "PERDA") stockMovementTypes = "AJUSTE_QUEBRA"; // Assumindo que PERDA = AJUSTE_QUEBRA
       if (type === "AJUSTE") stockMovementTypes = "AJUSTE_INVENTARIO";
     }
 
-    let movements: any[] = [];
+    let movements: MovementWithDetails[] = [];
     if (!type || type === "TODOS" || type !== "VENDA") {
       movements = await prisma.movimentacaoEstoque.findMany({
         where: {
@@ -97,7 +130,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Buscar Movimentações de Caixa (Se o tipo for TODOS ou OUTROS)
-    let cashMovements: any[] = [];
+    let cashMovements: CashMovementWithDetails[] = [];
     if (!type || type === "TODOS" || type !== "VENDA") {
       cashMovements = await prisma.movimentacaoCaixa.findMany({
         where: {
@@ -116,7 +149,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Buscar Fechamentos de Caixa
-    let closedCaixas: any[] = [];
+    let closedCaixas: ClosedCaixaWithDetails[] = [];
     if (!type || type === "TODOS" || type !== "VENDA") {
       closedCaixas = await prisma.caixa.findMany({
         where: {
@@ -143,7 +176,7 @@ export async function GET(request: NextRequest) {
         totalValue: Number(sale.valorTotal),
         amountPaid: sale.valorRecebido ? Number(sale.valorRecebido) : undefined,
         change: sale.troco ? Number(sale.troco) : undefined,
-        items: sale.saleItems.map((item: any) => ({
+        items: sale.saleItems.map((item) => ({
           productName: item.product.nome,
           quantity: item.quantidade,
           unitPrice: Number(item.precoUnitario),
@@ -187,9 +220,11 @@ export async function GET(request: NextRequest) {
     ];
 
     // 4. Ordenar por Data (Decrescente)
-    unifiedTimeline.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    unifiedTimeline.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date).getTime() : 0;
+      const dateB = b.date ? new Date(b.date).getTime() : 0;
+      return dateB - dateA;
+    });
 
     return NextResponse.json(unifiedTimeline);
   } catch (error) {
@@ -292,68 +327,71 @@ export async function POST(request: NextRequest) {
     const delta = qtd * multiplier;
 
     // Transação
-    const result = await prisma.$transaction(async (tx: any) => {
-      // 1. Verificar Produto
-      const produto = await tx.product.findFirst({
-        where: { id: produtoId, empresaId },
-      });
-
-      if (!produto) throw new Error("Produto não encontrado");
-
-      // 2. Se tiver Lote, atualizar Lote
-      let loteInfo = "";
-      if (loteId) {
-        const lote = await tx.lote.findFirst({
-          where: { id: loteId, produtoId },
+    const result = await prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        // 1. Verificar Produto
+        const produto = await tx.product.findFirst({
+          where: { id: produtoId, empresaId },
         });
 
-        if (!lote) throw new Error("Lote não encontrado");
+        if (!produto) throw new Error("Produto não encontrado");
 
-        // Verificar estoque negativo no lote
-        if (lote.quantidade + delta < 0) {
-          throw new Error(
-            `Estoque insuficiente no lote. Disponível: ${lote.quantidade}`
-          );
+        // 2. Se tiver Lote, atualizar Lote
+        let loteInfo = "";
+        if (loteId) {
+          const lote = await tx.lote.findFirst({
+            where: { id: loteId, produtoId },
+          });
+
+          if (!lote) throw new Error("Lote não encontrado");
+
+          // Verificar estoque negativo no lote
+          if (lote.quantidade + delta < 0) {
+            throw new Error(
+              `Estoque insuficiente no lote. Disponível: ${lote.quantidade}`
+            );
+          }
+
+          await tx.lote.update({
+            where: { id: loteId },
+            data: { quantidade: { increment: delta } },
+          });
+          loteInfo = ` (Lote: ${lote.numeroLote})`;
+        } else {
+          // Se não tem lote, verificar estoque negativo no produto geral (opcional, mas recomendado)
+          if (produto.estoqueAtual + delta < 0) {
+            // Permitir negativo? Geralmente não.
+            throw new Error(
+              `Estoque insuficiente. Disponível: ${produto.estoqueAtual}`
+            );
+          }
         }
 
-        await tx.lote.update({
-          where: { id: loteId },
-          data: { quantidade: { increment: delta } },
+        // 3. Atualizar Produto
+        await tx.product.update({
+          where: { id: produtoId },
+          data: { estoqueAtual: { increment: delta } },
         });
-        loteInfo = ` (Lote: ${lote.numeroLote})`;
-      } else {
-        // Se não tem lote, verificar estoque negativo no produto geral (opcional, mas recomendado)
-        if (produto.estoqueAtual + delta < 0) {
-          // Permitir negativo? Geralmente não.
-          throw new Error(
-            `Estoque insuficiente. Disponível: ${produto.estoqueAtual}`
-          );
-        }
+
+        // 4. Criar Movimentação
+        const mov = await tx.movimentacaoEstoque.create({
+          data: {
+            produtoId,
+            usuarioId: session.user.id,
+            empresaId,
+            tipo: tipo, // ENTRADA, AJUSTE_QUEBRA, AJUSTE_INVENTARIO
+            quantidade: delta,
+            motivo: `${motivo || "Ajuste manual"}${loteInfo}`,
+            loteId: loteId || null,
+          },
+        });
+
+        return mov;
       }
-
-      // 3. Atualizar Produto
-      await tx.product.update({
-        where: { id: produtoId },
-        data: { estoqueAtual: { increment: delta } },
-      });
-
-      // 4. Criar Movimentação
-      const mov = await tx.movimentacaoEstoque.create({
-        data: {
-          produtoId,
-          usuarioId: session.user.id,
-          empresaId,
-          tipo: tipo, // ENTRADA, AJUSTE_QUEBRA, AJUSTE_INVENTARIO
-          quantidade: delta,
-          motivo: `${motivo || "Ajuste manual"}${loteInfo}`,
-          loteId: loteId || null,
-        },
-      });
-
-      return mov;
-    });
+    );
 
     return NextResponse.json(result);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Erro ao criar movimentação:", error);
     return NextResponse.json(

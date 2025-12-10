@@ -19,7 +19,7 @@ export function usePOS() {
 
   // Ordenação Reativa com useMemo
   const filteredProducts = useMemo(() => {
-    let sorted = [...searchResults];
+    const sorted = [...searchResults];
 
     switch (sortOption) {
       case "name_asc":
