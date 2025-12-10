@@ -31,8 +31,12 @@ export function AuthLayout({
         </div>
       )}
 
-      {/* Mobile Logo */}
-      <div className="absolute top-8 left-8 lg:hidden z-20">
+      {/* Mobile Logo - Visible on mobile OR when form is on left (Desktop) */}
+      <div
+        className={`absolute top-8 left-8 z-20 ${
+          formPosition === "right" ? "lg:hidden" : ""
+        }`}
+      >
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
             <span className="text-white font-bold text-xl">F</span>
@@ -42,20 +46,23 @@ export function AuthLayout({
       </div>
 
       {/* Form Side */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-24 relative z-10 overflow-y-auto max-h-screen">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-24 relative z-10 overflow-hidden h-screen">
         {children}
       </div>
 
       {/* Visual Side */}
       <div className="hidden lg:flex w-1/2 bg-white dark:bg-black relative overflow-hidden items-center justify-center">
-        <div className="absolute top-8 left-8 z-20">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <span className="text-white font-bold text-xl">F</span>
-            </div>
-            <span className="text-xl font-bold tracking-tight">Flow PDV</span>
-          </Link>
-        </div>
+        {/* Visual Side Logo - Only visible when Visual Side is on left (Login page) */}
+        {formPosition === "right" && (
+          <div className="absolute top-8 left-8 z-20">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="text-white font-bold text-xl">F</span>
+              </div>
+              <span className="text-xl font-bold tracking-tight">Flow PDV</span>
+            </Link>
+          </div>
+        )}
         <div className="absolute inset-0 z-0">
           <Sparkles />
         </div>
