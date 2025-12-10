@@ -55,7 +55,7 @@ export const Hero = () => {
                 size="lg"
                 className="rounded-full text-lg h-14 px-8 bg-white dark:bg-zinc-900 border-gray-300 dark:border-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-800 dark:text-gray-300"
               >
-                <Link href="/demo">Ver Demonstração</Link>
+                <Link href="/signup">Teste por 14 dias grátis</Link>
               </Button>
             </motion.div>
           </div>

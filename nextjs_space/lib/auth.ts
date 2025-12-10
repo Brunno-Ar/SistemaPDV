@@ -105,7 +105,7 @@ export const authOptions: AuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 8 * 60 * 60, // 8 horas (sessão expira após 8h)
+    maxAge: 4 * 60 * 60, // 4 horas (reduzido para maior segurança)
   },
   callbacks: {
     async signIn() {

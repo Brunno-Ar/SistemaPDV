@@ -6,10 +6,31 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
+    // Se o usuário já estiver logado e tentar acessar login ou signup, redireciona para a home correta
+    if (token && (path === "/login" || path === "/signup")) {
+      if (token.role === "master") {
+        return NextResponse.redirect(new URL("/master", req.url));
+      }
+      if (token.role === "gerente") {
+        return NextResponse.redirect(new URL("/gerente", req.url));
+      }
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
     // Rotas exclusivas do MASTER
     if (path.startsWith("/master")) {
       if (token?.role !== "master") {
         return NextResponse.redirect(new URL("/vender", req.url));
+      }
+    }
+
+    // Redirecionamento inteligente do /dashboard
+    if (path === "/dashboard") {
+      if (token?.role === "gerente") {
+        return NextResponse.redirect(new URL("/gerente", req.url));
+      }
+      if (token?.role === "master") {
+        return NextResponse.redirect(new URL("/master", req.url));
       }
     }
 
