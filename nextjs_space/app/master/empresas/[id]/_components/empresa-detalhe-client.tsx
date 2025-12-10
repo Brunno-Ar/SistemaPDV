@@ -11,7 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Mail } from "lucide-react";
+import { Mail, ExternalLink, CreditCard } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -47,6 +47,7 @@ interface EmpresaDetalheClientProps {
     enderecoBairro?: string | null;
     enderecoCidade?: string | null;
     enderecoUf?: string | null;
+    asaasCustomerId?: string | null;
     _count: {
       users: number;
       products: number;
@@ -143,11 +144,29 @@ export default function EmpresaDetalheClient({
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Botão Ver Boletos no Asaas */}
+          {empresa.asaasCustomerId && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() =>
+                window.open(
+                  `https://www.asaas.com/customerAccount/show/${empresa.asaasCustomerId}`,
+                  "_blank"
+                )
+              }
+            >
+              <CreditCard className="h-4 w-4" />
+              Ver Boletos
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          )}
+
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Mail className="h-4 w-4" />
-                Enviar Aviso ao Admin
+                Enviar Aviso
               </Button>
             </DialogTrigger>
             <DialogContent>

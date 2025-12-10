@@ -22,7 +22,20 @@ export default async function EmpresaDetalhePage({ params }: PageProps) {
   try {
     const empresa = await prisma.empresa.findUnique({
       where: { id: params.id },
-      include: {
+      select: {
+        id: true,
+        nome: true,
+        status: true,
+        vencimentoPlano: true,
+        cpfCnpj: true,
+        telefone: true,
+        enderecoCep: true,
+        enderecoLogradouro: true,
+        enderecoNumero: true,
+        enderecoBairro: true,
+        enderecoCidade: true,
+        enderecoUf: true,
+        asaasCustomerId: true,
         _count: {
           select: {
             users: true,
