@@ -295,19 +295,27 @@ export async function DELETE(request: NextRequest) {
       });
 
       // 5.5. Excluir Movimentações de Caixa (antes de excluir Caixas e Usuários)
-      // Precisamos pegar os IDs dos caixas para deletar as movimentações
+      // FIX CRÍTICO: Deletar tanto por Caixas da empresa quanto por Usuários da empresa
+      // para evitar erro de FK (RESTRICT) ao deletar usuários.
+
+      const companyUsers = await tx.user.findMany({
+        where: { empresaId },
+        select: { id: true },
+      });
+      const userIds = companyUsers.map((u: any) => u.id);
+
       const caixas = await tx.caixa.findMany({
         where: { empresaId },
         select: { id: true },
       });
+      const caixaIds = caixas.map((c: any) => c.id);
 
-      if (caixas.length > 0) {
-        await tx.movimentacaoCaixa.deleteMany({
-          where: {
-            caixaId: { in: caixas.map((c: any) => c.id) },
-          },
-        });
-      }
+      // Deletar movimentações vinculadas aos caixas OU aos usuários dessa empresa
+      await tx.movimentacaoCaixa.deleteMany({
+        where: {
+          OR: [{ caixaId: { in: caixaIds } }, { usuarioId: { in: userIds } }],
+        },
+      });
 
       // 6. Excluir caixas
       await tx.caixa.deleteMany({
@@ -315,12 +323,6 @@ export async function DELETE(request: NextRequest) {
       });
 
       // 7. Excluir avisos (vinculados à empresa ou aos usuários)
-      const companyUsers = await tx.user.findMany({
-        where: { empresaId },
-        select: { id: true },
-      });
-      const userIds = companyUsers.map((u: any) => u.id);
-
       await tx.aviso.deleteMany({
         where: {
           OR: [
