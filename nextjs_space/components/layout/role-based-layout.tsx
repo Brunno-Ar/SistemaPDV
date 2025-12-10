@@ -214,7 +214,7 @@ export default function RoleBasedLayout({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row h-[100dvh] overflow-hidden bg-gray-100 dark:bg-zinc-900 font-body">
+    <div className="flex flex-col lg:flex-row h-full overflow-hidden bg-gray-100 dark:bg-zinc-900 font-body">
       <Sidebar>
         <SidebarBody className="justify-between gap-10">
           <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
