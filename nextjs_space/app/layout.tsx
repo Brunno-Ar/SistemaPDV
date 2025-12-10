@@ -9,6 +9,7 @@ import { TrialBanner } from "@/components/trial-banner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SyncManager } from "@/components/sync-manager";
+import { Analytics } from "@vercel/analytics/next";
 
 import dynamicLoader from "next/dynamic";
 
@@ -64,6 +65,7 @@ export default async function RootLayout({
           {session?.user && <OnboardingTour />}
           <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
