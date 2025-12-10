@@ -370,13 +370,11 @@ export async function DELETE(request: NextRequest) {
       { message: "Empresa excluída com sucesso" },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro ao excluir empresa:", error);
     return NextResponse.json(
-      { error: "Erro ao excluir empresa" },
+      { error: `Erro ao excluir empresa: ${error.message || error}` },
       { status: 500 }
     );
   }
 }
-/ /   F o r c e   u p d a t e   f o r   d e p l o y m e n t  
- 
