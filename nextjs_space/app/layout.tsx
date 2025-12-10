@@ -52,15 +52,17 @@ export default async function RootLayout({
   const session = await getServerSession(authOptions);
 
   return (
-    <html lang="pt-BR">
-      <body className={inter.className}>
+    <html lang="pt-BR" className="h-full">
+      <body
+        className={`${inter.className} h-full overflow-hidden flex flex-col`}
+      >
         <Providers>
           <SyncManager />
           <InactivityMonitor />
           <PasswordChangeAlert />
           <TrialBanner />
           {session?.user && <OnboardingTour />}
-          {children}
+          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
         </Providers>
       </body>
     </html>
