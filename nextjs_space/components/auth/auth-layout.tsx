@@ -46,8 +46,10 @@ export function AuthLayout({
       </div>
 
       {/* Form Side */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-24 relative z-10 overflow-hidden h-screen">
-        {children}
+      <div className="w-full lg:w-1/2 relative z-10 overflow-y-auto h-screen scrollbar-hide">
+        <div className="min-h-full flex flex-col justify-center items-center p-8 lg:p-24">
+          {children}
+        </div>
       </div>
 
       {/* Visual Side */}

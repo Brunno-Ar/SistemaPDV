@@ -249,3 +249,13 @@ img {
 .slide-in-left {
   animation: slideInFromLeft 0.3s ease-out;
 }
+
+/* Scrollbar Hide Utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
