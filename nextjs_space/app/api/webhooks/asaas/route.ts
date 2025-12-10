@@ -27,27 +27,36 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { event, payment } = body;
+    const { event, payment, subscription } = body;
 
     // Extrair ID do evento para idempotência
-    const eventId = body.id || `${event}_${payment?.id}_${Date.now()}`;
+    const eventId =
+      body.id || `${event}_${payment?.id || subscription?.id}_${Date.now()}`;
+
+    // Determinar o customerId baseado no tipo de evento
+    const customerId = payment?.customer || subscription?.customer;
 
     console.log("📥 [Webhook] Evento recebido:", {
       event,
       eventId,
       paymentId: payment?.id,
-      customerId: payment?.customer,
+      subscriptionId: subscription?.id,
+      customerId,
     });
 
     // ========== VALIDAÇÃO DO PAYLOAD ==========
-    if (!payment || !payment.customer) {
-      console.warn("⚠️ [Webhook] Payload inválido - sem payment ou customer");
+    // Eventos de payment precisam de payment.customer
+    // Eventos de subscription precisam de subscription.customer
+    if (!customerId) {
+      console.warn(
+        "⚠️ [Webhook] Payload inválido - sem customer em payment ou subscription"
+      );
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
     // ========== BUSCAR EMPRESA ==========
     const empresa = await prisma.empresa.findUnique({
-      where: { asaasCustomerId: payment.customer },
+      where: { asaasCustomerId: customerId },
     });
 
     if (!empresa) {

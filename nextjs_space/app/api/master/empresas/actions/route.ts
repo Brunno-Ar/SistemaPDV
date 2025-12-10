@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
 
         // Restaurar status anterior baseado no marcador liberacaoTemporariaAte
         // 1970-01-02 = era EM_TESTE, 1970-01-01 ou null = era ATIVO
-        let statusRestaurado = "ATIVO";
+        let statusRestaurado: "ATIVO" | "EM_TESTE" = "ATIVO";
         if (
           empresaParaReativar.liberacaoTemporariaAte &&
           empresaParaReativar.liberacaoTemporariaAte.getTime() ===
