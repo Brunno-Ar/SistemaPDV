@@ -221,10 +221,12 @@ export default function FuncionarioDetalhes({
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             {funcionario.nome || funcionario.name || funcionario.email}
           </h1>
-          <p className="text-gray-500">{funcionario.email}</p>
+          <p className="text-gray-500 dark:text-gray-400">
+            {funcionario.email}
+          </p>
         </div>
       </div>
 

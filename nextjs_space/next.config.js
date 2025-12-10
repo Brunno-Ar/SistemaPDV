@@ -19,6 +19,14 @@ const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "banco-imagens-sistema-pdv.s3.sa-east-1.amazonaws.com",
+      },
+    ],
+  },
 };
 
 module.exports = withPWA(nextConfig);

@@ -70,7 +70,7 @@ export function UserCard({
     <Card
       onClick={onClick}
       className={cn(
-        "transition-all duration-200 border-2 bg-white dark:bg-zinc-900 h-full",
+        "transition-all duration-200 border-2 bg-white dark:bg-zinc-900 h-full relative",
         isCurrentUser
           ? "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20"
           : "border-gray-200 dark:border-zinc-800 hover:shadow-md",
