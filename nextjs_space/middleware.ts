@@ -105,7 +105,8 @@ export default withAuth(
           req.nextUrl.pathname.startsWith("/login") ||
           req.nextUrl.pathname.startsWith("/signup") ||
           req.nextUrl.pathname.startsWith("/api/signup") ||
-          req.nextUrl.pathname.startsWith("/api/webhooks")
+          req.nextUrl.pathname.startsWith("/api/webhooks") ||
+          req.nextUrl.pathname.startsWith("/api/cupons/validate")
         ) {
           return true;
         }
