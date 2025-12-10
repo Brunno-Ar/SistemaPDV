@@ -31,6 +31,8 @@ const SidebarUserInfo = ({ session }: { session: any }) => {
 
   if (!session?.user) return null;
 
+  const isMaster = session.user.role === "master";
+
   return (
     <motion.div
       animate={{
@@ -40,10 +42,12 @@ const SidebarUserInfo = ({ session }: { session: any }) => {
       className="px-2 py-1 mb-4 text-xs border-b border-white/20 pb-2 text-white"
     >
       <p className="font-medium truncate">
-        {session.user.empresaNome || "Empresa"}
+        {isMaster ? "Painel Master" : session.user.empresaNome || "Empresa"}
       </p>
       <p className="truncate opacity-80">
-        {session.user.role} | {session.user.name?.split(" ")[0]}
+        {isMaster
+          ? "Administrador do Sistema"
+          : `${session.user.role} | ${session.user.name?.split(" ")[0]}`}
       </p>
     </motion.div>
   );

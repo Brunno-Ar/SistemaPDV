@@ -94,7 +94,9 @@ export default function EmpresasClient() {
 
   const fetchEmpresas = async () => {
     try {
-      const response = await fetch("/api/master/empresas");
+      const response = await fetch("/api/master/empresas", {
+        cache: "no-store",
+      });
       if (!response.ok) throw new Error("Erro ao buscar empresas");
       const data = await response.json();
       setEmpresas(Array.isArray(data) ? data : []);

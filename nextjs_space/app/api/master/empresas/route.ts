@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -254,6 +255,11 @@ export async function DELETE(request: NextRequest) {
         where: { empresaId },
       });
 
+      // 1.1 Excluir cancelamentos (feedback)
+      await tx.cancelamento.deleteMany({
+        where: { empresaId },
+      });
+
       // 2. Buscar todos os produtos para deletar lotes
       const products = await tx.product.findMany({
         where: { empresaId },
@@ -293,9 +299,22 @@ export async function DELETE(request: NextRequest) {
         where: { empresaId },
       });
 
-      // 7. Excluir avisos
-      await tx.aviso.deleteMany({
+      // 7. Excluir avisos (vinculados à empresa ou aos usuários)
+      // Primeiro buscamos os usuários para garantir que avisos soltos também sejam excluídos
+      const companyUsers = await tx.user.findMany({
         where: { empresaId },
+        select: { id: true },
+      });
+      const userIds = companyUsers.map((u: any) => u.id);
+
+      await tx.aviso.deleteMany({
+        where: {
+          OR: [
+            { empresaId },
+            { remetenteId: { in: userIds } },
+            { destinatarioId: { in: userIds } },
+          ],
+        },
       });
 
       // 8. Excluir produtos
@@ -313,6 +332,9 @@ export async function DELETE(request: NextRequest) {
         where: { id: empresaId },
       });
     });
+
+    revalidatePath("/master/empresas");
+    revalidatePath("/master");
 
     return NextResponse.json(
       { message: "Empresa excluída com sucesso" },
