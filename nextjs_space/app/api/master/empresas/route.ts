@@ -294,13 +294,27 @@ export async function DELETE(request: NextRequest) {
         where: { empresaId },
       });
 
+      // 5.5. Excluir Movimentações de Caixa (antes de excluir Caixas e Usuários)
+      // Precisamos pegar os IDs dos caixas para deletar as movimentações
+      const caixas = await tx.caixa.findMany({
+        where: { empresaId },
+        select: { id: true },
+      });
+
+      if (caixas.length > 0) {
+        await tx.movimentacaoCaixa.deleteMany({
+          where: {
+            caixaId: { in: caixas.map((c: any) => c.id) },
+          },
+        });
+      }
+
       // 6. Excluir caixas
       await tx.caixa.deleteMany({
         where: { empresaId },
       });
 
       // 7. Excluir avisos (vinculados à empresa ou aos usuários)
-      // Primeiro buscamos os usuários para garantir que avisos soltos também sejam excluídos
       const companyUsers = await tx.user.findMany({
         where: { empresaId },
         select: { id: true },
@@ -322,7 +336,13 @@ export async function DELETE(request: NextRequest) {
         where: { empresaId },
       });
 
+      // 8.5 Excluir Categorias
+      await tx.category.deleteMany({
+        where: { empresaId },
+      });
+
       // 9. Excluir usuários
+      // O Prisma cuida de Account e Session via onDelete: Cascade no Schema
       await tx.user.deleteMany({
         where: { empresaId },
       });
