@@ -76,6 +76,11 @@ export default function RoleBasedLayout({
         icon: <Store className="h-5 w-5 flex-shrink-0" />,
       },
       {
+        label: "Cupons",
+        href: "/master/cupons",
+        icon: <CreditCard className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
         label: "Usuários",
         href: "/master/usuarios",
         icon: <Users className="h-5 w-5 flex-shrink-0" />,
