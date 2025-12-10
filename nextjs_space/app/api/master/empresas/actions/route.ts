@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
+import { StatusEmpresa } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -282,13 +283,13 @@ export async function POST(request: NextRequest) {
 
         // Restaurar status anterior baseado no marcador liberacaoTemporariaAte
         // 1970-01-02 = era EM_TESTE, 1970-01-01 ou null = era ATIVO
-        let statusRestaurado: "ATIVO" | "EM_TESTE" = "ATIVO";
+        let statusRestaurado: StatusEmpresa = StatusEmpresa.ATIVO;
         if (
           empresaParaReativar.liberacaoTemporariaAte &&
           empresaParaReativar.liberacaoTemporariaAte.getTime() ===
             new Date("1970-01-02T00:00:00Z").getTime()
         ) {
-          statusRestaurado = "EM_TESTE";
+          statusRestaurado = StatusEmpresa.EM_TESTE;
         }
 
         const empresaReativada = await prisma.empresa.update({
