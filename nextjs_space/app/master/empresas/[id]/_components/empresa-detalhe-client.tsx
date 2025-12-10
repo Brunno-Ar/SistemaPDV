@@ -11,7 +11,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Mail, ExternalLink, CreditCard } from "lucide-react";
+import { Mail, ExternalLink, CreditCard, Loader2 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -65,6 +65,81 @@ export default function EmpresaDetalheClient({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [sending, setSending] = useState(false);
+
+  // Estados para boletos
+  const [boletosDialogOpen, setBoletosDialogOpen] = useState(false);
+  const [loadingBoletos, setLoadingBoletos] = useState(false);
+  const [boletos, setBoletos] = useState<
+    Array<{
+      id: string;
+      valor: number;
+      status: string;
+      vencimento: string;
+      dataPagamento: string | null;
+      tipo: string;
+      invoiceUrl: string | null;
+      boletoUrl: string | null;
+      pixUrl: string | null;
+    }>
+  >([]);
+
+  const fetchBoletos = async () => {
+    setLoadingBoletos(true);
+    try {
+      const res = await fetch(`/api/master/pagamentos?empresaId=${companyId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setBoletos(data.pagamentos);
+      } else {
+        toast({
+          title: "Erro",
+          description: data.error || "Erro ao buscar boletos",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao conectar com o servidor",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingBoletos(false);
+    }
+  };
+
+  const handleOpenBoletos = () => {
+    setBoletosDialogOpen(true);
+    fetchBoletos();
+  };
+
+  const getStatusBoleto = (status: string) => {
+    const statusMap: Record<string, { label: string; className: string }> = {
+      PENDING: { label: "Pendente", className: "bg-yellow-500" },
+      RECEIVED: { label: "Pago", className: "bg-green-600" },
+      CONFIRMED: { label: "Confirmado", className: "bg-green-600" },
+      OVERDUE: { label: "Vencido", className: "bg-red-600" },
+      REFUNDED: { label: "Estornado", className: "bg-gray-500" },
+      RECEIVED_IN_CASH: {
+        label: "Pago em Dinheiro",
+        className: "bg-green-600",
+      },
+      REFUND_REQUESTED: {
+        label: "Estorno Solicitado",
+        className: "bg-orange-500",
+      },
+      CHARGEBACK_REQUESTED: { label: "Chargeback", className: "bg-red-700" },
+      CHARGEBACK_DISPUTE: { label: "Disputa", className: "bg-red-700" },
+      AWAITING_CHARGEBACK_REVERSAL: {
+        label: "Aguardando Reversão",
+        className: "bg-orange-500",
+      },
+      DUNNING_REQUESTED: { label: "Negativado", className: "bg-red-800" },
+      DUNNING_RECEIVED: { label: "Recuperado", className: "bg-green-700" },
+      AWAITING_RISK_ANALYSIS: { label: "Em Análise", className: "bg-blue-500" },
+    };
+    return statusMap[status] || { label: status, className: "bg-gray-500" };
+  };
 
   const handleSendAviso = async () => {
     if (!mensagem.trim()) return;
@@ -144,22 +219,121 @@ export default function EmpresaDetalheClient({
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Botão Ver Boletos no Asaas */}
+          {/* Dialog Ver Boletos */}
           {empresa.asaasCustomerId && (
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() =>
-                window.open(
-                  `https://www.asaas.com/customerAccount/show/${empresa.asaasCustomerId}`,
-                  "_blank"
-                )
-              }
+            <Dialog
+              open={boletosDialogOpen}
+              onOpenChange={setBoletosDialogOpen}
             >
-              <CreditCard className="h-4 w-4" />
-              Ver Boletos
-              <ExternalLink className="h-3 w-3" />
-            </Button>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleOpenBoletos}
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Ver Boletos
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
+                <DialogHeader>
+                  <DialogTitle>Boletos de {empresa.nome}</DialogTitle>
+                  <DialogDescription>
+                    Lista de cobranças e pagamentos do cliente
+                  </DialogDescription>
+                </DialogHeader>
+
+                {loadingBoletos ? (
+                  <div className="flex items-center justify-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  </div>
+                ) : boletos.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    Nenhum boleto encontrado para este cliente.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {boletos.map((boleto) => {
+                      const status = getStatusBoleto(boleto.status);
+                      return (
+                        <div
+                          key={boleto.id}
+                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <Badge className={status.className}>
+                                {status.label}
+                              </Badge>
+                              <span className="font-bold text-lg">
+                                R$ {boleto.valor.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              Vencimento:{" "}
+                              {new Date(boleto.vencimento).toLocaleDateString(
+                                "pt-BR"
+                              )}
+                              {boleto.dataPagamento && (
+                                <>
+                                  {" "}
+                                  • Pago em:{" "}
+                                  {new Date(
+                                    boleto.dataPagamento
+                                  ).toLocaleDateString("pt-BR")}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            {boleto.invoiceUrl && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  window.open(boleto.invoiceUrl!, "_blank")
+                                }
+                              >
+                                Ver Fatura
+                                <ExternalLink className="h-3 w-3 ml-1" />
+                              </Button>
+                            )}
+                            {boleto.boletoUrl && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() =>
+                                  window.open(boleto.boletoUrl!, "_blank")
+                                }
+                              >
+                                Ver Boleto
+                                <ExternalLink className="h-3 w-3 ml-1" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      window.open(
+                        `https://www.asaas.com/customerAccount/show/${empresa.asaasCustomerId}`,
+                        "_blank"
+                      )
+                    }
+                  >
+                    Abrir no Asaas
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
