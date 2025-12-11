@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -8,8 +8,26 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 export const Navbar = () => {
-  const { scrollY } = useScroll();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // Tenta encontrar o container imediatamente e também observa mudanças
+    const findContainer = () => {
+      const el = document.getElementById("main-scroll-container");
+      if (el) setContainerRef(el);
+    };
+
+    findContainer();
+
+    // Fallback caso o elemento ainda não esteja montado (pouco provável para pai, mas seguro)
+    const timer = setTimeout(findContainer, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const { scrollY } = useScroll({
+    container: containerRef ? { current: containerRef } : undefined,
+  });
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
