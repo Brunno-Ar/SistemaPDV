@@ -37,7 +37,17 @@ export const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <ThemeToggle />
+          <motion.div
+            initial={{ opacity: 1 }}
+            animate={{
+              opacity: isScrolled ? 0 : 1,
+              pointerEvents: isScrolled ? "none" : "auto",
+              scale: isScrolled ? 0.8 : 1,
+            }}
+            transition={{ duration: 0.3 }}
+          >
+            <ThemeToggle />
+          </motion.div>
           <Link
             href="/login"
             className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors"
