@@ -141,15 +141,15 @@ export function SharedDashboard({
       </div>
 
       {/* Main Area */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-7">
-        {/* Shortcuts (Left - 2 cols) */}
-        <Card className="md:col-span-2 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl flex flex-col h-auto md:h-[220px]">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
+        {/* Shortcuts (Left - 2 cols on lg) */}
+        <Card className="sm:col-span-1 lg:col-span-2 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
               Acesso Rápido
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col gap-3 justify-center pb-6 md:pb-0">
+          <CardContent className="flex-1 flex flex-col gap-3 justify-center pb-6">
             <Link href="/vender" className="w-full">
               <InteractiveHoverButton className="w-full h-14 text-base bg-cta-bg hover:bg-cta-bg/90 border-cta-bg shadow-md transition-all hover:-translate-y-1 text-white">
                 <span className="flex items-center justify-center gap-2">
@@ -169,8 +169,8 @@ export function SharedDashboard({
           </CardContent>
         </Card>
 
-        {/* Chart (Right - 5 cols) */}
-        <Card className="md:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[300px] md:h-[220px]">
+        {/* Chart (Right - 5 cols on lg, full width on sm) */}
+        <Card className="sm:col-span-2 lg:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[280px] sm:h-[250px]">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
               Desempenho Semanal

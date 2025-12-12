@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "@/hooks/use-toast"; // Assuming you have a toast hook
 
 export interface SignupFormData {
   email: string;
@@ -85,7 +84,10 @@ export function useSignupForm() {
     setStep((prev) => prev - 1);
   };
 
-  const handleChange = (field: keyof SignupFormData, value: any) => {
+  const handleChange = (
+    field: keyof SignupFormData,
+    value: string | boolean
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

@@ -1,0 +1,431 @@
+﻿
+> lint
+> next lint
+
+npm : 
+No linha:1 caractere:25
++ $env:FORCE_COLOR = '0'; npm run lint 
+2>&1 | Out-File -Encoding utf8 l ...
++                         ~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified 
+   : (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeComman 
+   dError
+ 
+[36m./app/(funcionario)/vender/_components
+/parts/CartSummary.tsx[39m
+[33m311[39m:[33m6[39m  
+[33m[1mWarning[22m[39m: React Hook 
+useEffect has a missing dependency: 
+'localValue'. Either include it or remove 
+the dependency array.  [90m[1mreact-hooks
+/exhaustive-deps[22m[39m
+
+[36m./app/api/admin/assinatura/cancel/rout
+e.ts[39m
+[33m35[39m:[33m33[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m54[39m:[33m35[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m72[39m:[33m32[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/admin/lotes/route.ts[39m
+[33m86[39m:[33m45[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m247[39m:[33m57[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m434[39m:[33m22[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m501[39m:[33m57[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/admin/products/route.ts[39m
+[33m73[39m:[33m55[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m189[39m:[33m57[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/admin/sales/route.ts[39m
+[33m52[39m:[33m23[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m91[39m:[33m45[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m95[39m:[33m70[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/company/status/route.ts[39m
+[33m14[39m:[33m20[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m22[39m:[33m10[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/master/cupons/route.ts[39m
+[33m63[39m:[33m65[39m  
+[31m[1mError[22m[39m: 'duracaoMeses' 
+is assigned a value but never used. 
+Allowed unused vars must match /^_/u.  [90
+m[1m@typescript-eslint/no-unused-vars[22m
+[39m
+
+[36m./app/api/master/empresas/actions/rout
+e.ts[39m
+[33m175[39m:[33m27[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/master/empresas/route.ts[39
+m
+[33m137[39m:[33m57[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m237[39m:[33m28[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m250[39m:[33m28[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m260[39m:[33m42[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m281[39m:[33m47[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m295[39m:[33m41[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m313[39m:[33m44[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m319[39m:[33m39[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m373[39m:[33m19[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/products/route.ts[39m
+[33m10[39m:[33m44[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m11[39m:[33m18[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m16[39m:[33m33[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m72[39m:[33m19[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/products/search/route.ts[39
+m
+[33m10[39m:[33m44[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m11[39m:[33m18[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m16[39m:[33m33[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/public/unlock-account/route.
+ts[39m
+[33m46[39m:[33m20[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/api/sync/products/route.ts[39m
+[33m8[39m:[33m44[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m9[39m:[33m18[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m14[39m:[33m33[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/equipe/[id]/_components/funciona
+rio-detalhes.tsx[39m
+[33m29[39m:[33m50[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m56[39m:[33m21[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m148[39m:[33m29[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/equipe/[id]/_components/parts/Em
+ployeeActions.tsx[39m
+[33m20[39m:[33m16[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m81[39m:[33m21[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/estoque/_components/lot-manager-
+dialog.tsx[39m
+[33m114[39m:[33m27[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m114[39m:[33m35[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/forgot-password/page.tsx[39m
+[33m46[39m:[33m21[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/lotes/_components/lotes-client.t
+sx[39m
+[33m486[39m:[33m40[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/master/empresas/_components/part
+s/AvisoDialog.tsx[39m
+[33m14[39m:[33m20[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m15[39m:[33m14[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m16[39m:[33m24[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/master/empresas/_components/part
+s/ClearDataAlert.tsx[39m
+[33m16[39m:[33m19[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m17[39m:[33m32[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/master/empresas/_components/part
+s/CreateCompanyDialog.tsx[39m
+[33m39[39m:[33m23[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/master/empresas/_components/part
+s/DeleteCompanyAlert.tsx[39m
+[33m15[39m:[33m20[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m16[39m:[33m33[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/master/empresas/_components/part
+s/ResetPasswordDialog.tsx[39m
+[33m14[39m:[33m19[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m15[39m:[33m32[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/master/page.tsx[39m
+[33m79[39m:[33m33[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m115[39m:[33m33[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/master/usuarios/_components/usua
+rios-client.tsx[39m
+[33m100[39m:[33m21[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m129[39m:[33m21[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/movimentacoes/_components/movime
+ntacoes-client.tsx[39m
+[33m228[39m:[33m44[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m229[39m:[33m38[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/relatorios/_components/relatorio
+s-charts.tsx[39m
+[33m73[39m:[33m42[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m152[39m:[33m38[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m194[39m:[33m34[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m210[39m:[33m38[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./app/signup/_hooks/use-signup-form.ts
+[39m
+[33m3[39m:[33m10[39m  
+[31m[1mError[22m[39m: 'toast' is 
+defined but never used. Allowed unused 
+vars must match /^_/u.  [90m[1m@typescrip
+t-eslint/no-unused-vars[22m[39m
+[33m88[39m:[33m61[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./components/layout/role-based-layout.
+tsx[39m
+[33m29[39m:[33m50[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m64[39m:[33m14[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./components/PasswordChangeAlert.tsx[
+39m
+[33m17[39m:[33m43[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./components/pwa/install-prompt.tsx[3
+9m
+[33m10[39m:[33m27[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m20[39m:[33m14[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m34[39m:[33m67[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./lib/asaas.ts[39m
+[33m208[39m:[33m20[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./lib/auth.ts[39m
+[33m48[39m:[33m26[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+[33m99[39m:[33m29[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./lib/local-db.ts[39m
+[33m14[39m:[33m12[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36m./lib/validation/product.ts[39m
+[33m3[39m:[33m43[39m  
+[31m[1mError[22m[39m: Unexpected any. 
+Specify a different type.  [90m[1m@typesc
+ript-eslint/no-explicit-any[22m[39m
+
+[36minfo[39m  - Need to disable some 
+ESLint rules? Learn more here: https://next
+js.org/docs/basic-features/eslint#disabling
+-rules

@@ -69,11 +69,11 @@ export async function GET() {
     const serializedProducts = await signUrlsInBatches(products, 10);
 
     return NextResponse.json(serializedProducts);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro detalhado ao buscar produtos:", error);
 
     let errorMessage = "Erro ao buscar produtos";
-    if (error.message) {
+    if (error instanceof Error) {
       errorMessage = error.message;
     }
 

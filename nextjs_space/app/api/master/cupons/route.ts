@@ -60,8 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { codigo, descontoPorcentagem, validoAte, limiteUsos, duracaoMeses } =
-      body;
+    const { codigo, descontoPorcentagem, validoAte, limiteUsos } = body;
 
     // Validações
     if (!codigo || descontoPorcentagem === undefined) {

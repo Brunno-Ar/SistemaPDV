@@ -13,7 +13,12 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
+    ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }
@@ -83,6 +88,7 @@ export async function GET(request: NextRequest) {
     const trintaDias = new Date();
     trintaDias.setDate(hoje.getDate() + 30);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lotesComStatus = lotes.map((lote: any) => {
       let status = "sem_validade";
       let diasParaVencer = null;
@@ -129,7 +135,12 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
+    ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }
@@ -244,6 +255,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar lote e atualizar estoque em uma transação
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await prisma.$transaction(async (tx: any) => {
       // 1. Calcular Custo Médio Ponderado
       // Fórmula: ((QtdAtual * CustoAtual) + (QtdLote * CustoLote)) / (QtdAtual + QtdLote)
@@ -320,7 +332,12 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
+    ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }
@@ -398,7 +415,12 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
+    ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
         { status: 403 }
@@ -431,6 +453,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Buscar o lote atual
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const loteAtual: any = await prisma.lote.findFirst({
       where: {
         id,
@@ -498,6 +521,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Atualizar em transação
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await prisma.$transaction(async (tx: any) => {
       // 1. Atualizar o lote
       const loteAtualizado = await tx.lote.update({

@@ -308,7 +308,7 @@ function DiscountInput({ value, onChange }: DiscountInputProps) {
     if (Math.abs(numericLocal - value) > 0.009) {
       setLocalValue(value === 0 ? "" : value.toFixed(2).replace(".", ","));
     }
-  }, [value]);
+  }, [value]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Permite digitar apenas números, vírgula e ponto
