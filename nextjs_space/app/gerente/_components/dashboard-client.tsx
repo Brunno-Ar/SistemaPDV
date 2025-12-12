@@ -9,6 +9,7 @@ import {
   DashboardMetrics,
   CaixaData,
 } from "@/components/dashboard/shared-dashboard";
+import { CaixasVisaoGeral } from "@/components/dashboard/caixas-visao-geral";
 
 // Interface local para lotes (com data em string como vem da API)
 interface LoteVencimentoData {
@@ -131,7 +132,12 @@ export default function GerenteDashboardClient() {
       caixaData={caixaData}
       loading={loading}
     >
-      {/* Alertas de Estoque (Novo para Gerente) */}
+      {/* Visão Geral dos Caixas da Loja */}
+      <div className="mb-6">
+        <CaixasVisaoGeral />
+      </div>
+
+      {/* Alertas de Estoque */}
       <div className="mt-2">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
           Alertas de Estoque

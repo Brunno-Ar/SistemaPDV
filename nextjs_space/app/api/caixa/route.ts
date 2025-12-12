@@ -34,35 +34,60 @@ async function calcularValoresEsperados(
   const vendasDebito = getTotal("debito");
   const vendasCartao = vendasCredito + vendasDebito;
 
-  // 2. Calculate Movements (Sangrias and Suprimentos)
+  // 2. Calculate Movements (Sangrias and Suprimentos) - SEPARADO POR MÉTODO DE PAGAMENTO
   const todasMovimentacoes = await prisma.movimentacaoCaixa.findMany({
     where: { caixaId: caixaAberto.id },
   });
 
-  let totalSangrias = 0;
-  let totalSuprimentos = 0;
+  // Separar movimentações por método de pagamento
+  let sangriasDinheiro = 0;
+  let sangriasMaquininha = 0; // PIX + Cartão
+  let suprimentosDinheiro = 0;
+  let suprimentosMaquininha = 0; // PIX + Cartão
 
   todasMovimentacoes.forEach((mov) => {
     const valor = Number(mov.valor || 0);
+    const metodo = mov.metodoPagamento;
+
+    // Determinar se é movimentação de dinheiro ou maquininha
+    const isDinheiro = !metodo || metodo === "dinheiro";
+
     if (mov.tipo === TipoMovimentacaoCaixa.SANGRIA) {
-      totalSangrias += valor;
+      if (isDinheiro) {
+        sangriasDinheiro += valor;
+      } else {
+        sangriasMaquininha += valor;
+      }
     } else if (mov.tipo === TipoMovimentacaoCaixa.SUPRIMENTO) {
-      totalSuprimentos += valor;
+      if (isDinheiro) {
+        suprimentosDinheiro += valor;
+      } else {
+        suprimentosMaquininha += valor;
+      }
     }
   });
 
+  // Totais legados (para compatibilidade)
+  const totalSangrias = sangriasDinheiro + sangriasMaquininha;
+  const totalSuprimentos = suprimentosDinheiro + suprimentosMaquininha;
+
   // 3. Calculate Theoretical Balances
-  // NOTA: Não incluímos o saldo inicial no cálculo
-  // O funcionário deve informar apenas o valor das operações do dia, sem contar o fundo de troco
+  // AGORA INCLUÍMOS O SALDO INICIAL no cálculo do dinheiro
+  // O funcionário conta o dinheiro físico na gaveta, então precisamos incluir o fundo de troco
 
-  // Expected Cash = Sales(Cash) + Supplies - Bleeds (sem saldo inicial)
+  // Saldo Inicial (fundo de troco)
+  const saldoInicial = Number(caixaAberto.saldoInicial || 0);
+
+  // Expected Cash = Saldo Inicial + Sales(Cash) + Supplies(Cash) - Bleeds(Cash)
   const saldoTeoricoDinheiro =
-    vendasDinheiro + totalSuprimentos - totalSangrias;
+    saldoInicial + vendasDinheiro + suprimentosDinheiro - sangriasDinheiro;
 
-  // Expected Machine (Pix + Card)
-  const saldoTeoricoMaquininha = vendasPix + vendasCartao;
+  // Expected Machine (Pix + Card) + Supplies(Machine) - Bleeds(Machine)
+  // Maquininha não tem saldo inicial pois começa do zero todo dia
+  const saldoTeoricoMaquininha =
+    vendasPix + vendasCartao + suprimentosMaquininha - sangriasMaquininha;
 
-  // Total Theoretical Drawer (sem saldo inicial)
+  // Total Theoretical Drawer (agora com saldo inicial)
   const totalTeoricoSistema = saldoTeoricoDinheiro + saldoTeoricoMaquininha;
 
   return {
@@ -104,11 +129,10 @@ export async function GET() {
     });
 
     if (caixaAberto) {
-      // Buscar vendas em dinheiro realizadas após a abertura do caixa
+      // Buscar TODAS as vendas (não só dinheiro) para poder calcular corretamente no frontend
       const vendas = await prisma.sale.findMany({
         where: {
           userId: session.user.id,
-          metodoPagamento: "dinheiro",
           dataHora: {
             gte: caixaAberto.dataAbertura,
           },
@@ -118,7 +142,7 @@ export async function GET() {
         },
       });
 
-      // Unificar movimentações e vendas
+      // Unificar movimentações e vendas - AGORA COM metodoPagamento
       const movimentosUnificados = [
         ...caixaAberto.movimentacoes.map((m) => ({
           id: m.id,
@@ -126,6 +150,7 @@ export async function GET() {
           valor: Number(m.valor),
           descricao: m.descricao,
           dataHora: m.dataHora,
+          metodoPagamento: m.metodoPagamento || null,
         })),
         ...vendas.map((v) => ({
           id: v.id,
@@ -135,6 +160,7 @@ export async function GET() {
             ? `Venda (Troco: R$ ${Number(v.troco).toFixed(2)})`
             : "Venda",
           dataHora: v.dataHora,
+          metodoPagamento: v.metodoPagamento,
         })),
       ].sort(
         (a, b) =>
@@ -144,6 +170,7 @@ export async function GET() {
       return NextResponse.json({
         caixaAberto: {
           ...caixaAberto,
+          saldoInicial: Number(caixaAberto.saldoInicial), // Converter Decimal para número
           movimentacoes: movimentosUnificados,
         },
       });

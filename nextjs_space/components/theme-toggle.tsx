@@ -40,7 +40,15 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
         className
       )}
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      role="button"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setTheme(isDark ? "light" : "dark");
+        }
+      }}
+      role="switch"
+      aria-checked={isDark}
+      aria-label={isDark ? "Ativar modo claro" : "Ativar modo escuro"}
       tabIndex={0}
     >
       <div className="flex justify-between items-center w-full">

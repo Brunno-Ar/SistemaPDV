@@ -7,6 +7,7 @@ import { StatsCards, StockAlerts, QuickAccess } from "./parts";
 import { useSession } from "next-auth/react";
 import { AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { CaixasVisaoGeral } from "@/components/dashboard/caixas-visao-geral";
 
 export default function DashboardClient() {
   useSession(); // Manter para reatividade da sessão
@@ -94,6 +95,9 @@ export default function DashboardClient() {
       <StatsCards stats={stats} />
 
       <QuickAccess />
+
+      {/* Visão Geral dos Caixas da Loja */}
+      <CaixasVisaoGeral />
 
       <StockAlerts
         produtosEstoqueBaixo={produtosEstoqueBaixo}

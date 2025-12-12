@@ -47,6 +47,7 @@ export interface CaixaData {
     valor: number;
     descricao: string;
     dataHora: string;
+    metodoPagamento?: string | null;
   }>;
 }
 

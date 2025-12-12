@@ -1,3 +1,14 @@
-# Allow all web crawlers to access all content
+# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
+
+# Bloquear áreas administrativas e APIs
+Disallow: /api/
+Disallow: /admin/
+Disallow: /master/
+Disallow: /gerente/
+Disallow: /dashboard/
+Disallow: /bloqueado/
+
+# Sitemap
+Sitemap: https://flowpdv.com.br/sitemap.xml

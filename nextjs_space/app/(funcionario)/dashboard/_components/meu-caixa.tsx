@@ -55,7 +55,18 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
   const [paymentMethod, setPaymentMethod] = useState("dinheiro");
   const [processing, setProcessing] = useState(false);
 
+  // Estados para Troca PIX (integrado no suprimento)
+  const [isTrocaPix, setIsTrocaPix] = useState(false);
+  const [trocaPixTrocoValue, setTrocaPixTrocoValue] = useState("");
+
   const router = useRouter();
+
+  // Função para validar e permitir apenas números e separadores decimais
+  const handleValueChange = (value: string) => {
+    // Remove tudo que não for número, vírgula ou ponto
+    const sanitized = value.replace(/[^0-9.,]/g, "");
+    setInputValue(sanitized);
+  };
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -157,11 +168,111 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
     }
   };
 
+  // Handler específico para Troca PIX
+  const handleTrocaPix = async () => {
+    const maquininhaNum = parseCurrency(inputValue);
+    const trocoNum = parseCurrency(trocaPixTrocoValue);
+
+    // Validações
+    if (maquininhaNum <= 0) {
+      toast({
+        title: "Erro",
+        description: "Informe o valor que entrou na maquininha.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (trocoNum <= 0) {
+      toast({
+        title: "Erro",
+        description: "Informe o valor do troco em dinheiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (trocoNum >= maquininhaNum) {
+      toast({
+        title: "Atenção",
+        description: "O troco deve ser menor que o valor recebido no PIX.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProcessing(true);
+
+    try {
+      // 1. Criar SUPRIMENTO PIX (valor que entrou na maquininha)
+      const resSuprimento = await fetch("/api/caixa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "suprimento",
+          valor: maquininhaNum,
+          descricao: `Troca PIX - Recebido na maquininha`,
+          metodoPagamento: "pix",
+        }),
+      });
+
+      if (!resSuprimento.ok) {
+        const data = await resSuprimento.json();
+        throw new Error(data.error || "Erro ao registrar entrada PIX");
+      }
+
+      // 2. Criar SANGRIA DINHEIRO (troco dado ao cliente)
+      const resSangria = await fetch("/api/caixa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sangria",
+          valor: trocoNum,
+          descricao: `Troca PIX - Troco em dinheiro`,
+          metodoPagamento: "dinheiro",
+        }),
+      });
+
+      if (!resSangria.ok) {
+        const data = await resSangria.json();
+        throw new Error(data.error || "Erro ao registrar saída de dinheiro");
+      }
+
+      const taxa = maquininhaNum - trocoNum;
+      toast({
+        title: "Troca PIX registrada!",
+        description: `Maquininha: +R$ ${maquininhaNum.toFixed(
+          2
+        )} | Troco: -R$ ${trocoNum.toFixed(2)} | Taxa: R$ ${taxa.toFixed(2)}`,
+        variant: "default",
+      });
+
+      // Limpar estados e fechar dialog
+      setDialogOpen(null);
+      setInputValue("");
+      setTrocaPixTrocoValue("");
+      setIsTrocaPix(false);
+      await fetchStatus();
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro na operação",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleDialogOpenChange = (isOpen: boolean, type: string) => {
     if (!isOpen) {
       setInputValue("");
       setDescription("");
       setPaymentMethod("dinheiro");
+      setIsTrocaPix(false);
+      setTrocaPixTrocoValue("");
       setDialogOpen(null);
     } else {
       setDialogOpen(type);
@@ -214,7 +325,7 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
                     id="saldoInicial"
                     type="text"
                     value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
+                    onChange={(e) => handleValueChange(e.target.value)}
                     placeholder="0,00"
                     inputMode="decimal"
                   />
@@ -253,21 +364,71 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
                 {new Date(caixa.dataAbertura).toLocaleTimeString("pt-BR", {
                   hour: "2-digit",
                   minute: "2-digit",
-                })}
+                })}{" "}
+                •{" "}
+                <span className="text-green-700 dark:text-green-300">
+                  Caixa inicial: {formatCurrency(caixa.saldoInicial)}
+                </span>
               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {/* Card: Dinheiro em Caixa (calculado) */}
+          {(() => {
+            // Calcular saldo atual de dinheiro - garantindo que todos são números
+            const saldoInicial = Number(caixa.saldoInicial) || 0;
+            const vendasDinheiro = caixa.movimentacoes
+              .filter(
+                (m) =>
+                  m.tipo === "VENDA" &&
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+              )
+              .reduce((acc, m) => acc + Number(m.valor), 0);
+            const suprimentosDinheiro = caixa.movimentacoes
+              .filter(
+                (m) =>
+                  m.tipo === "SUPRIMENTO" &&
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+              )
+              .reduce((acc, m) => acc + Number(m.valor), 0);
+            const sangriasDinheiro = caixa.movimentacoes
+              .filter(
+                (m) =>
+                  m.tipo === "SANGRIA" &&
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+              )
+              .reduce((acc, m) => acc + Number(m.valor), 0);
+            const saldoDinheiro =
+              saldoInicial +
+              vendasDinheiro +
+              suprimentosDinheiro -
+              sangriasDinheiro;
+
+            return (
+              <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg shadow-sm border-2 border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                  💵 Dinheiro em Caixa
+                </p>
+                <p
+                  className={`text-2xl font-bold ${
+                    saldoDinheiro >= 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}
+                >
+                  {formatCurrency(saldoDinheiro)}
+                </p>
+                <p className="text-[10px] text-green-600/70 dark:text-green-400/70 mt-1">
+                  Saldo teórico na gaveta
+                </p>
+              </div>
+            );
+          })()}
+
           <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
-            <p className="text-sm text-muted-foreground">Saldo Inicial</p>
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(caixa.saldoInicial)}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
-            <p className="text-sm text-muted-foreground">Entradas (Vendas)</p>
+            <p className="text-sm text-muted-foreground">Vendas</p>
             <p className="text-xl font-bold text-green-600 dark:text-green-400">
               {formatCurrency(
                 caixa.movimentacoes
@@ -277,7 +438,17 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
             </p>
           </div>
           <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
-            <p className="text-sm text-muted-foreground">Saídas (Sangrias)</p>
+            <p className="text-sm text-muted-foreground">Suprimentos</p>
+            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              {formatCurrency(
+                caixa.movimentacoes
+                  .filter((m) => m.tipo === "SUPRIMENTO")
+                  .reduce((acc, m) => acc + m.valor, 0)
+              )}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
+            <p className="text-sm text-muted-foreground">Sangrias</p>
             <p className="text-xl font-bold text-red-600 dark:text-red-400">
               {formatCurrency(
                 caixa.movimentacoes
@@ -316,6 +487,13 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
             setDescriptionValue={setDescription}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
+            // Props para Troca PIX
+            allowTrocaPix={true}
+            isTrocaPix={isTrocaPix}
+            setIsTrocaPix={setIsTrocaPix}
+            trocaPixTrocoValue={trocaPixTrocoValue}
+            setTrocaPixTrocoValue={setTrocaPixTrocoValue}
+            onConfirmTrocaPix={handleTrocaPix}
           />
 
           <Dialog

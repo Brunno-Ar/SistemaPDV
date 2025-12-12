@@ -78,6 +78,9 @@ export function FechamentoCaixaDialog({
     setTemDivergencia(false);
   };
 
+  // Função para validar e permitir apenas números e separadores decimais
+  const sanitizeValue = (value: string) => value.replace(/[^0-9.,]/g, "");
+
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       resetFechamento();
@@ -173,7 +176,9 @@ export function FechamentoCaixaDialog({
                   id="valorDinheiro"
                   type="text"
                   value={valorDinheiro}
-                  onChange={(e) => setValorDinheiro(e.target.value)}
+                  onChange={(e) =>
+                    setValorDinheiro(sanitizeValue(e.target.value))
+                  }
                   placeholder="0.00"
                   inputMode="decimal"
                 />
@@ -187,7 +192,9 @@ export function FechamentoCaixaDialog({
                   id="valorMaquininha"
                   type="text"
                   value={valorMaquininha}
-                  onChange={(e) => setValorMaquininha(e.target.value)}
+                  onChange={(e) =>
+                    setValorMaquininha(sanitizeValue(e.target.value))
+                  }
                   placeholder="0.00"
                   inputMode="decimal"
                 />
