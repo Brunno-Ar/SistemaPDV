@@ -23,6 +23,7 @@ import {
   Store,
   Settings,
   CreditCard,
+  StickyNote,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -131,6 +132,11 @@ export default function RoleBasedLayout({
         href: "/configuracoes",
         icon: <Settings className="h-5 w-5 flex-shrink-0" />,
       },
+      {
+        label: "Anotações",
+        href: "/anotacoes",
+        icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,
+      },
     ];
   } else if (role === "admin") {
     links = [
@@ -189,6 +195,11 @@ export default function RoleBasedLayout({
         href: "/configuracoes",
         icon: <Settings className="h-5 w-5 flex-shrink-0" />,
       },
+      {
+        label: "Anotações",
+        href: "/anotacoes",
+        icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,
+      },
     ];
   } else {
     // Caixa / Funcionário
@@ -214,6 +225,11 @@ export default function RoleBasedLayout({
         label: "Configurações",
         href: "/configuracoes",
         icon: <Settings className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Anotações",
+        href: "/anotacoes",
+        icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,
       },
     ];
   }

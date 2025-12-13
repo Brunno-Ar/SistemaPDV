@@ -110,6 +110,7 @@ model User {
   avisosEnviados   Aviso[] @relation("Remetente")
   avisosRecebidos  Aviso[] @relation("Destinatario")
   empresa       Empresa?              @relation(fields: [empresaId], references: [id])
+  notes         Note[]
 
   @@map("users")
 }
@@ -161,6 +162,7 @@ model Empresa {
   categories    Category[]
   Caixa         Caixa[]
   cancelamentos Cancelamento[]
+  notes         Note[]
 
   @@map("empresas")
 }
@@ -362,4 +364,22 @@ model Cupom {
   limiteUsos          Int?      @map("limite_usos")
 
   @@map("cupons")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  color     String?  @default("yellow")
+  userId    String   @map("user_id")
+  empresaId String   @map("empresa_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id])
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([empresaId])
+  @@map("notes")
 }
