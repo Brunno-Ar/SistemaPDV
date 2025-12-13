@@ -18,7 +18,7 @@ export const Marquee = () => {
     <section className="py-10 bg-white dark:bg-zinc-950 border-y border-gray-300 dark:border-zinc-900 overflow-hidden">
       <div className="container mx-auto px-6 mb-6 text-center">
         <p className="text-sm font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-          Confiança de mais de 500+ empresas
+          A escolha de negócios inovadores
         </p>
       </div>
 

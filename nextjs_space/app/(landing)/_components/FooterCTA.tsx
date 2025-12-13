@@ -22,8 +22,8 @@ export const FooterCTA = () => {
             Pronto para transformar seu varejo?
           </h2>
           <p className="text-xl text-zinc-400 mb-10">
-            Junte-se a centenas de lojistas que já modernizaram suas operações
-            com o Flow PDV.
+            Junte-se a lojistas que já modernizaram suas operações com o Flow
+            PDV.
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4">
