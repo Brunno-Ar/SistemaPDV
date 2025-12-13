@@ -55,25 +55,37 @@ export async function POST() {
           ? new Date(sub.nextDueDate)
           : null;
 
-        if (sub.status === "ACTIVE") novoStatus = "ATIVO";
-        else if (sub.status === "OVERDUE") novoStatus = "PAUSADO";
-        // Ou manter ATIVO se dentro do grace period (mas aqui forçamos o status real)
-        else if (sub.status === "RECEIVED" || sub.status === "CONFIRMED")
-          novoStatus = "ATIVO";
-        else if (sub.status === "INACTIVE" || sub.status === "CANCELLED")
-          novoStatus = "CANCELADO";
+        // Decisão de Status baseada no retorno do Asaas
+        // Status do Asaas: ACTIVE, EXPIRED, OVERDUE, CANCELED, RECEIVED, CONFIRMED...
 
-        // Se estiver EM_TESTE, mantemos EM_TESTE até que o pagamento seja confirmado ou vença
-        if (
-          empresa.status === "EM_TESTE" &&
-          novoStatus !== "ATIVO" &&
-          novoStatus !== "CANCELADO"
-        ) {
-          // Verifica se o trial expirou
-          if (novoVencimento && new Date() > novoVencimento) {
-            novoStatus = "PAUSADO"; // Fim do trial sem pagamento
+        if (sub.status === "RECEIVED" || sub.status === "CONFIRMED") {
+          // Pagamento confirmado: Cliente Ativo real oficial
+          novoStatus = "ATIVO";
+        } else if (sub.status === "OVERDUE") {
+          // Vencido
+          novoStatus = "PAUSADO";
+        } else if (sub.status === "INACTIVE" || sub.status === "CANCELLED") {
+          novoStatus = "CANCELADO";
+        } else if (sub.status === "ACTIVE") {
+          // Assinatura vigente.
+          // SE a empresa já era EM_TESTE, ela deve continuar EM_TESTE até pagar,
+          // a menos que o trial tenha acabado (verificação de data abaixo).
+          // Se ela já era ATIVO ou PAUSADO, volta/fica ATIVO.
+          if (empresa.status === "EM_TESTE") {
+            novoStatus = "EM_TESTE";
           } else {
-            novoStatus = "EM_TESTE"; // Ainda no trial
+            novoStatus = "ATIVO";
+          }
+        }
+
+        // Validação adicional de expiração para EM_TESTE
+        if (novoStatus === "EM_TESTE") {
+          // Se a data de vencimento que veio do Asaas (próxima cobrança) já passou ou é hoje...
+          // Na prática, se está em teste, a próxima cobrança é o fim do teste.
+          if (novoVencimento && new Date() > novoVencimento) {
+            // Se passou da data e não está pago (senão teria caído no RECEIVED acima)
+            // Então pausamos.
+            novoStatus = "PAUSADO";
           }
         }
 

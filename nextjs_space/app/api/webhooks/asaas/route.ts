@@ -8,6 +8,7 @@ const GRACE_PERIOD_DAYS = parseInt(
 );
 
 export async function POST(req: NextRequest) {
+  console.log("🔔 [Webhook] Recebendo requisição POST em /api/webhooks/asaas");
   try {
     // ========== VALIDAÇÃO DE SEGURANÇA ==========
     const token = req.headers.get("asaas-access-token");
