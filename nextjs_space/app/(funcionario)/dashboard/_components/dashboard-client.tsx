@@ -31,40 +31,40 @@ export default function DashboardClient() {
   );
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // 🚀 Otimização: Buscar TODOS os dados em paralelo
-        // Isso inclui analytics, caixa e avisos
-        const [resAnalytics, resCaixa] = await Promise.all([
-          fetch("/api/employee/analytics"),
-          fetch("/api/caixa", { cache: "no-store" }),
-          fetch("/api/avisos"),
-        ]);
+  const fetchData = async () => {
+    try {
+      // 🚀 Otimização: Buscar TODOS os dados em paralelo
+      const [resAnalytics, resCaixa] = await Promise.all([
+        fetch("/api/employee/analytics"),
+        fetch("/api/caixa", { cache: "no-store" }),
+        // fetch("/api/avisos"), // Avisos já tem cache próprio ou não precisam de polling frequente, mas para simplificar pode ficar ou ser removido do loop crítico se pesar
+      ]);
 
-        if (resAnalytics.ok) {
-          const json = await resAnalytics.json();
-          setData(json);
-        }
-
-        // 🚀 Armazenar dados do caixa para passar ao MeuCaixa
-        if (resCaixa.ok) {
-          const caixaJson = await resCaixa.json();
-          setCaixaData(caixaJson.caixaAberto || null);
-        } else {
-          setCaixaData(null);
-        }
-
-        // Os dados de avisos são usados pelo MuralAvisos
-        // Ele tem seu próprio estado interno, mas agora o servidor já tem os dados em cache
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
-        setCaixaData(null); // Em caso de erro, seta como null
-      } finally {
-        setLoading(false);
+      if (resAnalytics.ok) {
+        const json = await resAnalytics.json();
+        setData(json);
       }
+
+      if (resCaixa.ok) {
+        const caixaJson = await resCaixa.json();
+        setCaixaData(caixaJson.caixaAberto || null);
+      } else {
+        setCaixaData(null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch dashboard data", error);
+    } finally {
+      setLoading(false);
     }
-    fetchData();
+  };
+
+  useEffect(() => {
+    fetchData(); // Initial fetch
+
+    // Auto-refresh a cada 5 segundos
+    const intervalId = setInterval(fetchData, 5000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const currentDate = new Date().toLocaleDateString("pt-BR", {
