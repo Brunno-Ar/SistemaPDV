@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Suporte - FlowPDV",
-  description: "Central de Suporte do FlowPDV - Estamos aqui para ajudar",
+  title: "Fale Conosco - FlowPDV",
+  description: "Entre em contato conosco - FlowPDV",
 };
 
 const faqItems = [
@@ -47,7 +47,7 @@ const faqItems = [
   },
 ];
 
-export default function SuportePage() {
+export default function FaleConoscoPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -64,11 +64,9 @@ export default function SuportePage() {
 
         {/* Hero */}
         <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-8 md:p-12 text-white mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            Como podemos ajudar?
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">Fale Conosco</h1>
           <p className="text-blue-100 text-lg">
-            Nossa equipe está pronta para te atender e resolver qualquer dúvida.
+            Estamos prontos para te atender e resolver qualquer dúvida.
           </p>
         </div>
 
@@ -79,13 +77,13 @@ export default function SuportePage() {
               <MessageCircle className="w-6 h-6 text-green-600" />
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              WhatsApp
+              WhatsApp / Suporte
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
               Atendimento rápido e prático
             </p>
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/5521980814965"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center text-green-600 hover:underline font-medium"
@@ -99,16 +97,16 @@ export default function SuportePage() {
               <Mail className="w-6 h-6 text-blue-600" />
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-              E-mail
+              Email Profissional
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
               Para questões detalhadas
             </p>
             <a
-              href="mailto:suporte@flowpdv.com"
+              href="mailto:Brunoaraujodev0@gmail.com"
               className="inline-flex items-center text-blue-600 hover:underline font-medium"
             >
-              suporte@flowpdv.com
+              Brunoaraujodev0@gmail.com
             </a>
           </div>
 

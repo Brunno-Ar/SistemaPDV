@@ -28,7 +28,7 @@ export default function TermosPage() {
             Termos de Serviço
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mb-8">
-            Última atualização: Dezembro de 2024
+            Última atualização: Dezembro de 2025
           </p>
 
           <div className="prose prose-gray dark:prose-invert max-w-none">
@@ -125,10 +125,10 @@ export default function TermosPage() {
               Para dúvidas sobre estes termos, entre em contato através do
               e-mail:
               <a
-                href="mailto:suporte@flowpdv.com"
+                href="mailto:Brunoaraujodev0@gmail.com"
                 className="text-blue-600 hover:underline ml-1"
               >
-                suporte@flowpdv.com
+                Brunoaraujodev0@gmail.com
               </a>
             </p>
           </div>

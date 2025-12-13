@@ -26,7 +26,7 @@ export const FooterCTA = () => {
             com o Flow PDV.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-4">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button
                 asChild
@@ -39,6 +39,17 @@ export const FooterCTA = () => {
                 </Link>
               </Button>
             </motion.div>
+
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="rounded-full text-lg h-14 px-8 bg-transparent border-white text-white hover:bg-white hover:text-zinc-900"
+              >
+                <Link href="/fale-conosco">FALE CONOSCO</Link>
+              </Button>
+            </motion.div>
           </div>
 
           <p className="mt-8 text-sm text-zinc-500">
@@ -49,7 +60,7 @@ export const FooterCTA = () => {
 
       <div className="border-t border-zinc-800 mt-24 pt-8">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-zinc-500 text-sm">
-          <p>© 2024 Flow PDV. Todos os direitos reservados.</p>
+          <p>© 2025 Flow PDV. Todos os direitos reservados.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
             <Link href="/termos" className="hover:text-white transition-colors">
               Termos
@@ -59,12 +70,6 @@ export const FooterCTA = () => {
               className="hover:text-white transition-colors"
             >
               Privacidade
-            </Link>
-            <Link
-              href="/suporte"
-              className="hover:text-white transition-colors"
-            >
-              Suporte
             </Link>
           </div>
         </div>

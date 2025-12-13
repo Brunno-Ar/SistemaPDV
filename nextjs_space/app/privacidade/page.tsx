@@ -206,7 +206,7 @@ export default function PrivacidadePage() {
                   href="mailto:privacidade@flowpdv.com"
                   className="text-blue-600 hover:underline"
                 >
-                  privacidade@flowpdv.com
+                  Brunoaraujodev0@gmail.com
                 </a>
               </p>
               <p className="text-gray-700 dark:text-gray-300 mt-2">
