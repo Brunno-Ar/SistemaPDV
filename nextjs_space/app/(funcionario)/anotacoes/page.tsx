@@ -35,7 +35,7 @@ export default async function NotesPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Anotações</h1>
       </div>
-      <NotesBoard initialNotes={notes as any} />
+      <NotesBoard initialNotes={notes} />
     </div>
   );
 }
