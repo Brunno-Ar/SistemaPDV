@@ -41,9 +41,13 @@ interface CaixaPayload {
 
 interface MeuCaixaProps {
   initialData?: CaixaData | null;
+  simpleMode?: boolean; // Modo Admin: Abertura/Fechamento rápidos
 }
 
-export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
+export function MeuCaixa({
+  initialData,
+  simpleMode = false,
+}: MeuCaixaProps = {}) {
   const { data: session } = useSession();
   const [caixa, setCaixa] = useState<CaixaData | null>(initialData ?? null);
   const [loading, setLoading] = useState(initialData === undefined);
@@ -248,6 +252,93 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
     }
   };
 
+  // Handlers Rápidos (Simplificados para Admin)
+  const handleQuickOpen = async () => {
+    // Abre com saldo 0
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/caixa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "abrir", saldoInicial: 0 }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao abrir caixa");
+      }
+
+      toast({
+        title: "Caixa Aberto",
+        description: "Iniciado com saldo zero (Modo Rápido).",
+      });
+      await fetchStatus();
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleQuickClose = async () => {
+    setProcessing(true);
+    try {
+      // 1. Obter valores esperados (conferir)
+      const resConf = await fetch("/api/caixa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "conferir" }),
+      });
+      const dataConf = await resConf.json();
+
+      if (!dataConf.success || !dataConf.detalhes) {
+        throw new Error("Não foi possível calcular valores de fechamento.");
+      }
+
+      const { dinheiro, maquininha } = dataConf.detalhes.esperado;
+
+      // 2. Fechar usando os valores esperados (sem divergência)
+      const resClose = await fetch("/api/caixa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "fechar",
+          valorInformadoDinheiro: dinheiro,
+          valorInformadoMaquininha: maquininha,
+          justificativa: "Fechamento Rápido (Admin)",
+        }),
+      });
+
+      if (!resClose.ok) {
+        const dataClose = await resClose.json();
+        throw new Error(dataClose.error || "Erro ao fechar caixa");
+      }
+
+      toast({
+        title: "Caixa Fechado",
+        description: "Fechamento rápido realizado com sucesso.",
+      });
+      setDialogOpen(null);
+      await fetchStatus();
+      router.refresh();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleDialogOpenChange = (isOpen: boolean, type: string) => {
     if (!isOpen) {
       setInputValue("");
@@ -281,48 +372,59 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
             </div>
           </div>
 
-          <Dialog
-            open={dialogOpen === "abrir"}
-            onOpenChange={(o) => handleDialogOpenChange(o, "abrir")}
-          >
-            <DialogTrigger asChild>
-              <Button
-                size="lg"
-                className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
-              >
-                Abrir Caixa
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Abrir Caixa</DialogTitle>
-                <DialogDescription>
-                  Informe o fundo de troco (saldo inicial) da gaveta.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="saldoInicial">Saldo Inicial (R$)</Label>
-                  <Input
-                    id="saldoInicial"
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => handleValueChange(e.target.value)}
-                    placeholder="0,00"
-                    inputMode="decimal"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
+          {simpleMode ? (
+            <Button
+              size="lg"
+              className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
+              onClick={handleQuickOpen}
+              disabled={processing}
+            >
+              {processing ? "Abrindo..." : "Abrir Caixa Rápido"}
+            </Button>
+          ) : (
+            <Dialog
+              open={dialogOpen === "abrir"}
+              onOpenChange={(o) => handleDialogOpenChange(o, "abrir")}
+            >
+              <DialogTrigger asChild>
                 <Button
-                  onClick={() => handleAction("abrir")}
-                  disabled={processing || !inputValue}
+                  size="lg"
+                  className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                 >
-                  {processing ? "Abrindo..." : "Abrir Caixa"}
+                  Abrir Caixa
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Abrir Caixa</DialogTitle>
+                  <DialogDescription>
+                    Informe o fundo de troco (saldo inicial) da gaveta.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="saldoInicial">Saldo Inicial (R$)</Label>
+                    <Input
+                      id="saldoInicial"
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => handleValueChange(e.target.value)}
+                      placeholder="0,00"
+                      inputMode="decimal"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    onClick={() => handleAction("abrir")}
+                    disabled={processing || !inputValue}
+                  >
+                    {processing ? "Abrindo..." : "Abrir Caixa"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </CardContent>
       </Card>
     );
@@ -507,24 +609,38 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
             onConfirmTrocaPix={handleTrocaPix}
           />
 
-          <Button
-            variant="destructive"
-            className="w-full sm:w-auto"
-            onClick={() => setDialogOpen("fechar")}
-          >
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Fechar Caixa
-          </Button>
+          {simpleMode ? (
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={handleQuickClose}
+              disabled={processing}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              {processing ? "Fechando..." : "Fechar Rápido"}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={() => setDialogOpen("fechar")}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Fechar Caixa
+              </Button>
 
-          <FechamentoCaixaDialog
-            open={dialogOpen === "fechar"}
-            onOpenChange={(open) => !open && setDialogOpen(null)}
-            onSuccess={async () => {
-              setDialogOpen(null);
-              await fetchStatus();
-              router.refresh();
-            }}
-          />
+              <FechamentoCaixaDialog
+                open={dialogOpen === "fechar"}
+                onOpenChange={(open) => !open && setDialogOpen(null)}
+                onSuccess={async () => {
+                  setDialogOpen(null);
+                  await fetchStatus();
+                  router.refresh();
+                }}
+              />
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

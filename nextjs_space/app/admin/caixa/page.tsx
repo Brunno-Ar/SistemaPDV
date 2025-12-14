@@ -14,7 +14,7 @@ export default function AdminCaixaPage() {
 
       {/* Caixa do Admin (funcionalidade completa de funcionário) */}
       <div className="space-y-6">
-        <MeuCaixa />
+        <MeuCaixa simpleMode={true} />
       </div>
 
       {/* Visão Geral dos Caixas da Loja (movido do dashboard) */}

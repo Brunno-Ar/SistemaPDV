@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { Note } from "@prisma/client";
 import NotesBoard from "./_components/notes-board";
 
 export const metadata = {
@@ -21,14 +22,21 @@ export default async function NotesPage() {
     // If no empresa, maybe redirect or show empty
   }
 
-  const notes = await prisma.note.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
+  let notes: Note[] = [];
+  try {
+    notes = await prisma.note.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao buscar anotações:", error);
+    // Retorna array vazio para não quebrar a página
+    notes = [];
+  }
 
   return (
     <div className="h-full p-6 lg:p-10 max-w-7xl mx-auto">
