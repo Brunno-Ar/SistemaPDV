@@ -429,6 +429,77 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // === TROCA PIX (NOVO) ===
+    if (action === "troca_pix") {
+      const valorPix = Number(body.valorPix); // Valor que entrou (Pix)
+      const valorSaida = Number(body.valorDinheiro); // Valor que saiu (Dinheiro)
+
+      if (
+        isNaN(valorPix) ||
+        valorPix <= 0 ||
+        isNaN(valorSaida) ||
+        valorSaida <= 0
+      ) {
+        return NextResponse.json(
+          { error: "Valores inválidos para troca Pix." },
+          { status: 400 }
+        );
+      }
+
+      const taxa = valorPix - valorSaida;
+
+      // Transaction:
+      // 1. Venda (Pix) = Taxa (Lucro)
+      // 2. Suprimento (Pix) = Valor Principal (Para compor o saldo Pix total: Taxa + Principal = Total Pix)
+      // 3. Sangria (Dinheiro) = Valor Principal (Saída física)
+      await prisma.$transaction(async (tx) => {
+        // 1. Registrar Venda da Taxa (Entrada Pix - Lucro)
+        if (taxa > 0) {
+          await tx.sale.create({
+            data: {
+              userId: session.user.id,
+              empresaId: session.user.empresaId!,
+              valorTotal: taxa,
+              metodoPagamento: "pix",
+              valorRecebido: taxa,
+              troco: 0,
+              // Sem itens - Venda de Serviço Implícito
+            },
+          });
+        }
+
+        // 2. Registrar Suprimento do Principal (Entrada Pix - Troca)
+        // Isso garante que o saldo de Pix no caixa reflita o total recebido (Taxa + Principal)
+        await tx.movimentacaoCaixa.create({
+          data: {
+            caixaId: caixaAberto.id,
+            usuarioId: session.user.id,
+            tipo: TipoMovimentacaoCaixa.SUPRIMENTO,
+            valor: valorSaida,
+            descricao: "Troca PIX - Principal (Entrada)",
+            metodoPagamento: "pix",
+          },
+        });
+
+        // 3. Registrar Sangria (Saída Dinheiro)
+        await tx.movimentacaoCaixa.create({
+          data: {
+            caixaId: caixaAberto.id,
+            usuarioId: session.user.id,
+            tipo: TipoMovimentacaoCaixa.SANGRIA,
+            valor: valorSaida,
+            descricao: "Troca PIX - Entrega (Saída)",
+            metodoPagamento: "dinheiro",
+          },
+        });
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Troca PIX registrada com sucesso!",
+      });
+    }
+
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
   } catch (error) {
     console.error("Erro na operação de caixa:", error);

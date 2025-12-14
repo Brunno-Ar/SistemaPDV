@@ -204,38 +204,20 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
     setProcessing(true);
 
     try {
-      // 1. Criar SUPRIMENTO PIX (valor que entrou na maquininha)
-      const resSuprimento = await fetch("/api/caixa", {
+      // 1. Chamar endpoint unificado de Troca PIX
+      const res = await fetch("/api/caixa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "suprimento",
-          valor: maquininhaNum,
-          descricao: `Troca PIX - Recebido na maquininha`,
-          metodoPagamento: "pix",
+          action: "troca_pix",
+          valorPix: maquininhaNum,
+          valorDinheiro: trocoNum,
         }),
       });
 
-      if (!resSuprimento.ok) {
-        const data = await resSuprimento.json();
-        throw new Error(data.error || "Erro ao registrar entrada PIX");
-      }
-
-      // 2. Criar SANGRIA DINHEIRO (troco dado ao cliente)
-      const resSangria = await fetch("/api/caixa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "sangria",
-          valor: trocoNum,
-          descricao: `Troca PIX - Troco em dinheiro`,
-          metodoPagamento: "dinheiro",
-        }),
-      });
-
-      if (!resSangria.ok) {
-        const data = await resSangria.json();
-        throw new Error(data.error || "Erro ao registrar saída de dinheiro");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao registrar Troca PIX");
       }
 
       const taxa = maquininhaNum - trocoNum;
@@ -487,13 +469,6 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
             setDescriptionValue={setDescription}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
-            // Props para Troca PIX
-            allowTrocaPix={true}
-            isTrocaPix={isTrocaPix}
-            setIsTrocaPix={setIsTrocaPix}
-            trocaPixTrocoValue={trocaPixTrocoValue}
-            setTrocaPixTrocoValue={setTrocaPixTrocoValue}
-            onConfirmTrocaPix={handleTrocaPix}
           />
 
           <Dialog
@@ -523,6 +498,13 @@ export function MeuCaixa({ initialData }: MeuCaixaProps = {}) {
             setDescriptionValue={setDescription}
             paymentMethod={paymentMethod}
             setPaymentMethod={setPaymentMethod}
+            // Props para Troca PIX (Movido para Sangria)
+            allowTrocaPix={true}
+            isTrocaPix={isTrocaPix}
+            setIsTrocaPix={setIsTrocaPix}
+            trocaPixTrocoValue={trocaPixTrocoValue}
+            setTrocaPixTrocoValue={setTrocaPixTrocoValue}
+            onConfirmTrocaPix={handleTrocaPix}
           />
 
           <Button

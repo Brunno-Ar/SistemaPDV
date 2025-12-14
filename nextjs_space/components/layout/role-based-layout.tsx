@@ -24,6 +24,7 @@ import {
   Settings,
   CreditCard,
   StickyNote,
+  Wallet,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -128,14 +129,14 @@ export default function RoleBasedLayout({
         icon: <User className="h-5 w-5 flex-shrink-0" />,
       },
       {
-        label: "Configurações",
-        href: "/configuracoes",
-        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
-      },
-      {
         label: "Anotações",
         href: "/anotacoes",
         icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Configurações",
+        href: "/configuracoes",
+        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
       },
     ];
   } else if (role === "admin") {
@@ -144,6 +145,11 @@ export default function RoleBasedLayout({
         label: "Dashboard",
         href: "/admin",
         icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Caixa",
+        href: "/admin/caixa",
+        icon: <Wallet className="h-5 w-5 flex-shrink-0" />,
       },
       {
         label: "Vender",
@@ -191,14 +197,14 @@ export default function RoleBasedLayout({
         icon: <CreditCard className="h-5 w-5 flex-shrink-0" />,
       },
       {
-        label: "Configurações",
-        href: "/configuracoes",
-        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
-      },
-      {
         label: "Anotações",
         href: "/anotacoes",
         icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Configurações",
+        href: "/configuracoes",
+        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
       },
     ];
   } else {
@@ -222,14 +228,14 @@ export default function RoleBasedLayout({
         id: "menu-minha-conta",
       },
       {
-        label: "Configurações",
-        href: "/configuracoes",
-        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
-      },
-      {
         label: "Anotações",
         href: "/anotacoes",
         icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Configurações",
+        href: "/configuracoes",
+        icon: <Settings className="h-5 w-5 flex-shrink-0" />,
       },
     ];
   }

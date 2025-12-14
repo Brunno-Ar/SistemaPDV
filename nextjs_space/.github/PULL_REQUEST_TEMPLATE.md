@@ -1,23 +1,25 @@
 ## O que mudou?
 
-- Implementação da feature `anotacoes-sidebar`.
-- Adicionada nova tabela `Note` no schema do Prisma.
-- Criadas rotas de API para CRUD de anotações (`/api/notes`).
-- Implementada interface de usuário com suporte a cores e sticky notes.
-- Adicionado item "Anotações" na sidebar para Gerente, Admin e Caixa (oculto para Master).
+- Adicionada página `/admin/caixa` para o perfil Admin.
+- Reutilizado componente `MeuCaixa` para permitir operações de caixa na conta Admin.
+- Movido componente `CaixasVisaoGeral` da Dashboard Admin para a nova aba Caixa.
+- Adicionado item "Caixa" na sidebar do Admin.
 
 ## Como testar?
 
-1. Execute `npx prisma db push` para atualizar o banco local.
-2. Acesse com um usuário não-master (Gerente ou Caixa).
-3. Navegue até "Anotações" na sidebar.
-4. Tente criar, editar e excluir uma nota.
-5. Verifique a persistência dos dados.
-6. Acesse com usuário Master e confirme que a aba não existe.
+1. Faça login como Admin (Gerente).
+2. Verifique se o item "Caixa" aparece na sidebar.
+3. Acesse a aba "Caixa".
+4. Teste as operações de caixa (abrir, suprimento, sangria, fechar).
+5. Verifique se a seção "Visão Geral da Loja" aparece abaixo do caixa.
+6. Volte à Dashboard e verifique se o card "Visão Geral" sumiu.
+
+## Screenshots
+
+(Adicione screenshots aqui)
 
 ## Checklist QA
 
-- [ ] CRUD de notas funcionando.
-- [ ] Layout responsivo.
-- [ ] Permissões corretas (Master bloqueado na UI).
-- [ ] Design conforme solicitado (Bloco de notas).
+- [ ] Item na sidebar presente apenas para Admin.
+- [ ] Funcionalidades de MeuCaixa operacionais.
+- [ ] Dashboard limpa (sem card duplicado).
