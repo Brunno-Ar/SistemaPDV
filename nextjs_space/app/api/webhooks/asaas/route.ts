@@ -8,7 +8,6 @@ const GRACE_PERIOD_DAYS = parseInt(
 );
 
 export async function POST(req: NextRequest) {
-  console.log("🔔 [Webhook] Recebendo requisição POST em /api/webhooks/asaas");
   try {
     // ========== VALIDAÇÃO DE SEGURANÇA ==========
     const token = req.headers.get("asaas-access-token");
@@ -37,14 +36,6 @@ export async function POST(req: NextRequest) {
     // Determinar o customerId baseado no tipo de evento
     const customerId = payment?.customer || subscription?.customer;
 
-    console.log("📥 [Webhook] Evento recebido:", {
-      event,
-      eventId,
-      paymentId: payment?.id,
-      subscriptionId: subscription?.id,
-      customerId,
-    });
-
     // ========== VALIDAÇÃO DO PAYLOAD ==========
     // Eventos de payment precisam de payment.customer
     // Eventos de subscription precisam de subscription.customer
@@ -70,16 +61,12 @@ export async function POST(req: NextRequest) {
 
     // ========== VERIFICAÇÃO DE IDEMPOTÊNCIA ==========
     if (empresa.webhookEventId === eventId) {
-      console.log(`ℹ️ [Webhook] Evento ${eventId} já processado, ignorando`);
       return NextResponse.json({ message: "Event already processed" });
     }
 
     // ========== PROCESSAR EVENTOS ==========
     if (event === "PAYMENT_RECEIVED" || event === "PAYMENT_CONFIRMED") {
       // Pagamento confirmado: Renovar plano
-      console.log(
-        `💰 [Webhook] Pagamento confirmado para empresa: ${empresa.nome}`
-      );
 
       const hoje = new Date();
       let novoVencimento: Date;
@@ -109,17 +96,8 @@ export async function POST(req: NextRequest) {
           webhookEventId: eventId, // Salvar para idempotência
         },
       });
-
-      console.log(
-        `✅ [Webhook] Empresa ${
-          empresa.nome
-        } renovada até ${novoVencimento.toISOString()}`
-      );
     } else if (event === "PAYMENT_OVERDUE") {
       // Pagamento atrasado: Verificar grace period antes de pausar
-      console.log(
-        `⏰ [Webhook] Pagamento atrasado para empresa: ${empresa.nome}`
-      );
 
       // Calcular quantos dias de atraso
       const dataVencimentoPagamento = payment.dueDate
@@ -135,10 +113,6 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      console.log(
-        `ℹ️ [Webhook] Dias de atraso: ${diasAtraso}, Grace Period: ${GRACE_PERIOD_DAYS} dias`
-      );
-
       if (diasAtraso >= GRACE_PERIOD_DAYS) {
         // Passou do grace period: Pausar empresa
         await prisma.empresa.update({
@@ -148,9 +122,6 @@ export async function POST(req: NextRequest) {
             webhookEventId: eventId,
           },
         });
-        console.log(
-          `🔴 [Webhook] Empresa ${empresa.nome} PAUSADA por inadimplência (${diasAtraso} dias de atraso)`
-        );
       } else {
         // Ainda dentro do grace period: Apenas registrar, não pausar
         await prisma.empresa.update({
@@ -159,20 +130,12 @@ export async function POST(req: NextRequest) {
             webhookEventId: eventId,
           },
         });
-        console.log(
-          `⚠️ [Webhook] Empresa ${empresa.nome} em grace period - ${
-            GRACE_PERIOD_DAYS - diasAtraso
-          } dias restantes para pagar`
-        );
       }
     } else if (
       event === "SUBSCRIPTION_DELETED" ||
       event === "SUBSCRIPTION_INACTIVATED"
     ) {
       // Assinatura cancelada/inativada externamente
-      console.log(
-        `🗑️ [Webhook] Assinatura cancelada para empresa: ${empresa.nome}`
-      );
 
       await prisma.empresa.update({
         where: { id: empresa.id },
@@ -181,12 +144,8 @@ export async function POST(req: NextRequest) {
           webhookEventId: eventId,
         },
       });
-      console.log(
-        `✅ [Webhook] Empresa ${empresa.nome} marcada como CANCELADO`
-      );
     } else {
       // Evento não tratado
-      console.log(`ℹ️ [Webhook] Evento ${event} ignorado (não tratado)`);
     }
 
     return NextResponse.json({ received: true });

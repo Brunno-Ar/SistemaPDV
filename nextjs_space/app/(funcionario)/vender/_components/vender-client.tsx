@@ -61,7 +61,6 @@ export default function VenderClient() {
 
         // Se estiver offline, LIBERA o acesso para vender
         if (!navigator.onLine) {
-          console.log("Offline: Liberando acesso ao caixa.");
           setCaixaFechado(false);
         } else {
           // Se online e deu erro, bloqueia por segurança

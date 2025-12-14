@@ -167,7 +167,27 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Unificar e Padronizar
-    const unifiedTimeline = [
+    interface TimelineItem {
+      id: string;
+      type: string;
+      date: Date | string;
+      user: string;
+      productName?: string;
+      quantity?: number;
+      totalValue?: number;
+      amountPaid?: number;
+      change?: number;
+      reason?: string | null;
+      items?: any[];
+      paymentMethod?: string | null;
+      trocaPixDetails?: {
+        demos: number;
+        recebemos: number;
+        taxa: number;
+      };
+    }
+
+    const unifiedTimeline: TimelineItem[] = [
       ...sales.map((sale) => ({
         id: sale.id,
         type: "VENDA",
@@ -194,21 +214,70 @@ export async function GET(request: NextRequest) {
         quantity: mov.quantidade,
         reason: mov.motivo,
       })),
-      ...cashMovements.map((mov) => ({
-        id: mov.id,
-        type: mov.tipo, // ABERTURA, SANGRIA, SUPRIMENTO
-        date: mov.dataHora,
-        user: mov.usuario?.name || "Desconhecido",
-        productName: "Movimentação de Caixa", // Placeholder
-        quantity: 1,
-        totalValue: Number(mov.valor),
-        reason: mov.descricao,
-        paymentMethod: mov.metodoPagamento || null, // Método de pagamento
-      })),
+      ...cashMovements.flatMap((mov) => {
+        // Lógica para Agrupar Troca Pix
+        const desc = mov.descricao || "";
+        const isTrocaPixMaster =
+          mov.tipo === "SUPRIMENTO" && desc.includes("Troca PIX - Principal");
+        const isTrocaPixSlave =
+          mov.tipo === "SANGRIA" &&
+          desc.includes("Troca PIX - Entrega") &&
+          desc.includes("[REF:");
+
+        if (isTrocaPixSlave) {
+          return []; // Ocultar a sangria técnica da Troca Pix
+        }
+
+        if (isTrocaPixMaster) {
+          // Parse dos valores
+          const taxaMatch = desc.match(/Taxa: ([\d.]+)/);
+          const demosMatch = desc.match(/Demos: ([\d.]+)/);
+          const recebemosMatch = desc.match(/Recebemos: ([\d.]+)/);
+
+          const taxa = taxaMatch ? Number(taxaMatch[1]) : 0;
+          const demos = demosMatch ? Number(demosMatch[1]) : Number(mov.valor);
+          const recebemos = recebemosMatch
+            ? Number(recebemosMatch[1])
+            : Number(mov.valor) + taxa;
+
+          return [
+            {
+              id: mov.id,
+              type: "TROCA_PIX",
+              date: mov.dataHora,
+              user: mov.usuario?.name || "Desconhecido",
+              productName: "Troca Pix",
+              quantity: 1,
+              totalValue: demos, // Valor base
+              reason: "Troca de Pix por Dinheiro",
+              paymentMethod: "pix",
+              trocaPixDetails: {
+                demos,
+                recebemos,
+                taxa,
+              },
+            },
+          ] as TimelineItem[];
+        }
+
+        return [
+          {
+            id: mov.id,
+            type: mov.tipo, // ABERTURA, SANGRIA, SUPRIMENTO
+            date: mov.dataHora,
+            user: mov.usuario?.name || "Desconhecido",
+            productName: "Movimentação de Caixa", // Placeholder
+            quantity: 1,
+            totalValue: Number(mov.valor),
+            reason: mov.descricao,
+            paymentMethod: mov.metodoPagamento || null, // Método de pagamento
+          },
+        ] as TimelineItem[];
+      }),
       ...closedCaixas.map((caixa) => ({
         id: caixa.id,
         type: "FECHAMENTO",
-        date: caixa.dataFechamento,
+        date: caixa.dataFechamento || new Date(),
         user: caixa.usuario?.name || "Desconhecido",
         productName: "Fechamento de Caixa",
         quantity: 1,

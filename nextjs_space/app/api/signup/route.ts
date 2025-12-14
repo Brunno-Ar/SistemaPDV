@@ -106,7 +106,6 @@ export async function POST(request: NextRequest) {
     );
 
     if (cupom) {
-      console.log("🎟️ Verificando cupom:", cupom);
       cupomDb = await prisma.cupom.findUnique({
         where: { codigo: cupom.toUpperCase() },
       });
@@ -138,19 +137,15 @@ export async function POST(request: NextRequest) {
       const desconto = cupomDb.descontoPorcentagem;
       subscriptionPrice = originalPrice * ((100 - desconto) / 100);
       subscriptionPrice = Number(subscriptionPrice.toFixed(2));
-      console.log(
-        `✅ Cupom aplicado: ${desconto}% OFF. Preço final: R$ ${subscriptionPrice}`
-      );
     }
 
     // ========== VERIFICAR DUPLICATAS ==========
-    console.log("🔍 Verificando se usuário existe:", email);
+
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
     if (existingUser) {
-      console.log("❌ Usuário já existe");
       return NextResponse.json(
         { error: "Já existe uma conta com este email" },
         { status: 400 }
@@ -163,7 +158,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingEmpresa) {
-      console.log("❌ CPF/CNPJ já cadastrado");
       return NextResponse.json(
         { error: "Este CPF/CNPJ já está cadastrado no sistema" },
         { status: 400 }
@@ -171,7 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash da senha
-    console.log("🔐 Gerando hash da senha");
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // ========== INTEGRAÇÃO ASAAS ==========
@@ -194,8 +188,6 @@ export async function POST(request: NextRequest) {
       | undefined;
 
     if (!isFreeAccount) {
-      console.log("🔄 Iniciando integração com Asaas...");
-
       try {
         // 1. Criar/Recuperar Cliente no Asaas
         const existingAsaasCustomer = await asaas.findCustomerByCpfCnpj(
@@ -203,10 +195,6 @@ export async function POST(request: NextRequest) {
         );
 
         if (existingAsaasCustomer) {
-          console.log(
-            "ℹ️ Cliente já existe no Asaas, usando existente:",
-            existingAsaasCustomer.id
-          );
           asaasCustomer = existingAsaasCustomer;
           isNewCustomer = false;
         } else {
@@ -223,7 +211,7 @@ export async function POST(request: NextRequest) {
               complemento: "", // Opcional
             }
           );
-          console.log("✅ Cliente Asaas criado:", asaasCustomer.id);
+
           createdAsaasCustomerId = asaasCustomer.id;
           isNewCustomer = true;
         }
@@ -233,13 +221,11 @@ export async function POST(request: NextRequest) {
           asaasCustomer.id,
           subscriptionPrice
         );
-        console.log("✅ Assinatura Asaas criada:", asaasSubscription.id);
       } catch (asaasError: unknown) {
         console.error("❌ Erro na integração Asaas:", asaasError);
 
         // ROLLBACK: Se criamos um cliente novo e ele falhou na assinatura, deletar
         if (createdAsaasCustomerId && isNewCustomer) {
-          console.log("🔄 Executando rollback - deletando cliente Asaas...");
           await asaas.deleteCustomer(createdAsaasCustomerId);
         }
 
@@ -272,11 +258,9 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      console.log("🎁 Conta GRATUITA - Pulando integração Asaas (cupom 100%)");
     }
 
     // ========== CRIAR EMPRESA E ADMIN NO BANCO ==========
-    console.log("🗄️ Iniciando transação de criação local");
 
     try {
       const result = await prisma.$transaction(
@@ -290,7 +274,6 @@ export async function POST(request: NextRequest) {
             // Conta gratuita: ATIVO permanentemente, sem vencimento
             status = "ATIVO";
             vencimento = null;
-            console.log("🎁 Conta GRATUITA - Status ATIVO permanente");
           } else {
             // Conta normal: Trial de X dias
             const trialDays = parseInt(
@@ -302,7 +285,7 @@ export async function POST(request: NextRequest) {
           }
 
           // 1. Criar empresa
-          console.log("📦 Criando empresa:", nomeEmpresa);
+
           const empresa = await tx.empresa.create({
             data: {
               nome: nomeEmpresa,
@@ -325,10 +308,9 @@ export async function POST(request: NextRequest) {
               cupomAplicado: cupom ? cupom.toUpperCase() : null,
             },
           });
-          console.log("✅ Empresa criada:", empresa.id);
 
           // 2. Criar usuário admin da empresa
-          console.log("👤 Criando usuário admin:", email);
+
           const admin = await tx.user.create({
             data: {
               email,
@@ -340,11 +322,9 @@ export async function POST(request: NextRequest) {
               tourCompleted: false,
             },
           });
-          console.log("✅ Usuário admin criado:", admin.id);
 
           // 3. Incrementar uso do cupom (se aplicado)
           if (cupomDb) {
-            console.log("🎟️ Incrementando uso do cupom:", cupomDb.codigo);
             await tx.cupom.update({
               where: { codigo: cupomDb.codigo },
               data: { usosAtuais: { increment: 1 } },
@@ -355,13 +335,10 @@ export async function POST(request: NextRequest) {
         }
       );
 
-      console.log("✅ Transação concluída com sucesso");
-
       // Enviar email de verificação
       try {
         const verificationToken = await generateVerificationToken(email);
         await sendVerificationEmail(email, verificationToken.token);
-        console.log("📧 Email de verificação enviado");
       } catch (emailError) {
         console.warn("⚠️ Erro ao enviar email de verificação:", emailError);
       }
@@ -387,12 +364,10 @@ export async function POST(request: NextRequest) {
       console.error("❌ Erro ao criar registros no banco:", dbError);
 
       // ROLLBACK: Cancelar assinatura e deletar cliente no Asaas
-      console.log("🔄 Executando rollback completo...");
 
       if (asaasSubscription) {
         try {
           await asaas.cancelSubscription(asaasSubscription.id);
-          console.log("✅ Assinatura cancelada no Asaas");
         } catch (e) {
           console.warn("⚠️ Falha ao cancelar assinatura:", e);
         }
@@ -401,7 +376,6 @@ export async function POST(request: NextRequest) {
       if (isNewCustomer && createdAsaasCustomerId) {
         try {
           await asaas.deleteCustomer(createdAsaasCustomerId);
-          console.log("✅ Cliente deletado do Asaas");
         } catch (e) {
           console.warn("⚠️ Falha ao deletar cliente:", e);
         }

@@ -210,13 +210,6 @@ export async function POST(request: NextRequest) {
 
     // === ABRIR CAIXA ===
     if (action === "abrir") {
-      console.log(
-        "Tentando abrir caixa. User:",
-        session.user.id,
-        "Empresa:",
-        session.user.empresaId
-      );
-
       const caixaExistente = await prisma.caixa.findFirst({
         where: {
           usuarioId: session.user.id,
@@ -453,6 +446,9 @@ export async function POST(request: NextRequest) {
       // 2. Suprimento (Pix) = Valor Principal (Para compor o saldo Pix total: Taxa + Principal = Total Pix)
       // 3. Sangria (Dinheiro) = Valor Principal (Saída física)
       await prisma.$transaction(async (tx) => {
+        // Gerar ID de referência para agrupar as movimentações na UI
+        const refId = `REF-${Date.now()}`;
+
         // 1. Registrar Venda da Taxa (Entrada Pix - Lucro)
         if (taxa > 0) {
           await tx.sale.create({
@@ -463,20 +459,27 @@ export async function POST(request: NextRequest) {
               metodoPagamento: "pix",
               valorRecebido: taxa,
               troco: 0,
-              // Sem itens - Venda de Serviço Implícito
+              // Adicionamos o Ref ID escondido no campo troco? Não.
+              // Sale infelizmente não tem descrição customizável fácil sem alterar schema.
+              // Mas o display principal será via Suprimento. A venda fica lá como registro contábil.
             },
           });
         }
 
         // 2. Registrar Suprimento do Principal (Entrada Pix - Troca)
-        // Isso garante que o saldo de Pix no caixa reflita o total recebido (Taxa + Principal)
+        // Guardamos os metadados na descrição para o frontend ler
         await tx.movimentacaoCaixa.create({
           data: {
             caixaId: caixaAberto.id,
             usuarioId: session.user.id,
             tipo: TipoMovimentacaoCaixa.SUPRIMENTO,
-            valor: valorSaida,
-            descricao: "Troca PIX - Principal (Entrada)",
+            valor: valorSaida, // Valor do Principal
+            // Formato: Troca PIX - Principal (Entrada) - Taxa: {taxa} - Demos: {valorSaida} - Recebemos: {valorPix} [REF:{refId}]
+            descricao: `Troca PIX - Principal (Entrada) - Taxa: ${taxa.toFixed(
+              2
+            )} - Demos: ${valorSaida.toFixed(
+              2
+            )} - Recebemos: ${valorPix.toFixed(2)} [${refId}]`,
             metodoPagamento: "pix",
           },
         });
@@ -488,7 +491,7 @@ export async function POST(request: NextRequest) {
             usuarioId: session.user.id,
             tipo: TipoMovimentacaoCaixa.SANGRIA,
             valor: valorSaida,
-            descricao: "Troca PIX - Entrega (Saída)",
+            descricao: `Troca PIX - Entrega (Saída) [${refId}]`,
             metodoPagamento: "dinheiro",
           },
         });

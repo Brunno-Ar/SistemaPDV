@@ -68,7 +68,8 @@ interface UnifiedMovement {
     | "ABERTURA"
     | "SANGRIA"
     | "SUPRIMENTO"
-    | "FECHAMENTO";
+    | "FECHAMENTO"
+    | "TROCA_PIX";
   date: string;
   user: string;
   // Fields for Sales
@@ -81,6 +82,12 @@ interface UnifiedMovement {
   productName?: string;
   quantity?: number;
   reason?: string;
+  // Troca Pix
+  trocaPixDetails?: {
+    demos: number;
+    recebemos: number;
+    taxa: number;
+  };
 }
 
 interface MovimentacoesClientProps {
@@ -162,6 +169,8 @@ export default function MovimentacoesClient({
         return <ArrowDownCircle className="h-5 w-5 text-green-500" />;
       case "FECHAMENTO":
         return <DollarSign className="h-5 w-5 text-purple-500" />;
+      case "TROCA_PIX":
+        return <ArrowRightLeft className="h-5 w-5 text-orange-500" />;
       default:
         return <Wrench className="h-5 w-5 text-gray-500" />;
     }
@@ -203,6 +212,9 @@ export default function MovimentacoesClient({
         break;
       case "FECHAMENTO":
         baseLabel = "Fechamento de Caixa";
+        break;
+      case "TROCA_PIX":
+        baseLabel = "Troca Pix";
         break;
       default:
         baseLabel = type;
@@ -473,6 +485,14 @@ export default function MovimentacoesClient({
                             >
                               #{mov.id.slice(-6).toUpperCase()}
                             </Badge>
+                            {mov.paymentMethod && (
+                              <Badge
+                                variant="secondary"
+                                className="capitalize text-xs"
+                              >
+                                {mov.paymentMethod}
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
                             <span>
@@ -549,6 +569,60 @@ export default function MovimentacoesClient({
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
+              ) : mov.type === "TROCA_PIX" && mov.trocaPixDetails ? (
+                <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                      {getIcon(mov.type)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                          Troca Pix
+                        </h3>
+                        {mov.paymentMethod && (
+                          <Badge variant="outline" className="text-xs">
+                            Pix
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                        <span>
+                          {format(new Date(mov.date), "dd/MM/yyyy HH:mm", {
+                            locale: ptBR,
+                          })}
+                        </span>
+                        <span>•</span>
+                        <span>{mov.user}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1 text-sm bg-gray-50 dark:bg-zinc-800/50 p-2 rounded-lg border dark:border-zinc-800">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-right">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Recebemos (Pix):
+                      </span>
+                      <span className="font-medium text-green-600 dark:text-green-400">
+                        {formatCurrency(mov.trocaPixDetails.recebemos)}
+                      </span>
+
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Demos (Dinheiro):
+                      </span>
+                      <span className="font-medium text-red-600 dark:text-red-400">
+                        {formatCurrency(mov.trocaPixDetails.demos)}
+                      </span>
+
+                      <span className="text-gray-500 dark:text-gray-400 font-medium">
+                        Taxa (Lucro):
+                      </span>
+                      <span className="font-bold text-blue-600 dark:text-blue-400 border-t border-gray-200 dark:border-zinc-700 pt-1 mt-1">
+                        {formatCurrency(mov.trocaPixDetails.taxa)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
