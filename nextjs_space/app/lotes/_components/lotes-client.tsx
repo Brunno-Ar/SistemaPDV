@@ -49,6 +49,7 @@ interface Product {
   sku: string;
   estoqueAtual: number;
   estoqueMinimo: number;
+  precoCompra: number;
 }
 
 interface Lote {
@@ -108,24 +109,72 @@ export default function LotesClient() {
     fetchProducts();
   }, []);
 
-  // Cálculo automático do Custo Unitário
-  useEffect(() => {
-    const qtd = parseCurrency(formData.quantidade);
-    const total = parseCurrency(formData.valorTotalLote);
+  // Handlers para inputs interligados (Quantidade, Custo Total, Custo Unitário)
+  const handleQuantidadeChange = (value: string) => {
+    const qtd = parseFloat(value);
+    const unitPrice = parseFloat(formData.precoCompra);
 
-    if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
-      const unitario = total / qtd;
-      setFormData((prev) => ({
-        ...prev,
-        precoCompra: unitario.toFixed(2),
-      }));
-    } else if (!formData.valorTotalLote) {
-      // Se limpar o valor total, limpa o unitário (opcional, mas bom pra UX)
-      // Mas se estiver editando e só mudou a quantidade, talvez queira manter?
-      // A regra do usuário é: dividir valor do lote pela quantidade.
-      // Se não tem valor do lote, não calcula.
+    let updates: Partial<typeof formData> = { quantidade: value };
+
+    // Se tiver preço unitário definido e quantidade válida, atualiza o total
+    if (!isNaN(qtd) && !isNaN(unitPrice)) {
+      updates.valorTotalLote = (qtd * unitPrice).toFixed(2);
     }
-  }, [formData.quantidade, formData.valorTotalLote]);
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handleValorTotalChange = (value: string) => {
+    const total = parseFloat(value);
+    const qtd = parseFloat(formData.quantidade);
+
+    let updates: Partial<typeof formData> = { valorTotalLote: value };
+
+    // Se tiver quantidade e total, calcula unitário
+    if (!isNaN(total) && !isNaN(qtd) && qtd > 0) {
+      updates.precoCompra = (total / qtd).toFixed(2);
+    }
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handlePrecoUnitarioChange = (value: string) => {
+    const unitPrice = parseFloat(value);
+    const qtd = parseFloat(formData.quantidade);
+
+    let updates: Partial<typeof formData> = { precoCompra: value };
+
+    // Se tiver quantidade e preço unitário, atualiza o total
+    if (!isNaN(unitPrice) && !isNaN(qtd)) {
+      updates.valorTotalLote = (qtd * unitPrice).toFixed(2);
+    }
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handleProductSelect = (value: string) => {
+    const selectedProduct = products.find((p) => p.id === value);
+
+    // Atualiza o ID
+    let updates: Partial<typeof formData> = { produtoId: value };
+
+    // Se achou o produto e ele tem preço de compra (custo anterior) e não estamos editando um lote existente
+    if (selectedProduct && !editingLoteId) {
+      if (selectedProduct.precoCompra && selectedProduct.precoCompra > 0) {
+        updates.precoCompra = selectedProduct.precoCompra.toFixed(2);
+
+        // Se já tiver quantidade inserida, atualiza o total
+        const qtd = parseFloat(formData.quantidade);
+        if (!isNaN(qtd) && qtd > 0) {
+          updates.valorTotalLote = (qtd * selectedProduct.precoCompra).toFixed(
+            2
+          );
+        }
+      }
+    }
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
 
   const fetchLotes = async () => {
     try {
@@ -238,6 +287,17 @@ export default function LotesClient() {
       toast({
         title: "Erro",
         description: "Preencha os campos obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação obrigatória do custo
+    if (!formData.precoCompra || parseFloat(formData.precoCompra) <= 0) {
+      toast({
+        title: "Erro",
+        description:
+          "O custo unitário é obrigatório e deve ser maior que zero.",
         variant: "destructive",
       });
       return;
@@ -658,9 +718,7 @@ export default function LotesClient() {
               <Label htmlFor="produto">Produto</Label>
               <Select
                 value={formData.produtoId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, produtoId: value })
-                }
+                onValueChange={handleProductSelect}
                 disabled={!!editingLoteId}
               >
                 <SelectTrigger>
@@ -694,9 +752,7 @@ export default function LotesClient() {
                   id="quantidade"
                   type="number"
                   value={formData.quantidade}
-                  onChange={(e) =>
-                    setFormData({ ...formData, quantidade: e.target.value })
-                  }
+                  onChange={(e) => handleQuantidadeChange(e.target.value)}
                   placeholder="Qtd"
                   required
                   disabled={!!editingLoteId}
@@ -725,10 +781,9 @@ export default function LotesClient() {
                   type="number"
                   step="0.01"
                   value={formData.valorTotalLote}
-                  onChange={(e) =>
-                    setFormData({ ...formData, valorTotalLote: e.target.value })
-                  }
+                  onChange={(e) => handleValorTotalChange(e.target.value)}
                   placeholder="0.00"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -738,9 +793,10 @@ export default function LotesClient() {
                   type="number"
                   step="0.01"
                   value={formData.precoCompra}
-                  readOnly
-                  className="bg-gray-100 dark:bg-zinc-800 dark:text-gray-300"
-                  placeholder="Calculado auto"
+                  onChange={(e) => handlePrecoUnitarioChange(e.target.value)}
+                  className="bg-white dark:bg-zinc-900"
+                  placeholder="0.00"
+                  required
                 />
               </div>
             </div>

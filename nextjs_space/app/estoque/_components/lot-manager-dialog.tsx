@@ -38,6 +38,7 @@ interface Lote {
 interface Product {
   id: string;
   nome: string;
+  precoCompra?: number;
 }
 
 interface LotManagerDialogProps {
@@ -77,26 +78,55 @@ export function LotManagerDialog({
     }
   }, [open, product]);
 
-  // Cálculo automático do Custo Unitário
-  useEffect(() => {
-    const qtd = parseCurrency(newLoteData.quantidade);
-    const total = parseCurrency(newLoteData.valorTotalLote);
+  // Handlers para inputs interligados (Quantidade, Custo Total, Custo Unitário)
+  const handleQuantidadeChange = (value: string) => {
+    const qtd = parseFloat(value);
+    const unitPrice = parseFloat(newLoteData.precoCompra);
 
-    if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
-      const unitario = total / qtd;
-      setNewLoteData((prev) => ({
-        ...prev,
-        precoCompra: unitario.toFixed(2),
-      }));
+    let updates: any = { quantidade: value };
+
+    // Se tiver preço unitário definido e quantidade válida, atualiza o total
+    if (!isNaN(qtd) && !isNaN(unitPrice)) {
+      updates.valorTotalLote = (qtd * unitPrice).toFixed(2);
     }
-  }, [newLoteData.quantidade, newLoteData.valorTotalLote]);
+
+    setNewLoteData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handleValorTotalChange = (value: string) => {
+    const total = parseFloat(value);
+    const qtd = parseFloat(newLoteData.quantidade);
+
+    let updates: any = { valorTotalLote: value };
+
+    // Se tiver quantidade e total, calcula unitário
+    if (!isNaN(total) && !isNaN(qtd) && qtd > 0) {
+      updates.precoCompra = (total / qtd).toFixed(2);
+    }
+
+    setNewLoteData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handlePrecoUnitarioChange = (value: string) => {
+    const unitPrice = parseFloat(value);
+    const qtd = parseFloat(newLoteData.quantidade);
+
+    let updates: any = { precoCompra: value };
+
+    // Se tiver quantidade e preço unitário, atualiza o total
+    if (!isNaN(unitPrice) && !isNaN(qtd)) {
+      updates.valorTotalLote = (qtd * unitPrice).toFixed(2);
+    }
+
+    setNewLoteData((prev) => ({ ...prev, ...updates }));
+  };
 
   const resetForm = () => {
     setNewLoteData({
       numeroLote: "",
       dataValidade: "",
       quantidade: "",
-      precoCompra: "",
+      precoCompra: product?.precoCompra ? product.precoCompra.toFixed(2) : "",
       dataCompra: "",
       valorTotalLote: "",
     });
@@ -149,6 +179,19 @@ export function LotManagerDialog({
       toast({
         title: "Erro",
         description: "Preencha a data de validade ou marque 'Sem validade'.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (
+      !newLoteData.precoCompra ||
+      parseCurrency(newLoteData.precoCompra) <= 0
+    ) {
+      toast({
+        title: "Erro",
+        description:
+          "O custo unitário é obrigatório e deve ser maior que zero.",
         variant: "destructive",
       });
       return;
@@ -244,12 +287,7 @@ export function LotManagerDialog({
                   id="quantidadeLote"
                   type="number"
                   value={newLoteData.quantidade}
-                  onChange={(e) =>
-                    setNewLoteData({
-                      ...newLoteData,
-                      quantidade: e.target.value,
-                    })
-                  }
+                  onChange={(e) => handleQuantidadeChange(e.target.value)}
                   placeholder="Qtd"
                   className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
                 />
@@ -291,12 +329,7 @@ export function LotManagerDialog({
                   type="number"
                   step="0.01"
                   value={newLoteData.valorTotalLote}
-                  onChange={(e) =>
-                    setNewLoteData({
-                      ...newLoteData,
-                      valorTotalLote: e.target.value,
-                    })
-                  }
+                  onChange={(e) => handleValorTotalChange(e.target.value)}
                   placeholder="0.00"
                   className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
                 />
@@ -313,9 +346,9 @@ export function LotManagerDialog({
                   type="number"
                   step="0.01"
                   value={newLoteData.precoCompra}
-                  readOnly
-                  placeholder="Calculado auto"
-                  className="bg-gray-100 dark:bg-zinc-800 dark:text-gray-300 cursor-not-allowed"
+                  onChange={(e) => handlePrecoUnitarioChange(e.target.value)}
+                  placeholder="0.00"
+                  className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>

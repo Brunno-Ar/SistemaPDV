@@ -119,19 +119,45 @@ export function ProductFormDialog({
     }
   }, [open, productToEdit]);
 
-  // Cálculo automático do Custo Unitário (Estoque Inicial)
-  useEffect(() => {
-    const qtd = parseCurrency(formData.loteInicial);
-    const total = parseCurrency(formData.valorTotalLoteInicial);
+  // Handlers para input de estoque inicial
+  const handleLoteInicialChange = (value: string) => {
+    const qtd = parseFloat(value);
+    const unitPrice = parseFloat(formData.precoCompra);
 
-    if (!isNaN(qtd) && qtd > 0 && !isNaN(total)) {
-      const unitario = total / qtd;
-      setFormData((prev) => ({
-        ...prev,
-        precoCompra: unitario.toFixed(2),
-      }));
+    let updates: Partial<typeof formData> = { loteInicial: value };
+
+    if (!isNaN(qtd) && !isNaN(unitPrice)) {
+      updates.valorTotalLoteInicial = (qtd * unitPrice).toFixed(2);
     }
-  }, [formData.loteInicial, formData.valorTotalLoteInicial]);
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handleValorTotalInicialChange = (value: string) => {
+    const total = parseFloat(value);
+    const qtd = parseFloat(formData.loteInicial);
+
+    let updates: Partial<typeof formData> = { valorTotalLoteInicial: value };
+
+    if (!isNaN(total) && !isNaN(qtd) && qtd > 0) {
+      updates.precoCompra = (total / qtd).toFixed(2);
+    }
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handlePrecoUnitarioChange = (value: string) => {
+    const unitPrice = parseFloat(value);
+    const qtd = parseFloat(formData.loteInicial);
+
+    let updates: Partial<typeof formData> = { precoCompra: value };
+
+    if (formData.loteInicial && !isNaN(unitPrice) && !isNaN(qtd)) {
+      updates.valorTotalLoteInicial = (qtd * unitPrice).toFixed(2);
+    }
+
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -186,13 +212,25 @@ export function ProductFormDialog({
       : 0;
     const estoqueMinimo = parseInt(formData.estoqueMinimo) || 5;
 
-    if (precoVenda <= 0 || precoCompra < 0) {
+    if (precoVenda <= 0) {
       toast({
         title: "Erro",
-        description: "Preços inválidos",
+        description: "Preço de venda inválido",
         variant: "destructive",
       });
       return;
+    }
+
+    if (formData.loteInicial && parseFloat(formData.loteInicial) > 0) {
+      if (!precoCompra || precoCompra <= 0) {
+        toast({
+          title: "Erro",
+          description:
+            "Para adicionar estoque inicial, o custo unitário é obrigatório e deve ser maior que zero.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     try {
@@ -423,12 +461,7 @@ export function ProductFormDialog({
                   type="number"
                   min="0"
                   value={formData.loteInicial}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      loteInicial: e.target.value,
-                    })
-                  }
+                  onChange={(e) => handleLoteInicialChange(e.target.value)}
                   placeholder="0"
                   className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
                 />
@@ -474,22 +507,28 @@ export function ProductFormDialog({
                     step="0.01"
                     value={formData.valorTotalLoteInicial}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        valorTotalLoteInicial: e.target.value,
-                      })
+                      handleValorTotalInicialChange(e.target.value)
                     }
                     placeholder="0.00"
                     className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-600 dark:text-gray-400">
-                    Custo Unit. (Auto)
+                  <Label
+                    htmlFor="precoCompraInicial"
+                    className="text-gray-600 dark:text-gray-400"
+                  >
+                    Custo Unit. (R$)
                   </Label>
-                  <div className="h-10 px-3 py-2 bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 rounded-md text-blue-800 dark:text-blue-200 font-medium flex items-center">
-                    R$ {formData.precoCompra || "0.00"}
-                  </div>
+                  <Input
+                    id="precoCompraInicial"
+                    type="number"
+                    step="0.01"
+                    value={formData.precoCompra}
+                    onChange={(e) => handlePrecoUnitarioChange(e.target.value)}
+                    className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
+                    placeholder="0.00"
+                  />
                 </div>
               </div>
 
@@ -537,8 +576,8 @@ export function ProductFormDialog({
                   className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  📅 Obrigatória se houver quantidade no lote (exceto se &quot;Sem
-                  validade&quot;)
+                  📅 Obrigatória se houver quantidade no lote (exceto se
+                  &quot;Sem validade&quot;)
                 </p>
               </div>
 
