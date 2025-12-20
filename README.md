@@ -119,7 +119,7 @@ O projeto utiliza as tecnologias mais modernas do ecossistema React para garanti
 * [x] Gestão de Equipe e Metas
 * [x] Mural de Avisos Internos
 * [ ] **Impressão Térmica:** Geração de cupom não-fiscal (PDF/Raw).
-* [ ] **PWA:** Funcionalidade Offline-first e instalação no Desktop/Mobile.
+* [x] **PWA:** Funcionalidade Offline-first e instalação no Desktop/Mobile.
 * [ ] **Integração WhatsApp:** Envio de comprovantes via API.
 
 ---
@@ -137,5 +137,5 @@ Este projeto está sob a licença MIT.
 <div align="center">
   Desenvolvido com 💙 por <strong>Bruno Araujo</strong>
   <br>
-  <a href="https://www.linkedin.com/in/seu-linkedin">LinkedIn</a> • <a href="https://github.com/seu-github">GitHub</a>
+  <a href="https://www.linkedin.com/in/brunno-araujo">LinkedIn</a> • <a href="https://github.com/brunno-Ar">GitHub</a>
 </div>
