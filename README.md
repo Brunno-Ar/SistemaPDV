@@ -10,7 +10,7 @@
 
 **Gestão Multi-Tenant • Controle Financeiro Rigoroso • Estoque Inteligente (FEFO)**
 
-[Ver Demo Online](https://seu-link-aqui.com) • [Reportar Bug](https://github.com/seu-usuario/flow-pdv/issues)
+[Ver Demo Online](flowpdv.com) • [Reportar Bug](https://github.com/brunno-Ar/flow-pdv/issues)
 
 </div>
 
