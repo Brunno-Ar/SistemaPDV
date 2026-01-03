@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
       quantidade,
       precoCompra,
       dataCompra,
+      registerExpense = true, // Por padrão, lança como despesa
     } = body;
 
     // Validações
@@ -294,7 +295,7 @@ export async function POST(request: NextRequest) {
       });
 
       // 4. Criar movimentação de estoque
-      await tx.movimentacaoEstoque.create({
+      const movimentacao = await tx.movimentacaoEstoque.create({
         data: {
           produtoId,
           usuarioId: session.user.id,
@@ -307,7 +308,24 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return { novoLote, estoqueTotal: novaQtdTotal };
+      // 5. Criar despesa se registerExpense = true e custoLote > 0
+      let expenseId = null;
+      if (registerExpense && custoLote > 0) {
+        const expense = await tx.expense.create({
+          data: {
+            empresaId,
+            userId: session.user.id,
+            description: `Compra de ${quantidade}x ${product.nome} (Lote ${finalNumeroLote})`,
+            amount: custoLote * quantidade, // Custo total do lote
+            category: "ESTOQUE",
+            date: dataCompra ? new Date(dataCompra + "T12:00:00Z") : new Date(),
+            movimentacaoEstoqueId: movimentacao.id,
+          },
+        });
+        expenseId = expense.id;
+      }
+
+      return { novoLote, estoqueTotal: novaQtdTotal, expenseId };
     });
 
     return NextResponse.json({

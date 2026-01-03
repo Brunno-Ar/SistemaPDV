@@ -61,6 +61,7 @@ export function LotManagerDialog({
   const [creatingLote, setCreatingLote] = useState(false);
 
   const [semValidade, setSemValidade] = useState(false);
+  const [registerExpense, setRegisterExpense] = useState(true); // Por padrão, lança como despesa
   const [newLoteData, setNewLoteData] = useState({
     numeroLote: "",
     dataValidade: "",
@@ -131,6 +132,7 @@ export function LotManagerDialog({
       valorTotalLote: "",
     });
     setSemValidade(false);
+    setRegisterExpense(true);
   };
 
   const fetchProductLots = async (productId: string) => {
@@ -211,6 +213,7 @@ export function LotManagerDialog({
             ? parseCurrency(newLoteData.precoCompra)
             : 0,
           dataCompra: newLoteData.dataCompra || null,
+          registerExpense, // Flag para criar despesa
         }),
       });
 
@@ -396,6 +399,28 @@ export function LotManagerDialog({
                 disabled={semValidade}
                 className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
               />
+            </div>
+
+            {/* Checkbox para lançar como despesa */}
+            <div className="flex items-center space-x-2 py-2 px-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Checkbox
+                id="registerExpense"
+                checked={registerExpense}
+                onCheckedChange={(checked) =>
+                  setRegisterExpense(checked as boolean)
+                }
+              />
+              <div className="grid gap-0.5 leading-none">
+                <Label
+                  htmlFor="registerExpense"
+                  className="text-sm font-medium cursor-pointer text-blue-900 dark:text-blue-200"
+                >
+                  💰 Lançar valor como despesa no caixa
+                </Label>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  O valor total do lote será registrado como saída financeira
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

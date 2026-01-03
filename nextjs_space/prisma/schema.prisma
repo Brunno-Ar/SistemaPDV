@@ -111,6 +111,7 @@ model User {
   avisosRecebidos  Aviso[] @relation("Destinatario")
   empresa       Empresa?              @relation(fields: [empresaId], references: [id])
   notes         Note[]
+  expenses      Expense[]
 
   @@map("users")
 }
@@ -163,6 +164,7 @@ model Empresa {
   Caixa         Caixa[]
   cancelamentos Cancelamento[]
   notes         Note[]
+  expenses      Expense[]
 
   @@map("empresas")
 }
@@ -291,6 +293,7 @@ model MovimentacaoEstoque {
   usuario User    @relation(fields: [usuarioId], references: [id])
   empresa Empresa @relation(fields: [empresaId], references: [id])
   lote    Lote?   @relation(fields: [loteId], references: [id])
+  expense Expense? // Despesa associada (se for entrada de estoque)
 
   @@map("movimentacoes_estoque")
 }
@@ -400,4 +403,30 @@ model Note {
   @@index([userId])
   @@index([empresaId])
   @@map("notes")
+}
+
+// Model para registro de despesas (saídas de caixa)
+model Expense {
+  id          String   @id @default(cuid())
+  empresaId   String   @map("empresa_id")
+  description String   @db.Text
+  amount      Decimal  @db.Decimal(10, 2) // Valor da saída
+  date        DateTime @default(now())
+  category    String   @default("ESTOQUE") // ESTOQUE, OPERACIONAL, PESSOAL, OUTROS (String livre)
+
+  // Relacionamento opcional com Movimentação de Estoque (entrada de lote)
+  movimentacaoEstoqueId String?              @unique @map("movimentacao_estoque_id")
+  movimentacaoEstoque   MovimentacaoEstoque? @relation(fields: [movimentacaoEstoqueId], references: [id])
+
+  // Quem registrou a despesa
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([empresaId])
+  @@index([date])
+  @@index([category])
+  @@map("expenses")
 }

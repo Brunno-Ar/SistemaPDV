@@ -553,6 +553,21 @@ export function usePOS() {
         if (!response.ok)
           throw new Error(data.error || "Erro ao finalizar venda");
 
+        // Atualizar estoque local para refletir na UI imediatamente
+        for (const item of cart) {
+          const product = await db.products.get(item.product.id);
+          if (product) {
+            await db.products.update(item.product.id, {
+              estoqueAtual: Math.max(0, product.estoqueAtual - item.quantidade),
+            });
+          }
+        }
+
+        // Recarregar produtos para atualizar a UI
+        const updatedProducts = await db.products.limit(50).toArray();
+        setSearchResults(updatedProducts);
+        setProducts(updatedProducts);
+
         toast({
           title: "Venda realizada",
           description: "Venda registrada com sucesso!",
@@ -583,10 +598,17 @@ export function usePOS() {
             const product = await db.products.get(item.product.id);
             if (product) {
               await db.products.update(item.product.id, {
-                estoqueAtual: product.estoqueAtual - item.quantidade,
+                estoqueAtual: Math.max(
+                  0,
+                  product.estoqueAtual - item.quantidade
+                ),
               });
             }
           }
+          // Recarregar produtos para atualizar a UI
+          const updatedProducts = await db.products.limit(50).toArray();
+          setSearchResults(updatedProducts);
+          setProducts(updatedProducts);
         } catch (localUpdateError) {
           console.error("Erro ao atualizar estoque local", localUpdateError);
         }

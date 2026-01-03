@@ -101,22 +101,12 @@ export function CartSummary({
   }, [selectedMethod, valorRestante]);
 
   const handleMethodClick = (method: PaymentItem["method"]) => {
-    // Se não há mais nada a pagar, ignora
+    // Se não há mais nada a pagar, ignora (exceto dinheiro que pode dar troco)
     if (valorRestante <= 0 && method !== "dinheiro") {
       return;
     }
 
-    // Atalho: Se não tem pagamentos e clica no método, adiciona valor total diretamente
-    if (payments.length === 0 && valorRestante === total) {
-      // Adiciona pagamento integral diretamente
-      const success = onAddPayment(method, total);
-      if (success) {
-        setPaymentError(false);
-        return;
-      }
-    }
-
-    // Abre input para valor customizado
+    // Sempre abre o input para digitar o valor - mais intuitivo para o usuário
     setSelectedMethod(method);
     setInputValue(valorRestante.toFixed(2).replace(".", ","));
   };
