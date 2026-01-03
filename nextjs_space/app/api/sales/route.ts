@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { TransactionClient, SaleItemInput, Product } from "@/types/api";
+import {
+  TransactionClient,
+  SaleItemInput,
+  Product,
+  PaymentInput,
+} from "@/types/api";
+import { MetodoPagamento } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
+
+// Métodos de pagamento válidos
+const VALID_PAYMENT_METHODS = ["dinheiro", "debito", "credito", "pix"] as const;
 
 /**
  * FEFO Engine - First Expired, First Out
@@ -69,6 +78,119 @@ async function descontarLotesFEFO(
   };
 }
 
+/**
+ * Valida e normaliza os pagamentos
+ * Retorna o array de pagamentos normalizado ou null se inválido
+ */
+function validateAndNormalizePayments(
+  payments: PaymentInput[] | undefined,
+  metodoPagamento: string | undefined,
+  valorTotal: number,
+  valorRecebido: number | undefined,
+  troco: number | undefined
+):
+  | {
+      normalizedPayments: PaymentInput[];
+      hasMultiple: boolean;
+      primaryMethod: MetodoPagamento;
+      totalTroco: number;
+    }
+  | { error: string } {
+  // CASO 1: Novo formato com array de payments
+  if (payments && Array.isArray(payments) && payments.length > 0) {
+    // Validar cada pagamento
+    for (const payment of payments) {
+      if (!payment.method || !VALID_PAYMENT_METHODS.includes(payment.method)) {
+        return { error: `Método de pagamento inválido: ${payment.method}` };
+      }
+      if (typeof payment.amount !== "number" || payment.amount <= 0) {
+        return { error: `Valor de pagamento inválido: ${payment.amount}` };
+      }
+    }
+
+    // Calcular soma dos pagamentos
+    const totalPago = payments.reduce((sum, p) => sum + p.amount, 0);
+
+    // Calcular troco (só pode haver troco se tem dinheiro)
+    const pagamentoDinheiro = payments.find((p) => p.method === "dinheiro");
+    let totalTroco = 0;
+
+    if (pagamentoDinheiro) {
+      // Se tem dinheiro, pode haver troco
+      const pagamentosSemDinheiro = payments
+        .filter((p) => p.method !== "dinheiro")
+        .reduce((sum, p) => sum + p.amount, 0);
+
+      const valorRestanteParaDinheiro = valorTotal - pagamentosSemDinheiro;
+
+      if (pagamentoDinheiro.amount > valorRestanteParaDinheiro) {
+        totalTroco = pagamentoDinheiro.amount - valorRestanteParaDinheiro;
+      }
+    }
+
+    // Validar: soma dos pagamentos deve cobrir o total (tolerância de arredondamento)
+    const valorEfetivo = totalPago - totalTroco;
+    const diferenca = Math.abs(valorEfetivo - valorTotal);
+
+    if (diferenca > 0.01) {
+      return {
+        error: `Soma dos pagamentos (R$ ${valorEfetivo.toFixed(
+          2
+        )}) não corresponde ao total da venda (R$ ${valorTotal.toFixed(2)})`,
+      };
+    }
+
+    // Determinar método primário para campo legacy
+    const hasMultiple = payments.length > 1;
+    const primaryMethod = hasMultiple
+      ? ("dinheiro" as MetodoPagamento) // Fallback, será marcado como COMBINADO na lógica
+      : (payments[0].method as MetodoPagamento);
+
+    return {
+      normalizedPayments: payments,
+      hasMultiple,
+      primaryMethod,
+      totalTroco,
+    };
+  }
+
+  // CASO 2: Formato antigo com metodoPagamento (compatibilidade)
+  if (
+    metodoPagamento &&
+    VALID_PAYMENT_METHODS.includes(
+      metodoPagamento as (typeof VALID_PAYMENT_METHODS)[number]
+    )
+  ) {
+    // Calcular troco para dinheiro
+    let totalTroco = 0;
+    let valorPagamento = valorTotal;
+
+    if (metodoPagamento === "dinheiro" && valorRecebido !== undefined) {
+      if (valorRecebido < valorTotal) {
+        return {
+          error: "Valor recebido insuficiente para cobrir o total da venda",
+        };
+      }
+      totalTroco = valorRecebido - valorTotal;
+      valorPagamento = valorRecebido;
+    }
+
+    return {
+      normalizedPayments: [
+        {
+          method: metodoPagamento as PaymentInput["method"],
+          amount: valorPagamento,
+        },
+      ],
+      hasMultiple: false,
+      primaryMethod: metodoPagamento as MetodoPagamento,
+      totalTroco,
+    };
+  }
+
+  return { error: "Método de pagamento inválido ou não fornecido" };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -107,22 +229,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, metodoPagamento, valorRecebido, troco } = body;
+    const { items, payments, metodoPagamento, valorRecebido, troco } = body;
     const itemsTyped = items as SaleItemInput[];
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: "Itens são obrigatórios" },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !metodoPagamento ||
-      !["dinheiro", "debito", "credito", "pix"].includes(metodoPagamento)
-    ) {
-      return NextResponse.json(
-        { error: "Método de pagamento inválido" },
         { status: 400 }
       );
     }
@@ -162,21 +274,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (metodoPagamento === "dinheiro") {
-      if (valorRecebido === undefined || valorRecebido === null) {
-        return NextResponse.json(
-          { error: "Valor recebido é obrigatório para pagamento em dinheiro" },
-          { status: 400 }
-        );
-      }
-      if (Number(valorRecebido) < valorTotal) {
-        return NextResponse.json(
-          { error: "Valor recebido insuficiente para cobrir o total da venda" },
-          { status: 400 }
-        );
-      }
+    // Validar pagamentos
+    const paymentValidation = validateAndNormalizePayments(
+      payments,
+      metodoPagamento,
+      valorTotal,
+      valorRecebido,
+      troco
+    );
+
+    if ("error" in paymentValidation) {
+      return NextResponse.json(
+        { error: paymentValidation.error },
+        { status: 400 }
+      );
     }
 
+    const { normalizedPayments, hasMultiple, primaryMethod, totalTroco } =
+      paymentValidation;
+
+    // Validar produtos e estoque
     const productIds = itemsTyped.map((item) => item.productId);
     const products = await prisma.product.findMany({
       where: {
@@ -211,20 +328,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Criar venda com transação
     const result = await prisma.$transaction(
       async (tx: TransactionClient) => {
+        // Determinar o valor do campo legacy metodoPagamento
+        // Se múltiplos métodos, usamos o primeiro como fallback (não temos "COMBINADO" no enum)
+        // A lógica de leitura deve priorizar a tabela de payments
+        const legacyMethod = hasMultiple
+          ? primaryMethod
+          : (normalizedPayments[0].method as MetodoPagamento);
+
+        // Calcular valor recebido (soma de todos os pagamentos)
+        const totalRecebido = normalizedPayments.reduce(
+          (sum, p) => sum + p.amount,
+          0
+        );
+
         const sale = await tx.sale.create({
           data: {
             userId: session.user.id,
             empresaId: empresaId,
             valorTotal: valorTotal,
-            metodoPagamento: metodoPagamento,
-            valorRecebido:
-              metodoPagamento === "dinheiro" ? valorRecebido : null,
-            troco: metodoPagamento === "dinheiro" ? troco : null,
+            metodoPagamento: legacyMethod,
+            valorRecebido: totalRecebido,
+            troco: totalTroco > 0 ? totalTroco : null,
           },
         });
 
+        // Criar registros de pagamento na nova tabela
+        for (const payment of normalizedPayments) {
+          await tx.salePayment.create({
+            data: {
+              saleId: sale.id,
+              method: payment.method as MetodoPagamento,
+              amount: payment.amount,
+            },
+          });
+        }
+
+        // Processar itens da venda
         for (const item of itemsTyped) {
           const product = products.find(
             (p: Product) => p.id === item.productId
@@ -294,14 +436,22 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // Formatar resposta com métodos de pagamento
+    const paymentMethodsDisplay = normalizedPayments
+      .map((p) => `${p.method}: R$ ${p.amount.toFixed(2)}`)
+      .join(", ");
+
     return NextResponse.json({
       message: "Venda finalizada com sucesso",
       sale: {
         id: result.id,
         valorTotal: Number(result.valorTotal),
-        metodoPagamento: result.metodoPagamento,
+        metodoPagamento: hasMultiple ? "COMBINADO" : result.metodoPagamento,
+        payments: normalizedPayments,
+        troco: totalTroco > 0 ? totalTroco : null,
         dataHora: result.dataHora,
       },
+      paymentDetails: paymentMethodsDisplay,
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {

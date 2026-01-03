@@ -110,13 +110,25 @@ const _ShiningText = ({ text }: { text: string }) => {
   );
 };
 
+import { PaymentItem } from "@/hooks/use-pos";
+
 interface SaleCompletedScreenProps {
   total: number;
   paymentMethod: string;
   onNewSale: () => void;
   valorRecebido?: number | null;
   troco?: number | null;
+  payments?: PaymentItem[];
 }
+
+// Labels para métodos de pagamento
+const PAYMENT_LABELS: Record<string, string> = {
+  dinheiro: "💵 Dinheiro",
+  pix: "📱 PIX",
+  debito: "💳 Débito",
+  credito: "💳 Crédito",
+  COMBINADO: "🔀 Combinado",
+};
 
 const SaleCompletedScreen = ({
   total,
@@ -124,6 +136,7 @@ const SaleCompletedScreen = ({
   onNewSale,
   valorRecebido,
   troco,
+  payments = [],
 }: SaleCompletedScreenProps) => {
   const [orderId] = useState(() => Math.floor(Math.random() * 10000));
   const [showConfetti, setShowConfetti] = useState(false);
@@ -254,38 +267,58 @@ const SaleCompletedScreen = ({
                     <CreditCard className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     <div className="flex-1">
                       <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Método de Pagamento
+                        {payments.length > 1
+                          ? "Métodos de Pagamento"
+                          : "Método de Pagamento"}
                       </p>
-                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-100 capitalize">
-                        {paymentMethod}
-                      </p>
+                      {/* Exibir múltiplos pagamentos ou método único */}
+                      {payments.length > 0 ? (
+                        <div className="space-y-1 mt-1">
+                          {payments.map((p, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="text-gray-700 dark:text-gray-300">
+                                {PAYMENT_LABELS[p.method] || p.method}
+                              </span>
+                              <span className="font-semibold text-gray-800 dark:text-gray-100">
+                                R$ {p.amount.toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-100 capitalize">
+                          {PAYMENT_LABELS[paymentMethod] || paymentMethod}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  {paymentMethod === "dinheiro" &&
-                    valorRecebido !== null &&
-                    valorRecebido !== undefined && (
-                      <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-dashed border-gray-200 dark:border-zinc-700">
+                  {/* Troco (se houver) */}
+                  {troco !== null && troco !== undefined && troco > 0 && (
+                    <div className="mt-4 pt-4 border-t border-dashed border-gray-200 dark:border-zinc-700">
+                      <div className="flex justify-between items-center">
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             Valor Recebido
                           </p>
                           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            R$ {valorRecebido.toFixed(2)}
+                            R$ {valorRecebido?.toFixed(2) || "0.00"}
                           </p>
                         </div>
-                        {troco !== null && troco !== undefined && (
-                          <div className="text-right">
-                            <p className="text-xs text-blue-500 font-medium">
-                              Troco
-                            </p>
-                            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                              R$ {troco.toFixed(2)}
-                            </p>
-                          </div>
-                        )}
+                        <div className="text-right">
+                          <p className="text-xs text-amber-600 font-medium">
+                            💵 Troco
+                          </p>
+                          <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                            R$ {troco.toFixed(2)}
+                          </p>
+                        </div>
                       </div>
-                    )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "@/hooks/use-toast";
 import { db, ProductLocal } from "@/lib/local-db";
 import { PRODUCTS_SYNCED_EVENT } from "@/lib/events";
+import { PaymentInput } from "@/types/api";
 
 export interface Product extends ProductLocal {}
 
@@ -10,6 +11,13 @@ export interface CartItem {
   quantidade: number;
   descontoAplicado: number;
   subtotal: number;
+}
+
+// Interface para pagamentos múltiplos
+export interface PaymentItem {
+  id: string; // ID único para UI
+  method: "dinheiro" | "debito" | "credito" | "pix";
+  amount: number;
 }
 
 export function usePOS() {
@@ -48,8 +56,12 @@ export function usePOS() {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [metodoPagamento, setMetodoPagamento] = useState("");
+
+  // ==== MULTI-PAYMENT STATE ====
+  const [payments, setPayments] = useState<PaymentItem[]>([]);
+  const [metodoPagamento, setMetodoPagamento] = useState(""); // Mantido para compatibilidade de UI
   const [valorRecebido, setValorRecebido] = useState<string>("");
+
   const [initialLoading, setInitialLoading] = useState(true);
   const [finalizing, setFinalizing] = useState(false);
   const [paymentError, setPaymentError] = useState(false);
@@ -60,6 +72,7 @@ export function usePOS() {
     null
   );
   const [lastTroco, setLastTroco] = useState<number | null>(null);
+  const [lastPayments, setLastPayments] = useState<PaymentItem[]>([]);
   const [isOffline, setIsOffline] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -160,15 +173,30 @@ export function usePOS() {
     [cart]
   );
 
+  // Cálculo do valor restante (total - pagamentos já adicionados)
+  const totalPago = useMemo(
+    () => payments.reduce((acc, p) => acc + p.amount, 0),
+    [payments]
+  );
+
+  const valorRestante = useMemo(() => {
+    return Math.max(0, total - totalPago);
+  }, [total, totalPago]);
+
+  // Cálculo do troco (só se houver dinheiro e exceder o necessário)
+  const trocoTotal = useMemo(() => {
+    if (payments.length === 0) return 0;
+
+    // Soma de todos os pagamentos
+    const somaPagamentos = payments.reduce((acc, p) => acc + p.amount, 0);
+
+    // Troco = soma dos pagamentos - total (só positivo)
+    return Math.max(0, somaPagamentos - total);
+  }, [payments, total]);
+
   useEffect(() => {
     localStorage.setItem("pdv_payment_method", metodoPagamento);
-    // Se mudar para dinheiro ou o total mudar, preenche automaticamente com o total
-    if (metodoPagamento === "dinheiro") {
-      setValorRecebido(total.toFixed(2).replace(".", ","));
-    } else {
-      setValorRecebido("");
-    }
-  }, [metodoPagamento, total]);
+  }, [metodoPagamento]);
 
   // Busca com Debounce usando Dexie (150ms para ser mais responsivo)
   useEffect(() => {
@@ -389,8 +417,63 @@ export function usePOS() {
     );
   };
 
+  // ==== MULTI-PAYMENT FUNCTIONS ====
+
+  /**
+   * Adiciona um pagamento à lista
+   */
+  const addPayment = useCallback(
+    (method: PaymentItem["method"], amount: number) => {
+      if (amount <= 0) {
+        toast({
+          title: "Valor inválido",
+          description: "O valor do pagamento deve ser maior que zero.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Para métodos diferentes de dinheiro, não pode exceder o restante
+      if (method !== "dinheiro" && amount > valorRestante + 0.01) {
+        toast({
+          title: "Valor excede o restante",
+          description: `Para ${method}, o valor máximo é R$ ${valorRestante.toFixed(
+            2
+          )}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      const newPayment: PaymentItem = {
+        id: `${method}-${Date.now()}`,
+        method,
+        amount,
+      };
+
+      setPayments((prev) => [...prev, newPayment]);
+      return true;
+    },
+    [valorRestante]
+  );
+
+  /**
+   * Remove um pagamento da lista
+   */
+  const removePayment = useCallback((paymentId: string) => {
+    setPayments((prev) => prev.filter((p) => p.id !== paymentId));
+  }, []);
+
+  /**
+   * Limpa todos os pagamentos
+   */
+  const clearPayments = useCallback(() => {
+    setPayments([]);
+  }, []);
+
   const clearCart = () => {
     setCart([]);
+    setPayments([]);
     setMetodoPagamento("");
     setValorRecebido("");
     localStorage.removeItem("pdv_cart");
@@ -407,38 +490,41 @@ export function usePOS() {
       return;
     }
 
-    if (!metodoPagamento) {
+    // Validar pagamentos
+    if (payments.length === 0) {
       setPaymentError(true);
       toast({
-        title: "Forma de Pagamento Obrigatória",
-        description: "Selecione a Forma de Pagamento antes de finalizar!",
+        title: "Pagamento Obrigatório",
+        description: "Adicione pelo menos um método de pagamento!",
         variant: "destructive",
       });
       setTimeout(() => setPaymentError(false), 3000);
       return;
     }
 
-    const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
-    let trocoCalculado: number | null = null;
-    let valorRecebidoNum: number | null = null;
+    // Validar se o pagamento cobre o total (considerando troco)
+    const somaPagamentos = payments.reduce((acc, p) => acc + p.amount, 0);
+    const valorEfetivo = somaPagamentos - trocoTotal;
 
-    if (metodoPagamento === "dinheiro") {
-      valorRecebidoNum = parseFloat(valorRecebido.replace(",", "."));
-
-      if (isNaN(valorRecebidoNum) || valorRecebidoNum < total) {
-        toast({
-          title: "Valor recebido insuficiente",
-          description:
-            "O valor recebido deve ser maior ou igual ao total da venda.",
-          variant: "destructive",
-        });
-        return;
-      }
-      trocoCalculado = valorRecebidoNum - total;
+    if (valorEfetivo < total - 0.01) {
+      toast({
+        title: "Pagamento insuficiente",
+        description: `Faltam R$ ${(total - valorEfetivo).toFixed(
+          2
+        )} para cobrir o total.`,
+        variant: "destructive",
+      });
+      return;
     }
 
     setFinalizing(true);
     setPaymentError(false);
+
+    // Preparar payload com novo formato de pagamentos
+    const paymentsPayload: PaymentInput[] = payments.map((p) => ({
+      method: p.method,
+      amount: p.amount,
+    }));
 
     const salePayload = {
       items: cart.map((item) => ({
@@ -447,9 +533,10 @@ export function usePOS() {
         precoUnitario: item.product.precoVenda,
         descontoAplicado: item.descontoAplicado,
       })),
-      metodoPagamento,
-      valorRecebido: metodoPagamento === "dinheiro" ? valorRecebidoNum : null,
-      troco: trocoCalculado,
+      payments: paymentsPayload,
+      // Campos legacy para compatibilidade
+      valorRecebido: somaPagamentos,
+      troco: trocoTotal > 0 ? trocoTotal : null,
     };
 
     try {
@@ -517,9 +604,19 @@ export function usePOS() {
 
     // Success (either online or offline saved)
     setLastSaleTotal(total);
-    setLastPaymentMethod(metodoPagamento);
-    setLastValorRecebido(valorRecebidoNum);
-    setLastTroco(trocoCalculado);
+
+    // Determinar método de exibição
+    if (payments.length > 1) {
+      setLastPaymentMethod("COMBINADO");
+    } else if (payments.length === 1) {
+      setLastPaymentMethod(payments[0].method);
+    } else {
+      setLastPaymentMethod("");
+    }
+
+    setLastPayments([...payments]);
+    setLastValorRecebido(somaPagamentos);
+    setLastTroco(trocoTotal > 0 ? trocoTotal : null);
 
     setShowSuccessScreen(true);
     clearCart();
@@ -563,5 +660,16 @@ export function usePOS() {
     lastTroco,
     sortOption,
     setSortOption,
+    // ==== MULTI-PAYMENT ====
+    payments,
+    setPayments,
+    addPayment,
+    removePayment,
+    clearPayments,
+    totalPago,
+    valorRestante,
+    trocoTotal,
+    lastPayments,
+    total,
   };
 }

@@ -231,15 +231,33 @@ model Sale {
   valorTotal      Decimal         @map("valor_total") @db.Decimal(10, 2)
   valorRecebido   Decimal?        @map("valor_recebido") @db.Decimal(10, 2)
   troco           Decimal?        @map("troco") @db.Decimal(10, 2)
+  // @deprecated - Mantido para retrocompatibilidade. Use a relação 'payments' para novas vendas.
+  // Se múltiplos métodos: valor será "COMBINADO"
   metodoPagamento MetodoPagamento @map("metodo_pagamento")
   createdAt       DateTime        @default(now()) @map("created_at")
 
-  user      User       @relation(fields: [userId], references: [id])
-  empresa   Empresa?   @relation(fields: [empresaId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  empresa   Empresa?      @relation(fields: [empresaId], references: [id])
   saleItems SaleItem[]
+  payments  SalePayment[]
 
   @@index([empresaId])
   @@map("sales")
+}
+
+// Model para suportar múltiplos métodos de pagamento por venda
+model SalePayment {
+  id        String          @id @default(cuid())
+  saleId    String          @map("sale_id")
+  method    MetodoPagamento // Usa o mesmo enum já existente
+  amount    Decimal         @db.Decimal(10, 2)
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@index([method])
+  @@map("sale_payments")
 }
 
 model SaleItem {

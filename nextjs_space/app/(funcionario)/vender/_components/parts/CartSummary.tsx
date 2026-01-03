@@ -1,16 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
-import { ShoppingCart, Trash2, Plus, Minus, DollarSign } from "lucide-react";
-import { CartItem } from "@/hooks/use-pos";
+import {
+  ShoppingCart,
+  Trash2,
+  Plus,
+  Minus,
+  DollarSign,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  X,
+  Check,
+} from "lucide-react";
+import { CartItem, PaymentItem } from "@/hooks/use-pos";
 import { parseCurrency } from "@/lib/utils";
 
 interface CartSummaryProps {
@@ -18,11 +22,12 @@ interface CartSummaryProps {
   onUpdateQuantity: (productId: string, quantity: number) => void;
   onRemove: (productId: string) => void;
   onUpdateDiscount: (productId: string, discount: number) => void;
-  paymentMethod: string;
-  onPaymentMethodChange: (method: string) => void;
-  valorRecebido?: string;
-  setValorRecebido?: (value: string) => void;
-  troco?: number | null;
+  // Multi-payment props
+  payments: PaymentItem[];
+  onAddPayment: (method: PaymentItem["method"], amount: number) => boolean;
+  onRemovePayment: (paymentId: string) => void;
+  valorRestante: number;
+  trocoTotal: number;
   onFinalize: () => void;
   onClear: () => void;
   isOffline: boolean;
@@ -32,16 +37,48 @@ interface CartSummaryProps {
   total: number;
 }
 
+// Labels e ícones para métodos de pagamento
+const PAYMENT_METHODS = {
+  dinheiro: {
+    label: "Dinheiro",
+    icon: Banknote,
+    color: "text-green-600",
+    bgColor: "bg-green-50 dark:bg-green-900/20",
+    borderColor: "border-green-200 dark:border-green-800",
+  },
+  pix: {
+    label: "PIX",
+    icon: Smartphone,
+    color: "text-cyan-600",
+    bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
+    borderColor: "border-cyan-200 dark:border-cyan-800",
+  },
+  debito: {
+    label: "Débito",
+    icon: CreditCard,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    borderColor: "border-blue-200 dark:border-blue-800",
+  },
+  credito: {
+    label: "Crédito",
+    icon: CreditCard,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50 dark:bg-purple-900/20",
+    borderColor: "border-purple-200 dark:border-purple-800",
+  },
+} as const;
+
 export function CartSummary({
   cart,
   onUpdateQuantity,
   onRemove,
   onUpdateDiscount,
-  paymentMethod,
-  onPaymentMethodChange,
-  valorRecebido,
-  setValorRecebido,
-  troco,
+  payments,
+  onAddPayment,
+  onRemovePayment,
+  valorRestante,
+  trocoTotal,
   onFinalize,
   onClear,
   isOffline,
@@ -50,6 +87,65 @@ export function CartSummary({
   setPaymentError,
   total,
 }: CartSummaryProps) {
+  // Estado para o modal de input de valor
+  const [selectedMethod, setSelectedMethod] = useState<
+    PaymentItem["method"] | null
+  >(null);
+  const [inputValue, setInputValue] = useState("");
+
+  // Quando selecionar um método, preenche com o valor restante
+  useEffect(() => {
+    if (selectedMethod) {
+      setInputValue(valorRestante.toFixed(2).replace(".", ","));
+    }
+  }, [selectedMethod, valorRestante]);
+
+  const handleMethodClick = (method: PaymentItem["method"]) => {
+    // Se não há mais nada a pagar, ignora
+    if (valorRestante <= 0 && method !== "dinheiro") {
+      return;
+    }
+
+    // Atalho: Se não tem pagamentos e clica no método, adiciona valor total diretamente
+    if (payments.length === 0 && valorRestante === total) {
+      // Adiciona pagamento integral diretamente
+      const success = onAddPayment(method, total);
+      if (success) {
+        setPaymentError(false);
+        return;
+      }
+    }
+
+    // Abre input para valor customizado
+    setSelectedMethod(method);
+    setInputValue(valorRestante.toFixed(2).replace(".", ","));
+  };
+
+  const handleAddPayment = () => {
+    if (!selectedMethod) return;
+
+    const amount = parseCurrency(inputValue);
+    if (amount <= 0) {
+      return;
+    }
+
+    const success = onAddPayment(selectedMethod, amount);
+    if (success) {
+      setSelectedMethod(null);
+      setInputValue("");
+      setPaymentError(false);
+    }
+  };
+
+  const handleCancelInput = () => {
+    setSelectedMethod(null);
+    setInputValue("");
+  };
+
+  // Calcular se pode finalizar (restante <= 0 OU pagamentos cobrem tudo)
+  const canFinalize =
+    cart.length > 0 && payments.length > 0 && valorRestante <= 0.01;
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#182635] rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
       {/* Header */}
@@ -146,101 +242,221 @@ export function CartSummary({
         )}
       </div>
 
-      {/* Footer Area */}
+      {/* Footer Area - Payment Section */}
       <div className="flex-none bg-gray-50 dark:bg-zinc-900/50 p-4 space-y-4 border-t border-gray-100 dark:border-gray-700 backdrop-blur-sm">
-        <div className="space-y-3">
-          {/* Payment Method Selector */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 ml-1">
-              Forma de Pagamento
-            </label>
-            <Select
-              value={paymentMethod}
-              onValueChange={(value) => {
-                onPaymentMethodChange(value);
-                setPaymentError(false);
-              }}
-            >
-              <SelectTrigger
-                className={`h-11 bg-white dark:bg-[#182635] border-gray-200 dark:border-zinc-700 rounded-xl ${
-                  paymentError ? "border-red-500 ring-1 ring-red-500" : ""
-                }`}
-              >
-                <SelectValue placeholder="Selecione..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="debito">Cartão de Débito</SelectItem>
-                <SelectItem value="credito">Cartão de Crédito</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Cash Payment Inputs */}
-          {paymentMethod === "dinheiro" &&
-            setValorRecebido &&
-            valorRecebido !== undefined && (
-              <div className="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-xl border border-blue-100 dark:border-blue-900/20 space-y-3 animate-in slide-in-from-top-2">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 space-y-1">
-                    <label className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                      Recebido
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm">
-                        R$
+        {/* Lista de pagamentos adicionados */}
+        {payments.length > 0 && (
+          <div className="space-y-2 animate-in slide-in-from-top-2">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Pagamentos Adicionados:
+            </p>
+            <div className="space-y-1.5">
+              {payments.map((payment) => {
+                const config = PAYMENT_METHODS[payment.method];
+                const Icon = config.icon;
+                return (
+                  <div
+                    key={payment.id}
+                    className={`flex items-center justify-between p-2 rounded-lg border ${config.bgColor} ${config.borderColor}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className={`h-4 w-4 ${config.color}`} />
+                      <span className={`text-sm font-medium ${config.color}`}>
+                        {config.label}
                       </span>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        autoFocus
-                        placeholder="0,00"
-                        value={valorRecebido}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            onFinalize();
-                          }
-                        }}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (/^[\d,.]*$/.test(value)) {
-                            setValorRecebido(value);
-                          }
-                        }}
-                        className="pl-9 h-10 bg-white dark:bg-[#182635] border-blue-200 dark:border-blue-800 focus-visible:ring-blue-500"
-                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-800 dark:text-gray-200">
+                        R$ {payment.amount.toFixed(2)}
+                      </span>
+                      <button
+                        onClick={() => onRemovePayment(payment.id)}
+                        className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remover"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {troco !== null && troco !== undefined && (
-                    <div className="text-right space-y-0.5">
-                      <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                        Troco
-                      </span>
-                      <p
-                        className={`text-xl font-bold ${
-                          troco < 0
-                            ? "text-red-500"
-                            : "text-blue-600 dark:text-blue-400"
-                        }`}
-                      >
-                        R$ {troco.toFixed(2)}
-                      </p>
-                    </div>
-                  )}
-                </div>
+            {/* Troco se houver */}
+            {trocoTotal > 0 && (
+              <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  💵 Troco
+                </span>
+                <span className="font-bold text-amber-700 dark:text-amber-300">
+                  R$ {trocoTotal.toFixed(2)}
+                </span>
               </div>
             )}
-        </div>
+          </div>
+        )}
+
+        {/* Botões de método de pagamento ou Input de valor */}
+        {selectedMethod ? (
+          // Input para valor customizado
+          <div
+            className={`p-3 rounded-xl border ${PAYMENT_METHODS[selectedMethod].bgColor} ${PAYMENT_METHODS[selectedMethod].borderColor} space-y-3 animate-in slide-in-from-top-2`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const Icon = PAYMENT_METHODS[selectedMethod].icon;
+                  return (
+                    <Icon
+                      className={`h-5 w-5 ${PAYMENT_METHODS[selectedMethod].color}`}
+                    />
+                  );
+                })()}
+                <span
+                  className={`font-medium ${PAYMENT_METHODS[selectedMethod].color}`}
+                >
+                  {PAYMENT_METHODS[selectedMethod].label}
+                </span>
+              </div>
+              <button
+                onClick={handleCancelInput}
+                className="p-1 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full"
+              >
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                  R$
+                </span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  autoFocus
+                  placeholder="0,00"
+                  value={inputValue}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddPayment();
+                    } else if (e.key === "Escape") {
+                      handleCancelInput();
+                    }
+                  }}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^[\d,.]*$/.test(value)) {
+                      setInputValue(value);
+                    }
+                  }}
+                  className="pl-9 h-10 bg-white dark:bg-[#182635]"
+                />
+              </div>
+              <Button
+                onClick={handleAddPayment}
+                className="h-10 px-4 bg-green-600 hover:bg-green-700"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Adicionar
+              </Button>
+            </div>
+
+            {selectedMethod === "dinheiro" && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                💡 Para dinheiro, você pode informar mais que o restante. O
+                excedente será troco.
+              </p>
+            )}
+          </div>
+        ) : (
+          // Botões de seleção de método
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                {payments.length === 0
+                  ? "Forma de Pagamento"
+                  : "Adicionar Pagamento"}
+              </p>
+              {valorRestante > 0 && payments.length > 0 && (
+                <span className="text-xs font-bold text-red-500">
+                  Restante: R$ {valorRestante.toFixed(2)}
+                </span>
+              )}
+            </div>
+
+            <div
+              className={`grid grid-cols-4 gap-2 ${
+                paymentError ? "animate-shake" : ""
+              }`}
+            >
+              {(
+                Object.keys(PAYMENT_METHODS) as Array<
+                  keyof typeof PAYMENT_METHODS
+                >
+              ).map((method) => {
+                const config = PAYMENT_METHODS[method];
+                const Icon = config.icon;
+                const isDisabled = valorRestante <= 0 && method !== "dinheiro";
+
+                return (
+                  <button
+                    key={method}
+                    onClick={() => handleMethodClick(method)}
+                    disabled={isDisabled || cart.length === 0}
+                    className={`
+                      flex flex-col items-center justify-center gap-1 p-3 rounded-xl border-2 transition-all
+                      ${
+                        isDisabled || cart.length === 0
+                          ? "opacity-40 cursor-not-allowed border-gray-200 dark:border-zinc-700"
+                          : `${config.borderColor} hover:scale-105 hover:shadow-md cursor-pointer ${config.bgColor}`
+                      }
+                      ${
+                        paymentError && !isDisabled
+                          ? "border-red-500 ring-2 ring-red-500/30"
+                          : ""
+                      }
+                    `}
+                  >
+                    <Icon
+                      className={`h-5 w-5 ${
+                        isDisabled ? "text-gray-400" : config.color
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-medium ${
+                        isDisabled ? "text-gray-400" : config.color
+                      }`}
+                    >
+                      {config.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Total Display */}
         <div className="flex items-end justify-between pt-2">
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Total a Pagar
-          </span>
-          <span className="text-3xl font-bold text-green-600 dark:text-green-400 tracking-tight">
+          <div>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block">
+              Total a Pagar
+            </span>
+            {payments.length > 0 && valorRestante > 0 && (
+              <span className="text-xs text-red-500 font-medium">
+                Falta: R$ {valorRestante.toFixed(2)}
+              </span>
+            )}
+          </div>
+          <span
+            className={`text-3xl font-bold tracking-tight ${
+              canFinalize
+                ? "text-green-600 dark:text-green-400"
+                : "text-gray-600 dark:text-gray-400"
+            }`}
+          >
             R$ {total.toFixed(2)}
           </span>
         </div>
@@ -261,20 +477,19 @@ export function CartSummary({
             id="btn-finalizar-venda"
             onClick={onFinalize}
             className="col-span-3 h-14 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={
-              finalizing ||
-              isOffline ||
-              cart.length === 0 ||
-              (paymentMethod === "dinheiro" &&
-                (valorRecebido === "" ||
-                  parseCurrency(valorRecebido || "0") < total))
-            }
+            disabled={finalizing || isOffline || !canFinalize}
           >
             <span className="flex items-center justify-center gap-2">
               {finalizing ? (
                 "Processando..."
               ) : isOffline ? (
                 "Sem Conexão"
+              ) : !canFinalize ? (
+                payments.length === 0 ? (
+                  "Adicione Pagamento"
+                ) : (
+                  `Falta R$ ${valorRestante.toFixed(2)}`
+                )
               ) : (
                 <>
                   <DollarSign className="h-5 w-5" />
@@ -308,7 +523,7 @@ function DiscountInput({ value, onChange }: DiscountInputProps) {
     if (Math.abs(numericLocal - value) > 0.009) {
       setLocalValue(value === 0 ? "" : value.toFixed(2).replace(".", ","));
     }
-  }, [value]); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Permite digitar apenas números, vírgula e ponto

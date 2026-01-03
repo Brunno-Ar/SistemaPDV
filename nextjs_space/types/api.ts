@@ -19,9 +19,18 @@ export interface SaleItemInput {
   descontoAplicado?: number;
 }
 
+// Interface para múltiplos pagamentos
+export interface PaymentInput {
+  method: "dinheiro" | "debito" | "credito" | "pix";
+  amount: number;
+}
+
 export interface SaleInput {
   items: SaleItemInput[];
-  metodoPagamento: string;
+  // Novo: Array de pagamentos (prioridade)
+  payments?: PaymentInput[];
+  // @deprecated - Mantido para compatibilidade
+  metodoPagamento?: string;
   valorRecebido?: number;
   troco?: number;
 }

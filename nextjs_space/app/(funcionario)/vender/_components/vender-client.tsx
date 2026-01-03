@@ -15,7 +15,6 @@ import {
   SaleSuccessScreen,
   ClosedRegisterAlert,
 } from "./parts";
-import { parseCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ShoppingCart } from "lucide-react";
@@ -78,8 +77,6 @@ export default function VenderClient() {
     cart,
     searchTerm,
     setSearchTerm,
-    metodoPagamento,
-    setMetodoPagamento,
     loading,
     finalizing,
     paymentError,
@@ -96,12 +93,18 @@ export default function VenderClient() {
     finalizarVenda,
     handleNewSale,
     lastPaymentMethod,
-    valorRecebido,
-    setValorRecebido,
     lastValorRecebido,
     lastTroco,
     sortOption,
     setSortOption,
+    // Multi-payment
+    payments,
+    addPayment,
+    removePayment,
+    valorRestante,
+    trocoTotal,
+    total,
+    lastPayments,
   } = usePOS();
 
   // Atalhos de Teclado (Mantidos aqui pois dependem de refs e window events)
@@ -136,6 +139,7 @@ export default function VenderClient() {
         onNewSale={handleNewSale}
         valorRecebido={lastValorRecebido}
         troco={lastTroco}
+        payments={lastPayments}
       />
     );
   }
@@ -147,8 +151,6 @@ export default function VenderClient() {
       </div>
     );
   }
-
-  const total = cart.reduce((acc, item) => acc + item.subtotal, 0);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] bg-[#eff2f6] dark:bg-[#101922] p-4 lg:p-6 rounded-3xl lg:overflow-hidden flex flex-col relative pb-24 lg:pb-6">
@@ -209,15 +211,11 @@ export default function VenderClient() {
             onUpdateQuantity={updateCartItemQuantity}
             onRemove={removeFromCart}
             onUpdateDiscount={updateCartItemDesconto}
-            paymentMethod={metodoPagamento}
-            onPaymentMethodChange={setMetodoPagamento}
-            valorRecebido={valorRecebido}
-            setValorRecebido={setValorRecebido}
-            troco={
-              valorRecebido !== "" && metodoPagamento === "dinheiro"
-                ? parseCurrency(valorRecebido) - total
-                : null
-            }
+            payments={payments}
+            onAddPayment={addPayment}
+            onRemovePayment={removePayment}
+            valorRestante={valorRestante}
+            trocoTotal={trocoTotal}
             onFinalize={finalizarVenda}
             onClear={clearCart}
             isOffline={isOffline}
@@ -250,15 +248,11 @@ export default function VenderClient() {
                 onUpdateQuantity={updateCartItemQuantity}
                 onRemove={removeFromCart}
                 onUpdateDiscount={updateCartItemDesconto}
-                paymentMethod={metodoPagamento}
-                onPaymentMethodChange={setMetodoPagamento}
-                valorRecebido={valorRecebido}
-                setValorRecebido={setValorRecebido}
-                troco={
-                  valorRecebido !== "" && metodoPagamento === "dinheiro"
-                    ? parseCurrency(valorRecebido) - total
-                    : null
-                }
+                payments={payments}
+                onAddPayment={addPayment}
+                onRemovePayment={removePayment}
+                valorRestante={valorRestante}
+                trocoTotal={trocoTotal}
                 onFinalize={finalizarVenda}
                 onClear={clearCart}
                 isOffline={isOffline}

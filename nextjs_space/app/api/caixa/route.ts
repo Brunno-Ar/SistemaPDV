@@ -6,35 +6,77 @@ import { TipoMovimentacaoCaixa, MetodoPagamento, Caixa } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-// Helper function to calculate expected values
+/**
+ * Calcula valores esperados do caixa usando a tabela SalePayment
+ * para suportar vendas com múltiplos métodos de pagamento
+ */
 async function calcularValoresEsperados(
   userId: string,
   caixaAberto: Partial<Caixa>
 ) {
-  // 1. Fetch Sales aggregated by payment method since opening
-  const vendas = await prisma.sale.groupBy({
-    by: ["metodoPagamento"],
+  // 1. Buscar vendas do período para identificar quais devem ser consideradas
+  const vendas = await prisma.sale.findMany({
     where: {
       userId: userId,
       dataHora: { gte: caixaAberto.dataAbertura },
     },
-    _sum: {
+    select: {
+      id: true,
       valorTotal: true,
+      metodoPagamento: true,
+      payments: true, // Incluir pagamentos múltiplos
     },
   });
 
-  const getTotal = (metodo: MetodoPagamento) => {
-    const found = vendas.find((v) => v.metodoPagamento === metodo);
-    return Number(found?._sum.valorTotal || 0);
-  };
+  // 2. Calcular totais por método de pagamento usando SalePayment
+  let vendasDinheiro = 0;
+  let vendasPix = 0;
+  let vendasCredito = 0;
+  let vendasDebito = 0;
 
-  const vendasDinheiro = getTotal("dinheiro");
-  const vendasPix = getTotal("pix");
-  const vendasCredito = getTotal("credito");
-  const vendasDebito = getTotal("debito");
+  for (const venda of vendas) {
+    // Se a venda tem payments (novo formato), usar eles
+    if (venda.payments && venda.payments.length > 0) {
+      for (const payment of venda.payments) {
+        const valor = Number(payment.amount) || 0;
+        switch (payment.method) {
+          case "dinheiro":
+            vendasDinheiro += valor;
+            break;
+          case "pix":
+            vendasPix += valor;
+            break;
+          case "credito":
+            vendasCredito += valor;
+            break;
+          case "debito":
+            vendasDebito += valor;
+            break;
+        }
+      }
+    } else {
+      // Formato antigo: usar metodoPagamento diretamente
+      const valor = Number(venda.valorTotal) || 0;
+      switch (venda.metodoPagamento) {
+        case "dinheiro":
+          vendasDinheiro += valor;
+          break;
+        case "pix":
+          vendasPix += valor;
+          break;
+        case "credito":
+          vendasCredito += valor;
+          break;
+        case "debito":
+          vendasDebito += valor;
+          break;
+      }
+    }
+  }
+
   const vendasCartao = vendasCredito + vendasDebito;
 
-  // 2. Calculate Movements (Sangrias and Suprimentos) - SEPARADO POR MÉTODO DE PAGAMENTO
+  // 3. Calculate Movements (Sangrias and Suprimentos) - SEPARADO POR MÉTODO DE PAGAMENTO
   const todasMovimentacoes = await prisma.movimentacaoCaixa.findMany({
     where: { caixaId: caixaAberto.id },
   });
@@ -71,7 +113,7 @@ async function calcularValoresEsperados(
   const totalSangrias = sangriasDinheiro + sangriasMaquininha;
   const totalSuprimentos = suprimentosDinheiro + suprimentosMaquininha;
 
-  // 3. Calculate Theoretical Balances
+  // 4. Calculate Theoretical Balances
   // AGORA INCLUÍMOS O SALDO INICIAL no cálculo do dinheiro
   // O funcionário conta o dinheiro físico na gaveta, então precisamos incluir o fundo de troco
 
@@ -94,6 +136,8 @@ async function calcularValoresEsperados(
     vendasDinheiro,
     vendasPix,
     vendasCartao,
+    vendasCredito,
+    vendasDebito,
     totalSangrias,
     totalSuprimentos,
     saldoTeoricoDinheiro,
@@ -129,13 +173,16 @@ export async function GET() {
     });
 
     if (caixaAberto) {
-      // Buscar TODAS as vendas (não só dinheiro) para poder calcular corretamente no frontend
+      // Buscar vendas com seus pagamentos múltiplos
       const vendas = await prisma.sale.findMany({
         where: {
           userId: session.user.id,
           dataHora: {
             gte: caixaAberto.dataAbertura,
           },
+        },
+        include: {
+          payments: true, // Incluir pagamentos múltiplos
         },
         orderBy: {
           dataHora: "desc",
@@ -152,16 +199,42 @@ export async function GET() {
           dataHora: m.dataHora,
           metodoPagamento: m.metodoPagamento || null,
         })),
-        ...vendas.map((v) => ({
-          id: v.id,
-          tipo: "VENDA",
-          valor: Number(v.valorTotal),
-          descricao: v.troco
-            ? `Venda (Troco: R$ ${Number(v.troco).toFixed(2)})`
-            : "Venda",
-          dataHora: v.dataHora,
-          metodoPagamento: v.metodoPagamento,
-        })),
+        ...vendas.map((v) => {
+          // Determinar método de pagamento para exibição
+          let metodoDisplay: string | null;
+          if (v.payments && v.payments.length > 1) {
+            // Múltiplos pagamentos: mostrar como "COMBINADO" ou listar
+            metodoDisplay = "COMBINADO";
+          } else if (v.payments && v.payments.length === 1) {
+            metodoDisplay = v.payments[0].method;
+          } else {
+            metodoDisplay = v.metodoPagamento;
+          }
+
+          // Formatar descrição com detalhes de pagamento
+          let descricao = "Venda";
+          if (v.payments && v.payments.length > 1) {
+            const detalhes = v.payments
+              .map((p) => `${p.method}: R$ ${Number(p.amount).toFixed(2)}`)
+              .join(" + ");
+            descricao = `Venda (${detalhes})`;
+          } else if (v.troco) {
+            descricao = `Venda (Troco: R$ ${Number(v.troco).toFixed(2)})`;
+          }
+
+          return {
+            id: v.id,
+            tipo: "VENDA",
+            valor: Number(v.valorTotal),
+            descricao,
+            dataHora: v.dataHora,
+            metodoPagamento: metodoDisplay,
+            payments: v.payments?.map((p) => ({
+              method: p.method,
+              amount: Number(p.amount),
+            })),
+          };
+        }),
       ].sort(
         (a, b) =>
           new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()
@@ -330,7 +403,7 @@ export async function POST(request: NextRequest) {
       const infDinheiro = Number(valorInformadoDinheiro ?? 0);
       const infMaquininha = Number(valorInformadoMaquininha ?? 0);
 
-      // 2. Get Theoretical (System)
+      // 2. Get Theoretical (System) - AGORA USA SalePayment
       const dados = await calcularValoresEsperados(
         session.user.id,
         caixaAberto
@@ -363,6 +436,14 @@ export async function POST(request: NextRequest) {
           dinheiro: diffDinheiro,
           maquininha: diffMaquininha,
           total: divergenciaGeral,
+        },
+        // Detalhamento de vendas por método
+        vendasPorMetodo: {
+          dinheiro: dados.vendasDinheiro,
+          pix: dados.vendasPix,
+          credito: dados.vendasCredito,
+          debito: dados.vendasDebito,
+          cartaoTotal: dados.vendasCartao,
         },
       };
 
@@ -418,6 +499,7 @@ export async function POST(request: NextRequest) {
         divergencia: temDivergencia,
         detalhes: {
           diferencaTotal: divergenciaGeral,
+          vendasPorMetodo: detalhes.vendasPorMetodo,
         },
       });
     }
@@ -459,9 +541,13 @@ export async function POST(request: NextRequest) {
               metodoPagamento: "pix",
               valorRecebido: taxa,
               troco: 0,
-              // Adicionamos o Ref ID escondido no campo troco? Não.
-              // Sale infelizmente não tem descrição customizável fácil sem alterar schema.
-              // Mas o display principal será via Suprimento. A venda fica lá como registro contábil.
+              // Criar também o registro na nova tabela de pagamentos
+              payments: {
+                create: {
+                  method: "pix",
+                  amount: taxa,
+                },
+              },
             },
           });
         }
