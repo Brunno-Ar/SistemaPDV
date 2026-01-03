@@ -65,8 +65,10 @@ export default function RelatoriosClient({
   const handleExpenseCreated = () => {
     setExpenseDialogOpen(false);
     setExpenseRefreshKey((prev) => prev + 1);
-    // Opcional: recarregar dados dos relatórios
-    fetchFilteredData();
+    // Só recarrega dados filtrados se houver datas selecionadas
+    if (dateRange.startDate && dateRange.endDate) {
+      fetchFilteredData();
+    }
   };
 
   if (loading && !analytics) {
