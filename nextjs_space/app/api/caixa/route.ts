@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { TipoMovimentacaoCaixa, MetodoPagamento, Caixa } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
@@ -279,6 +280,8 @@ export async function POST(request: NextRequest) {
       valorInformadoDinheiro,
       valorInformadoMaquininha, // Novo campo
       justificativa,
+      managerEmail,
+      managerPassword,
     } = body;
 
     // === ABRIR CAIXA ===
@@ -458,15 +461,81 @@ export async function POST(request: NextRequest) {
 
       // === ACTION: FECHAR ===
 
-      // Backend Validation: Divergence requires Justification
-      if (temDivergencia && (!justificativa || justificativa.trim() === "")) {
-        return NextResponse.json(
-          {
-            error:
-              "Justificativa é obrigatória quando há divergência de valores.",
+      // Backend Validation: Divergence requires Justification and Manager Auth
+      if (temDivergencia) {
+        if (!justificativa || justificativa.trim() === "") {
+          return NextResponse.json(
+            {
+              error:
+                "Justificativa é obrigatória quando há divergência de valores.",
+            },
+            { status: 400 }
+          );
+        }
+
+        // Validate Manager Credentials
+        if (!managerEmail || !managerPassword) {
+          return NextResponse.json(
+            {
+              error:
+                "Autorização de Gerente/Admin é obrigatória para divergências.",
+            },
+            { status: 400 }
+          );
+        }
+
+        // Verify Manager User
+        const manager = await prisma.user.findFirst({
+          where: {
+            email: { equals: managerEmail, mode: "insensitive" },
           },
-          { status: 400 }
+        });
+
+        if (!manager) {
+          return NextResponse.json(
+            { error: "Credenciais de gerente inválidas." },
+            { status: 403 }
+          );
+        }
+
+        // Check if manager belongs to company OR is master
+        if (
+          manager.role !== "master" &&
+          manager.empresaId !== session.user.empresaId
+        ) {
+          return NextResponse.json(
+            { error: "Gerente não pertence a esta empresa." },
+            { status: 403 }
+          );
+        }
+
+        // Check Role Permission
+        const allowedRoles = ["gerente", "admin", "master"];
+        if (!allowedRoles.includes(manager.role)) {
+          return NextResponse.json(
+            { error: "Usuário informado não possui permissão de gerência." },
+            { status: 403 }
+          );
+        }
+
+        // Check Password
+        if (!manager.password) {
+          return NextResponse.json(
+            { error: "Usuário sem senha definida." },
+            { status: 403 }
+          );
+        }
+
+        const validPass = await bcrypt.compare(
+          managerPassword,
+          manager.password
         );
+        if (!validPass) {
+          return NextResponse.json(
+            { error: "Senha de gerente incorreta." },
+            { status: 403 }
+          );
+        }
       }
 
       // Update Caixa

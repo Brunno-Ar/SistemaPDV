@@ -633,6 +633,7 @@ export function MeuCaixa({
               <FechamentoCaixaDialog
                 open={dialogOpen === "fechar"}
                 onOpenChange={(open) => !open && setDialogOpen(null)}
+                saldoInicial={Number(caixa.saldoInicial)}
                 onSuccess={async () => {
                   setDialogOpen(null);
                   await fetchStatus();
