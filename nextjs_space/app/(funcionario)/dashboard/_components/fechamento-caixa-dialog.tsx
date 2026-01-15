@@ -64,8 +64,7 @@ export function FechamentoCaixaDialog({
   const [justificativa, setJustificativa] = useState("");
 
   // Auth Gerente (Divergência)
-  const [managerEmail, setManagerEmail] = useState("");
-  const [managerPassword, setManagerPassword] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
   const [isAuthorized, setIsAuthorized] = useState(false); // Controls visibility of blind audit values
 
   // Estado Conferência
@@ -80,8 +79,7 @@ export function FechamentoCaixaDialog({
     setValorDinheiro("");
     setValorMaquininha("");
     setJustificativa("");
-    setManagerEmail("");
-    setManagerPassword("");
+    setAuthPassword("");
     setIsAuthorized(false);
     setEtapaFechamento("contagem");
     setResultadoConferencia(null);
@@ -99,10 +97,10 @@ export function FechamentoCaixaDialog({
   };
 
   const verifyManager = async () => {
-    if (!managerEmail || !managerPassword) {
+    if (!authPassword) {
       toast({
         title: "Erro",
-        description: "Informe e-mail e senha do gerente.",
+        description: "Informe a senha de autorização.",
         variant: "destructive",
       });
       return;
@@ -115,8 +113,7 @@ export function FechamentoCaixaDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "verify_manager",
-          managerEmail,
-          managerPassword,
+          authPassword,
         }),
       });
 
@@ -133,7 +130,8 @@ export function FechamentoCaixaDialog({
     } catch (error) {
       toast({
         title: "Acesso Negado",
-        description: error instanceof Error ? error.message : "Erro na validação",
+        description:
+          error instanceof Error ? error.message : "Erro na validação",
         variant: "destructive",
       });
     } finally {
@@ -178,8 +176,7 @@ export function FechamentoCaixaDialog({
           }
 
           // We send credentials again to ensure atomic verification on backend close action
-          payload.managerEmail = managerEmail;
-          payload.managerPassword = managerPassword;
+          payload.authPassword = authPassword;
         }
       }
 
@@ -411,35 +408,23 @@ export function FechamentoCaixaDialog({
                   <Lock className="h-4 w-4" />
                   <h4>Autorização de Gerente Necessária</h4>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div className="grid gap-2">
-                    <Label>E-mail do Gerente</Label>
-                    <Input
-                      type="email"
-                      placeholder="admin@exemplo.com"
-                      value={managerEmail}
-                      onChange={(e) => setManagerEmail(e.target.value)}
-                      autoComplete="username"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Senha do Gerente</Label>
+                    <Label>Senha de Autorização (Gerente)</Label>
                     <div className="flex gap-2">
                       <Input
                         type="password"
                         placeholder="••••••••"
-                        value={managerPassword}
-                        onChange={(e) => setManagerPassword(e.target.value)}
-                        autoComplete="current-password"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        autoComplete="off"
                       />
                       {!isAuthorized && (
                         <Button
                           type="button"
                           variant="secondary"
                           onClick={verifyManager}
-                          disabled={
-                            processing || !managerEmail || !managerPassword
-                          }
+                          disabled={processing || !authPassword}
                         >
                           Validar
                         </Button>
@@ -479,8 +464,7 @@ export function FechamentoCaixaDialog({
                 onClick={() => handleAction("fechar")}
                 disabled={
                   processing ||
-                  (temDivergencia &&
-                    (!justificativa.trim() || !isAuthorized))
+                  (temDivergencia && (!justificativa.trim() || !isAuthorized))
                 }
                 className={
                   !temDivergencia

@@ -280,8 +280,7 @@ export async function POST(request: NextRequest) {
       valorInformadoDinheiro,
       valorInformadoMaquininha, // Novo campo
       justificativa,
-      managerEmail,
-      managerPassword,
+      authPassword,
     } = body;
 
     // === ABRIR CAIXA ===
@@ -473,66 +472,46 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Validate Manager Credentials
-        if (!managerEmail || !managerPassword) {
+        // Validate Auth Password
+        if (!authPassword) {
           return NextResponse.json(
             {
-              error:
-                "Autorização de Gerente/Admin é obrigatória para divergências.",
+              error: "Senha de Autorização é obrigatória para divergências.",
             },
             { status: 400 }
           );
         }
 
-        // Verify Manager User
-        const manager = await prisma.user.findFirst({
-          where: {
-            email: { equals: managerEmail, mode: "insensitive" },
-          },
+        // Verify Company Auth Password
+        const empresa = await prisma.empresa.findUnique({
+          where: { id: session.user.empresaId! },
         });
 
-        if (!manager) {
+        if (!empresa) {
           return NextResponse.json(
-            { error: "Credenciais de gerente inválidas." },
-            { status: 403 }
+            { error: "Empresa não encontrada." },
+            { status: 404 }
           );
         }
 
-        // Check if manager belongs to company OR is master
-        if (
-          manager.role !== "master" &&
-          manager.empresaId !== session.user.empresaId
-        ) {
+        if (!empresa.senhaAutorizacao) {
           return NextResponse.json(
-            { error: "Gerente não pertence a esta empresa." },
-            { status: 403 }
-          );
-        }
-
-        // Check Role Permission
-        const allowedRoles = ["gerente", "admin", "master"];
-        if (!allowedRoles.includes(manager.role)) {
-          return NextResponse.json(
-            { error: "Usuário informado não possui permissão de gerência." },
-            { status: 403 }
-          );
-        }
-
-        // Check Password
-        if (!manager.password) {
-          return NextResponse.json(
-            { error: "Usuário sem senha definida." },
+            {
+              error:
+                "Senha de autorização não configurada nesta empresa. Contate o administrador.",
+            },
             { status: 403 }
           );
         }
 
         const validPass = await bcrypt.compare(
-          managerPassword,
-          manager.password
+          authPassword,
+          empresa.senhaAutorizacao
         );
+
         if (!validPass) {
           return NextResponse.json(
-            { error: "Senha de gerente incorreta." },
+            { error: "Senha de autorização incorreta." },
             { status: 403 }
           );
         }
@@ -573,45 +552,41 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // === VERIFY MANAGER (NOVO) ===
+    // === VERIFY MANAGER (NOVO - AGORA APENAS SENHA DA EMPRESA) ===
     if (action === "verify_manager") {
-      if (!managerEmail || !managerPassword) {
+      if (!authPassword) {
         return NextResponse.json(
-          { error: "Credenciais de gerente incompletas." },
+          { error: "Senha de autorização não informada." },
           { status: 400 }
         );
       }
 
-      const manager = await prisma.user.findFirst({
-        where: { email: { equals: managerEmail, mode: "insensitive" } },
+      if (!session.user.empresaId) {
+        return NextResponse.json(
+          { error: "Usuário sem empresa." },
+          { status: 400 }
+        );
+      }
+
+      const empresa = await prisma.empresa.findUnique({
+        where: { id: session.user.empresaId! },
       });
 
-      if (!manager || !manager.password) {
+      if (!empresa?.senhaAutorizacao) {
         return NextResponse.json(
-          { error: "Credenciais inválidas." },
+          {
+            error:
+              "Senha de autorização não configurada. Configure no painel de Admin.",
+          },
           { status: 403 }
         );
       }
 
-      const allowedRoles = ["gerente", "admin", "master"];
-      if (!allowedRoles.includes(manager.role)) {
-        return NextResponse.json(
-          { error: "Usuário não possui permissão de gerência." },
-          { status: 403 }
-        );
-      }
+      const validPass = await bcrypt.compare(
+        authPassword,
+        empresa.senhaAutorizacao
+      );
 
-      if (
-        manager.role !== "master" &&
-        manager.empresaId !== session.user.empresaId
-      ) {
-        return NextResponse.json(
-          { error: "Gerente não pertence a esta empresa." },
-          { status: 403 }
-        );
-      }
-
-      const validPass = await bcrypt.compare(managerPassword, manager.password);
       if (!validPass) {
         return NextResponse.json(
           { error: "Senha incorreta." },
