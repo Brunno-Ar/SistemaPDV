@@ -573,6 +573,55 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // === VERIFY MANAGER (NOVO) ===
+    if (action === "verify_manager") {
+      if (!managerEmail || !managerPassword) {
+        return NextResponse.json(
+          { error: "Credenciais de gerente incompletas." },
+          { status: 400 }
+        );
+      }
+
+      const manager = await prisma.user.findFirst({
+        where: { email: { equals: managerEmail, mode: "insensitive" } },
+      });
+
+      if (!manager || !manager.password) {
+        return NextResponse.json(
+          { error: "Credenciais inválidas." },
+          { status: 403 }
+        );
+      }
+
+      const allowedRoles = ["gerente", "admin", "master"];
+      if (!allowedRoles.includes(manager.role)) {
+        return NextResponse.json(
+          { error: "Usuário não possui permissão de gerência." },
+          { status: 403 }
+        );
+      }
+
+      if (
+        manager.role !== "master" &&
+        manager.empresaId !== session.user.empresaId
+      ) {
+        return NextResponse.json(
+          { error: "Gerente não pertence a esta empresa." },
+          { status: 403 }
+        );
+      }
+
+      const validPass = await bcrypt.compare(managerPassword, manager.password);
+      if (!validPass) {
+        return NextResponse.json(
+          { error: "Senha incorreta." },
+          { status: 403 }
+        );
+      }
+
+      return NextResponse.json({ success: true, message: "Autorizado" });
+    }
+
     // === TROCA PIX (NOVO) ===
     if (action === "troca_pix") {
       const valorPix = Number(body.valorPix); // Valor que entrou (Pix)

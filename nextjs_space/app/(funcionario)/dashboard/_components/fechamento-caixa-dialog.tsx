@@ -66,6 +66,7 @@ export function FechamentoCaixaDialog({
   // Auth Gerente (Divergência)
   const [managerEmail, setManagerEmail] = useState("");
   const [managerPassword, setManagerPassword] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(false); // Controls visibility of blind audit values
 
   // Estado Conferência
   const [etapaFechamento, setEtapaFechamento] = useState<
@@ -81,6 +82,7 @@ export function FechamentoCaixaDialog({
     setJustificativa("");
     setManagerEmail("");
     setManagerPassword("");
+    setIsAuthorized(false);
     setEtapaFechamento("contagem");
     setResultadoConferencia(null);
     setTemDivergencia(false);
@@ -94,6 +96,49 @@ export function FechamentoCaixaDialog({
       resetFechamento();
     }
     onOpenChange(newOpen);
+  };
+
+  const verifyManager = async () => {
+    if (!managerEmail || !managerPassword) {
+      toast({
+        title: "Erro",
+        description: "Informe e-mail e senha do gerente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/caixa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify_manager",
+          managerEmail,
+          managerPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Falha na validação");
+
+      setIsAuthorized(true);
+      toast({
+        title: "Autorizado",
+        description: "Valores revelados com sucesso.",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Acesso Negado",
+        description: error instanceof Error ? error.message : "Erro na validação",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleAction = async (action: "conferir" | "fechar") => {
@@ -121,17 +166,18 @@ export function FechamentoCaixaDialog({
           }
 
           // Manager Auth required
-          if (!managerEmail || !managerPassword) {
+          if (!isAuthorized) {
             toast({
               title: "Bloqueio de Segurança",
               description:
-                "Autorização de Gerente/Admin é obrigatória para fechar com divergência.",
+                "É necessário validar as credenciais do gerente para prosseguir.",
               variant: "destructive",
             });
             setProcessing(false);
             return;
           }
 
+          // We send credentials again to ensure atomic verification on backend close action
           payload.managerEmail = managerEmail;
           payload.managerPassword = managerPassword;
         }
@@ -300,35 +346,43 @@ export function FechamentoCaixaDialog({
                       {formatCurrency(row.inf)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(row.sys)}
+                      {!temDivergencia || isAuthorized
+                        ? formatCurrency(row.sys)
+                        : "*****"}
                     </TableCell>
                     <TableCell
                       className={`text-right font-bold ${
-                        Math.abs(row.diff) > 0.009
-                          ? row.diff > 0
-                            ? "text-blue-600"
-                            : "text-red-600"
-                          : "text-green-600"
+                        !temDivergencia || isAuthorized
+                          ? Math.abs(row.diff) > 0.009
+                            ? row.diff > 0
+                              ? "text-blue-600"
+                              : "text-red-600"
+                            : "text-green-600"
+                          : "text-gray-500"
                       }`}
                     >
-                      {formatCurrency(row.diff)}
+                      {!temDivergencia || isAuthorized
+                        ? formatCurrency(row.diff)
+                        : "*****"}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
 
-            {/* Exibição do Faturamento Real */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md border border-blue-100 dark:border-blue-900 flex justify-between items-center">
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                💰 Valor Faturado (Vendas Líquidas):
-              </span>
-              <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                {formatCurrency(
-                  resultadoConferencia.informado.total - saldoInicial
-                )}
-              </span>
-            </div>
+            {/* Exibição do Faturamento Real - Blind Audit: Visible only if Authorized */}
+            {(!temDivergencia || isAuthorized) && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md border border-blue-100 dark:border-blue-900 flex justify-between items-center">
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  💰 Valor Faturado (Vendas Líquidas):
+                </span>
+                <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                  {formatCurrency(
+                    resultadoConferencia.informado.total - saldoInicial
+                  )}
+                </span>
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label className={temDivergencia ? "text-red-600 font-bold" : ""}>
@@ -370,13 +424,27 @@ export function FechamentoCaixaDialog({
                   </div>
                   <div className="grid gap-2">
                     <Label>Senha do Gerente</Label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      value={managerPassword}
-                      onChange={(e) => setManagerPassword(e.target.value)}
-                      autoComplete="current-password"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        value={managerPassword}
+                        onChange={(e) => setManagerPassword(e.target.value)}
+                        autoComplete="current-password"
+                      />
+                      {!isAuthorized && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={verifyManager}
+                          disabled={
+                            processing || !managerEmail || !managerPassword
+                          }
+                        >
+                          Validar
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -412,7 +480,7 @@ export function FechamentoCaixaDialog({
                 disabled={
                   processing ||
                   (temDivergencia &&
-                    (!justificativa.trim() || !managerEmail || !managerPassword))
+                    (!justificativa.trim() || !isAuthorized))
                 }
                 className={
                   !temDivergencia
@@ -423,7 +491,7 @@ export function FechamentoCaixaDialog({
                 {processing
                   ? "Finalizando..."
                   : temDivergencia
-                  ? "Autorizar e Finalizar"
+                  ? "Finalizar Fechamento"
                   : "Finalizar Fechamento"}
               </Button>
             </>
