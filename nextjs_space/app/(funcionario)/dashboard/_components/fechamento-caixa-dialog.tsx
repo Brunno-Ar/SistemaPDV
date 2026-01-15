@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency, parseCurrency } from "@/lib/utils";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -47,12 +47,14 @@ interface FechamentoCaixaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  saldoInicial: number;
 }
 
 export function FechamentoCaixaDialog({
   open,
   onOpenChange,
   onSuccess,
+  saldoInicial,
 }: FechamentoCaixaDialogProps) {
   const [processing, setProcessing] = useState(false);
 
@@ -60,6 +62,10 @@ export function FechamentoCaixaDialog({
   const [valorDinheiro, setValorDinheiro] = useState("");
   const [valorMaquininha, setValorMaquininha] = useState("");
   const [justificativa, setJustificativa] = useState("");
+
+  // Auth Gerente (Divergência)
+  const [managerEmail, setManagerEmail] = useState("");
+  const [managerPassword, setManagerPassword] = useState("");
 
   // Estado Conferência
   const [etapaFechamento, setEtapaFechamento] = useState<
@@ -73,6 +79,8 @@ export function FechamentoCaixaDialog({
     setValorDinheiro("");
     setValorMaquininha("");
     setJustificativa("");
+    setManagerEmail("");
+    setManagerPassword("");
     setEtapaFechamento("contagem");
     setResultadoConferencia(null);
     setTemDivergencia(false);
@@ -101,14 +109,31 @@ export function FechamentoCaixaDialog({
         payload.justificativa = justificativa;
 
         // Client-side validation for divergence
-        if (temDivergencia && !justificativa.trim()) {
-          toast({
-            title: "Erro",
-            description: "Justificativa é obrigatória quando há divergência.",
-            variant: "destructive",
-          });
-          setProcessing(false);
-          return;
+        if (temDivergencia) {
+          if (!justificativa.trim()) {
+            toast({
+              title: "Erro",
+              description: "Justificativa é obrigatória quando há divergência.",
+              variant: "destructive",
+            });
+            setProcessing(false);
+            return;
+          }
+
+          // Manager Auth required
+          if (!managerEmail || !managerPassword) {
+            toast({
+              title: "Bloqueio de Segurança",
+              description:
+                "Autorização de Gerente/Admin é obrigatória para fechar com divergência.",
+              variant: "destructive",
+            });
+            setProcessing(false);
+            return;
+          }
+
+          payload.managerEmail = managerEmail;
+          payload.managerPassword = managerPassword;
         }
       }
 
@@ -293,6 +318,18 @@ export function FechamentoCaixaDialog({
               </TableBody>
             </Table>
 
+            {/* Exibição do Faturamento Real */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md border border-blue-100 dark:border-blue-900 flex justify-between items-center">
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                💰 Valor Faturado (Vendas Líquidas):
+              </span>
+              <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                {formatCurrency(
+                  resultadoConferencia.informado.total - saldoInicial
+                )}
+              </span>
+            </div>
+
             <div className="grid gap-2">
               <Label className={temDivergencia ? "text-red-600 font-bold" : ""}>
                 Justificativa {temDivergencia && "(Obrigatório)"}
@@ -312,6 +349,38 @@ export function FechamentoCaixaDialog({
                 }
               />
             </div>
+
+            {/* Autenticação de Gerente (Apenas se houver divergência) */}
+            {temDivergencia && (
+              <div className="space-y-4 pt-2 border-t mt-2">
+                <div className="flex items-center gap-2 text-red-600 font-semibold">
+                  <Lock className="h-4 w-4" />
+                  <h4>Autorização de Gerente Necessária</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>E-mail do Gerente</Label>
+                    <Input
+                      type="email"
+                      placeholder="admin@exemplo.com"
+                      value={managerEmail}
+                      onChange={(e) => setManagerEmail(e.target.value)}
+                      autoComplete="username"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Senha do Gerente</Label>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={managerPassword}
+                      onChange={(e) => setManagerPassword(e.target.value)}
+                      autoComplete="current-password"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -341,7 +410,9 @@ export function FechamentoCaixaDialog({
                 variant={temDivergencia ? "destructive" : "default"}
                 onClick={() => handleAction("fechar")}
                 disabled={
-                  processing || (temDivergencia && !justificativa.trim())
+                  processing ||
+                  (temDivergencia &&
+                    (!justificativa.trim() || !managerEmail || !managerPassword))
                 }
                 className={
                   !temDivergencia
@@ -352,7 +423,7 @@ export function FechamentoCaixaDialog({
                 {processing
                   ? "Finalizando..."
                   : temDivergencia
-                  ? "Finalizar com Divergência"
+                  ? "Autorizar e Finalizar"
                   : "Finalizar Fechamento"}
               </Button>
             </>
