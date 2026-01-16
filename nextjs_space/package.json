@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "postinstall": "prisma generate && prisma migrate deploy"
+    "postinstall": "prisma generate && prisma db push"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config prisma/seed.ts"
