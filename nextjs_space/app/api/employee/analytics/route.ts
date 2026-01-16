@@ -25,7 +25,7 @@ export async function GET() {
     if (!empresaId) {
       return NextResponse.json(
         { error: "User not linked to a company" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -204,7 +204,7 @@ export async function GET() {
     console.error("Erro ao buscar analytics do funcionário:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

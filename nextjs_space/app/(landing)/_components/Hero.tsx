@@ -138,7 +138,7 @@ export const Hero = () => {
                       >
                         <div className="absolute bottom-0 w-full bg-blue-500 h-[20%] opacity-20 group-hover:opacity-40 transition-opacity"></div>
                       </motion.div>
-                    )
+                    ),
                   )}
                 </div>
 

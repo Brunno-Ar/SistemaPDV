@@ -123,7 +123,7 @@ export function useProducts({ companyId }: UseProductsProps = {}) {
 
       // Atualizar lista
       setCategories((prev) =>
-        [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome))
+        [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome)),
       );
       return true;
     } catch (error) {

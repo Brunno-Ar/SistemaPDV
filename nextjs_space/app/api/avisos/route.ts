@@ -33,12 +33,12 @@ export async function GET() {
                 empresaId: empresaId,
                 ...(isRestricted
                   ? {
-                    remetente: {
-                      role: {
-                        not: "master",
+                      remetente: {
+                        role: {
+                          not: "master",
+                        },
                       },
-                    },
-                  }
+                    }
                   : {}),
               },
             ],
@@ -69,7 +69,7 @@ export async function GET() {
     console.error("Erro ao buscar avisos:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     if (!mensagem) {
       return NextResponse.json(
         { error: "Mensagem é obrigatória" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro ao criar aviso:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

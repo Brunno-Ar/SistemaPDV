@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  */
 async function calcularValoresEsperados(
   userId: string,
-  caixaAberto: Partial<Caixa>
+  caixaAberto: Partial<Caixa>,
 ) {
   // 1. Buscar vendas do período para identificar quais devem ser consideradas
   const vendas = await prisma.sale.findMany({
@@ -238,7 +238,7 @@ export async function GET() {
         }),
       ].sort(
         (a, b) =>
-          new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()
+          new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime(),
       );
 
       return NextResponse.json({
@@ -255,7 +255,7 @@ export async function GET() {
     console.error("Erro ao buscar caixa:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -295,7 +295,7 @@ export async function POST(request: NextRequest) {
       if (caixaExistente) {
         return NextResponse.json(
           { error: "Você já possui um caixa aberto! Recarregue a página." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -308,14 +308,14 @@ export async function POST(request: NextRequest) {
       ) {
         return NextResponse.json(
           { error: "Saldo inicial inválido. Insira um valor positivo." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (!session.user.empresaId) {
         return NextResponse.json(
           { error: "Erro de permissão: Usuário não vinculado a uma empresa." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -360,7 +360,7 @@ export async function POST(request: NextRequest) {
     if (!caixaAberto) {
       return NextResponse.json(
         { error: "Você não possui um caixa aberto!" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -370,7 +370,7 @@ export async function POST(request: NextRequest) {
       if (!valor || isNaN(valorNum) || valorNum <= 0) {
         return NextResponse.json(
           { error: "Valor inválido. Insira um valor maior que zero." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -408,7 +408,7 @@ export async function POST(request: NextRequest) {
       // 2. Get Theoretical (System) - AGORA USA SalePayment
       const dados = await calcularValoresEsperados(
         session.user.id,
-        caixaAberto
+        caixaAberto,
       );
 
       // 3. Calculate Divergence (General)
@@ -468,7 +468,7 @@ export async function POST(request: NextRequest) {
               error:
                 "Justificativa é obrigatória quando há divergência de valores.",
             },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -478,7 +478,7 @@ export async function POST(request: NextRequest) {
             {
               error: "Senha de Autorização é obrigatória para divergências.",
             },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -490,7 +490,7 @@ export async function POST(request: NextRequest) {
         if (!empresa) {
           return NextResponse.json(
             { error: "Empresa não encontrada." },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
@@ -500,19 +500,19 @@ export async function POST(request: NextRequest) {
               error:
                 "Senha de autorização não configurada nesta empresa. Contate o administrador.",
             },
-            { status: 403 }
+            { status: 403 },
           );
         }
 
         const validPass = await bcrypt.compare(
           authPassword,
-          empresa.senhaAutorizacao
+          empresa.senhaAutorizacao,
         );
 
         if (!validPass) {
           return NextResponse.json(
             { error: "Senha de autorização incorreta." },
-            { status: 403 }
+            { status: 403 },
           );
         }
       }
@@ -557,14 +557,14 @@ export async function POST(request: NextRequest) {
       if (!authPassword) {
         return NextResponse.json(
           { error: "Senha de autorização não informada." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (!session.user.empresaId) {
         return NextResponse.json(
           { error: "Usuário sem empresa." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -578,19 +578,19 @@ export async function POST(request: NextRequest) {
             error:
               "Senha de autorização não configurada. Configure no painel de Admin.",
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
       const validPass = await bcrypt.compare(
         authPassword,
-        empresa.senhaAutorizacao
+        empresa.senhaAutorizacao,
       );
 
       if (!validPass) {
         return NextResponse.json(
           { error: "Senha incorreta." },
-          { status: 403 }
+          { status: 403 },
         );
       }
 
@@ -610,7 +610,7 @@ export async function POST(request: NextRequest) {
       ) {
         return NextResponse.json(
           { error: "Valores inválidos para troca Pix." },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -655,9 +655,9 @@ export async function POST(request: NextRequest) {
             valor: valorSaida, // Valor do Principal
             // Formato: Troca PIX - Principal (Entrada) - Taxa: {taxa} - Demos: {valorSaida} - Recebemos: {valorPix} [REF:{refId}]
             descricao: `Troca PIX - Principal (Entrada) - Taxa: ${taxa.toFixed(
-              2
+              2,
             )} - Demos: ${valorSaida.toFixed(
-              2
+              2,
             )} - Recebemos: ${valorPix.toFixed(2)} [${refId}]`,
             metodoPagamento: "pix",
           },
@@ -687,7 +687,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro na operação de caixa:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

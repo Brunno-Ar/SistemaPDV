@@ -92,7 +92,7 @@ export function TrialBanner() {
     if (session?.user?.empresaId) {
       sessionStorage.setItem(
         `trial_banner_dismissed_${session.user.empresaId}`,
-        "true"
+        "true",
       );
     }
     setDismissed(true);
@@ -132,7 +132,7 @@ export function TrialBanner() {
     const daysLeft = companyInfo.vencimentoPlano
       ? Math.max(
           0,
-          differenceInDays(new Date(companyInfo.vencimentoPlano), new Date())
+          differenceInDays(new Date(companyInfo.vencimentoPlano), new Date()),
         )
       : 0;
 
@@ -150,8 +150,8 @@ export function TrialBanner() {
           {daysLeft === 0
             ? "Último dia!"
             : daysLeft === 1
-            ? "1 dia restante"
-            : `${daysLeft} dias restantes`}
+              ? "1 dia restante"
+              : `${daysLeft} dias restantes`}
         </strong>
       </span>
     );

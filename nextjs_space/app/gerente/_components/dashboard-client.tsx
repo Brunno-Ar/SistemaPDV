@@ -53,7 +53,7 @@ export default function GerenteDashboardClient() {
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
   const [caixaData, setCaixaData] = useState<CaixaData | null | undefined>(
-    undefined
+    undefined,
   ); // undefined = ainda não buscou
   const [loading, setLoading] = useState(true);
 

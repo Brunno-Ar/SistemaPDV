@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -28,7 +28,7 @@ export async function PUT(
     console.error("Erro ao atualizar aviso:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

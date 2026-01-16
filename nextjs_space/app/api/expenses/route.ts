@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (!empresaId && !isMaster) {
       return NextResponse.json(
         { error: "Usuário não vinculado a uma empresa" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar despesas:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     if (session.user.role !== "admin" && session.user.role !== "master") {
       return NextResponse.json(
         { error: "Apenas administradores podem registrar despesas manuais" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     if (!empresaId && session.user.role !== "master") {
       return NextResponse.json(
         { error: "Usuário não vinculado a uma empresa" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     if (!description || description.trim() === "") {
       return NextResponse.json(
         { error: "Descrição é obrigatória" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
     if (isNaN(amountNum) || amountNum <= 0) {
       return NextResponse.json(
         { error: "Valor deve ser maior que zero" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     if (!targetEmpresaId) {
       return NextResponse.json(
         { error: "Empresa não especificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro ao criar despesa:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -200,7 +200,7 @@ export async function DELETE(request: NextRequest) {
     if (session.user.role !== "admin" && session.user.role !== "master") {
       return NextResponse.json(
         { error: "Sem permissão para deletar despesas" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -210,7 +210,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "ID da despesa é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -222,7 +222,7 @@ export async function DELETE(request: NextRequest) {
     if (!expense) {
       return NextResponse.json(
         { error: "Despesa não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -232,7 +232,7 @@ export async function DELETE(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Sem permissão para deletar esta despesa" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -248,7 +248,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Erro ao deletar despesa:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
 
       if (!res.ok) {
         throw new Error(
-          data.error || "Ocorreu um erro ao tentar recuperar a senha."
+          data.error || "Ocorreu um erro ao tentar recuperar a senha.",
         );
       }
 
@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
     } catch (error: any) {
       setError(
         error.message ||
-          "Ocorreu um erro ao tentar recuperar a senha. Tente novamente."
+          "Ocorreu um erro ao tentar recuperar a senha. Tente novamente.",
       );
     } finally {
       setLoading(false);

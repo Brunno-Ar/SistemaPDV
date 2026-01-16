@@ -27,7 +27,7 @@ async function signUrlsInBatches(products: any[], batchSize = 10) {
           precoVenda: Number(product.precoVenda),
           imagemUrl: signedUrl || product.imagemUrl,
         };
-      })
+      }),
     );
     results.push(...batchResults);
   }
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     console.error("Search error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

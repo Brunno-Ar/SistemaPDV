@@ -12,7 +12,7 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
+    "loading",
   );
   const [message, setMessage] = useState("");
 

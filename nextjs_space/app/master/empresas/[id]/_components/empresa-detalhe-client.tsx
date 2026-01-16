@@ -272,14 +272,14 @@ export default function EmpresaDetalheClient({
                             <div className="text-sm text-muted-foreground mt-1">
                               Vencimento:{" "}
                               {new Date(boleto.vencimento).toLocaleDateString(
-                                "pt-BR"
+                                "pt-BR",
                               )}
                               {boleto.dataPagamento && (
                                 <>
                                   {" "}
                                   • Pago em:{" "}
                                   {new Date(
-                                    boleto.dataPagamento
+                                    boleto.dataPagamento,
                                   ).toLocaleDateString("pt-BR")}
                                 </>
                               )}
@@ -324,7 +324,7 @@ export default function EmpresaDetalheClient({
                     onClick={() =>
                       window.open(
                         `https://www.asaas.com/customerAccount/show/${empresa.asaasCustomerId}`,
-                        "_blank"
+                        "_blank",
                       )
                     }
                   >

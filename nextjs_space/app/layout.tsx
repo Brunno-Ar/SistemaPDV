@@ -16,7 +16,7 @@ import dynamicLoader from "next/dynamic";
 const OnboardingTour = dynamicLoader(
   () =>
     import("@/components/onboarding-tour").then((mod) => mod.OnboardingTour),
-  { ssr: false }
+  { ssr: false },
 );
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });

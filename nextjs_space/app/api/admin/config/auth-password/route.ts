@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (role !== "admin" && role !== "master") {
       return NextResponse.json(
         { error: "Apenas administradores podem alterar essa senha." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     if (!password || password.length < 4) {
       return NextResponse.json(
         { error: "A senha deve ter pelo menos 4 caracteres." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro ao salvar senha de autorização:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

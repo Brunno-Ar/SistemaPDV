@@ -113,7 +113,7 @@ async function main() {
           quantidade: 100,
           precoCompra: 25.0,
           dataValidade: new Date(
-            new Date().setFullYear(new Date().getFullYear() + 1)
+            new Date().setFullYear(new Date().getFullYear() + 1),
           ),
         },
       },
@@ -136,7 +136,7 @@ async function main() {
           quantidade: 50,
           precoCompra: 60.0,
           dataValidade: new Date(
-            new Date().setFullYear(new Date().getFullYear() + 1)
+            new Date().setFullYear(new Date().getFullYear() + 1),
           ),
         },
       },

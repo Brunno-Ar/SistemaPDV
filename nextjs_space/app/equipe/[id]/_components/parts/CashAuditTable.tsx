@@ -50,7 +50,10 @@ interface CashAuditTableProps {
   formatCurrency: (value: number | string) => string;
 }
 
-export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) {
+export function CashAuditTable({
+  caixas,
+  formatCurrency,
+}: CashAuditTableProps) {
   const getQuebraBadge = (quebra: string | number | null) => {
     if (quebra === null) {
       return <Badge variant="secondary">Em Aberto</Badge>;
@@ -107,7 +110,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                 {format(
                                   new Date(caixa.dataAbertura),
                                   "dd/MM/yyyy 'às' HH:mm",
-                                  { locale: ptBR }
+                                  { locale: ptBR },
                                 )}
                               </span>
                             </div>
@@ -120,7 +123,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                   {format(
                                     new Date(caixa.dataFechamento),
                                     "dd/MM/yyyy 'às' HH:mm",
-                                    { locale: ptBR }
+                                    { locale: ptBR },
                                   )}
                                 </span>
                               </div>
@@ -140,7 +143,11 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                         <TableCell className="text-right">
                           <Sheet>
                             <SheetTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
                                 <span className="sr-only">Ver Extrato</span>
                                 <List className="h-4 w-4" />
                               </Button>
@@ -163,7 +170,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                       {format(
                                         new Date(caixa.dataAbertura),
                                         "dd/MM/yyyy HH:mm",
-                                        { locale: ptBR }
+                                        { locale: ptBR },
                                       )}
                                     </span>
                                   </div>
@@ -176,7 +183,7 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                         {format(
                                           new Date(caixa.dataFechamento),
                                           "dd/MM/yyyy HH:mm",
-                                          { locale: ptBR }
+                                          { locale: ptBR },
                                         )}
                                       </span>
                                     </div>
@@ -211,43 +218,52 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
                                         </TableRow>
                                       </TableHeader>
                                       <TableBody>
-                                        {caixa.movimentacoes && caixa.movimentacoes.length > 0 ? (
-                                          caixa.movimentacoes
-                                            .filter((m) => m.tipo !== "ABERTURA")
-                                            .map((mov) => (
-                                              <TableRow key={mov.id}>
-                                                <TableCell className="text-xs">
-                                                  {format(
-                                                    new Date(mov.dataHora),
-                                                    "HH:mm",
-                                                    { locale: ptBR }
-                                                  )}
-                                                </TableCell>
-                                                <TableCell>
-                                                  {mov.tipo === "SANGRIA" ? (
-                                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 h-auto">
-                                                      Sangria
-                                                    </Badge>
-                                                  ) : (
-                                                    <Badge className="bg-green-600 hover:bg-green-700 text-[10px] px-1.5 py-0.5 h-auto">
-                                                      Suprimento
-                                                    </Badge>
-                                                  )}
-                                                </TableCell>
-                                                <TableCell className="font-medium text-xs">
-                                                  {formatCurrency(mov.valor)}
-                                                </TableCell>
-                                                <TableCell
-                                                  className="max-w-[120px] truncate text-xs text-muted-foreground"
-                                                  title={mov.descricao}
-                                                >
-                                                  {mov.descricao || "-"}
-                                                </TableCell>
-                                              </TableRow>
-                                            ))
-                                        ) : null}
+                                        {caixa.movimentacoes &&
+                                        caixa.movimentacoes.length > 0
+                                          ? caixa.movimentacoes
+                                              .filter(
+                                                (m) => m.tipo !== "ABERTURA",
+                                              )
+                                              .map((mov) => (
+                                                <TableRow key={mov.id}>
+                                                  <TableCell className="text-xs">
+                                                    {format(
+                                                      new Date(mov.dataHora),
+                                                      "HH:mm",
+                                                      { locale: ptBR },
+                                                    )}
+                                                  </TableCell>
+                                                  <TableCell>
+                                                    {mov.tipo === "SANGRIA" ? (
+                                                      <Badge
+                                                        variant="destructive"
+                                                        className="text-[10px] px-1.5 py-0.5 h-auto"
+                                                      >
+                                                        Sangria
+                                                      </Badge>
+                                                    ) : (
+                                                      <Badge className="bg-green-600 hover:bg-green-700 text-[10px] px-1.5 py-0.5 h-auto">
+                                                        Suprimento
+                                                      </Badge>
+                                                    )}
+                                                  </TableCell>
+                                                  <TableCell className="font-medium text-xs">
+                                                    {formatCurrency(mov.valor)}
+                                                  </TableCell>
+                                                  <TableCell
+                                                    className="max-w-[120px] truncate text-xs text-muted-foreground"
+                                                    title={mov.descricao}
+                                                  >
+                                                    {mov.descricao || "-"}
+                                                  </TableCell>
+                                                </TableRow>
+                                              ))
+                                          : null}
 
-                                        {(!caixa.movimentacoes || caixa.movimentacoes.filter((m) => m.tipo !== "ABERTURA").length === 0) && (
+                                        {(!caixa.movimentacoes ||
+                                          caixa.movimentacoes.filter(
+                                            (m) => m.tipo !== "ABERTURA",
+                                          ).length === 0) && (
                                           <TableRow>
                                             <TableCell
                                               colSpan={4}
@@ -264,26 +280,42 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
 
                                 {caixa.status === "FECHADO" && (
                                   <div>
-                                    <h3 className="font-semibold text-sm mb-3">Conferência de Fechamento</h3>
+                                    <h3 className="font-semibold text-sm mb-3">
+                                      Conferência de Fechamento
+                                    </h3>
                                     <div className="space-y-3 border rounded-lg p-4">
                                       <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Dinheiro em Gaveta</span>
+                                        <span className="text-muted-foreground">
+                                          Dinheiro em Gaveta
+                                        </span>
                                         <span className="font-medium">
-                                          {formatCurrency(caixa.valorInformadoDinheiro || 0)}
+                                          {formatCurrency(
+                                            caixa.valorInformadoDinheiro || 0,
+                                          )}
                                         </span>
                                       </div>
                                       <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Maquininha (Cartão/Pix)</span>
+                                        <span className="text-muted-foreground">
+                                          Maquininha (Cartão/Pix)
+                                        </span>
                                         <span className="font-medium">
                                           {formatCurrency(
-                                            (Number(caixa.valorInformadoMaquininha) || 0) +
-                                            (Number(caixa.valorInformadoPix) || 0) +
-                                            (Number(caixa.valorInformadoCartao) || 0)
+                                            (Number(
+                                              caixa.valorInformadoMaquininha,
+                                            ) || 0) +
+                                              (Number(
+                                                caixa.valorInformadoPix,
+                                              ) || 0) +
+                                              (Number(
+                                                caixa.valorInformadoCartao,
+                                              ) || 0),
                                           )}
                                         </span>
                                       </div>
                                       <div className="flex justify-between items-center pt-3 border-t">
-                                        <span className="font-semibold">Total Informado</span>
+                                        <span className="font-semibold">
+                                          Total Informado
+                                        </span>
                                         <span className="font-bold text-lg">
                                           {formatCurrency(saldoInformado)}
                                         </span>
@@ -294,7 +326,9 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
 
                                 {caixa.justificativa && (
                                   <div>
-                                    <h3 className="font-semibold text-sm mb-2">Justificativa de Quebra</h3>
+                                    <h3 className="font-semibold text-sm mb-2">
+                                      Justificativa de Quebra
+                                    </h3>
                                     <div className="p-3 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/30 rounded-md text-sm text-yellow-800 dark:text-yellow-200">
                                       {caixa.justificativa}
                                     </div>
@@ -304,13 +338,18 @@ export function CashAuditTable({ caixas, formatCurrency }: CashAuditTableProps) 
 
                               <div className="mt-auto pt-6 border-t space-y-3 bg-background">
                                 <div className="flex justify-between items-center">
-                                  <span className="font-semibold">Resultado (Quebra de Caixa)</span>
+                                  <span className="font-semibold">
+                                    Resultado (Quebra de Caixa)
+                                  </span>
                                   <div className="scale-110 origin-right">
-                                    {getQuebraBadge(caixa.quebraDeCaixa ?? null)}
+                                    {getQuebraBadge(
+                                      caixa.quebraDeCaixa ?? null,
+                                    )}
                                   </div>
                                 </div>
                                 <p className="text-xs text-muted-foreground text-right">
-                                  * Diferença entre o valor esperado pelo sistema e o valor informado.
+                                  * Diferença entre o valor esperado pelo
+                                  sistema e o valor informado.
                                 </p>
                               </div>
                             </SheetContent>

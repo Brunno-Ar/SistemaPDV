@@ -104,16 +104,16 @@ export function CaixasVisaoGeral() {
       totalCaixasAbertos: caixasFiltrados.length,
       totalVendasDia: caixasFiltrados.reduce(
         (acc, c) => acc + c.vendas.total,
-        0
+        0,
       ),
       totalSangrias: caixasFiltrados.reduce((acc, c) => acc + c.sangrias, 0),
       totalSuprimentos: caixasFiltrados.reduce(
         (acc, c) => acc + c.suprimentos,
-        0
+        0,
       ),
       totalDinheiroCaixas: caixasFiltrados.reduce(
         (acc, c) => acc + c.dinheiroCaixa,
-        0
+        0,
       ),
     };
 
@@ -239,7 +239,7 @@ export function CaixasVisaoGeral() {
               {formatCurrency(
                 (resumoFiltrado?.totalVendasDia || 0) +
                   (resumoFiltrado?.totalSuprimentos || 0) -
-                  (resumoFiltrado?.totalSangrias || 0)
+                  (resumoFiltrado?.totalSangrias || 0),
               )}
             </p>
           </div>
@@ -284,7 +284,7 @@ export function CaixasVisaoGeral() {
                           {
                             hour: "2-digit",
                             minute: "2-digit",
-                          }
+                          },
                         )}
                       </p>
                     </div>

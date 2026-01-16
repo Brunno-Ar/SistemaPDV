@@ -36,7 +36,7 @@ export const authOptions: AuthOptions = {
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password,
         );
 
         if (!isPasswordValid) {
@@ -52,7 +52,7 @@ export const authOptions: AuthOptions = {
           // 1. Empresa pendente de aprovação
           if (status === "PENDENTE") {
             throw new Error(
-              "Sua empresa está aguardando aprovação do administrador. Tente novamente mais tarde."
+              "Sua empresa está aguardando aprovação do administrador. Tente novamente mais tarde.",
             );
           }
 
@@ -81,7 +81,7 @@ export const authOptions: AuthOptions = {
 
             if (now > toleranceDate) {
               throw new Error(
-                "Acesso bloqueado. O pagamento da sua mensalidade não foi realizado. Entre em contato com o suporte."
+                "Acesso bloqueado. O pagamento da sua mensalidade não foi realizado. Entre em contato com o suporte.",
               );
             }
           }

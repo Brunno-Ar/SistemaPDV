@@ -375,7 +375,7 @@ export function FechamentoCaixaDialog({
                 </span>
                 <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
                   {formatCurrency(
-                    resultadoConferencia.informado.total - saldoInicial
+                    resultadoConferencia.informado.total - saldoInicial,
                   )}
                 </span>
               </div>
@@ -475,8 +475,8 @@ export function FechamentoCaixaDialog({
                 {processing
                   ? "Finalizando..."
                   : temDivergencia
-                  ? "Finalizar Fechamento"
-                  : "Finalizar Fechamento"}
+                    ? "Finalizar Fechamento"
+                    : "Finalizar Fechamento"}
               </Button>
             </>
           )}

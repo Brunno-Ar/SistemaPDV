@@ -10,7 +10,11 @@ export default async function LotesPage() {
     redirect("/login");
   }
 
-  if (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
+  if (
+    session.user.role !== "admin" &&
+    session.user.role !== "master" &&
+    session.user.role !== "gerente"
+  ) {
     redirect("/vender");
   }
 

@@ -13,7 +13,10 @@ interface ClosedRegisterAlertProps {
   onRedirect: () => void;
 }
 
-export function ClosedRegisterAlert({ open, onRedirect }: ClosedRegisterAlertProps) {
+export function ClosedRegisterAlert({
+  open,
+  onRedirect,
+}: ClosedRegisterAlertProps) {
   return (
     <AlertDialog open={open}>
       <AlertDialogContent>

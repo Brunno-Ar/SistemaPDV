@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email e senha são obrigatórios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!user || !user.password) {
       return NextResponse.json(
         { error: "Credenciais inválidas" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -32,14 +32,14 @@ export async function POST(req: NextRequest) {
     if (!isPasswordValid) {
       return NextResponse.json(
         { error: "Credenciais inválidas" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     if (!user.empresa) {
       return NextResponse.json(
         { error: "Usuário não possui uma empresa associada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     if (empresa.status !== "PAUSADO") {
       return NextResponse.json(
         { error: "Esta empresa não está pausada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
               20 - diffDays
             } dias ou entre em contato com o suporte.`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     console.error("Erro no desbloqueio público:", error);
     return NextResponse.json(
       { error: "Erro interno ao processar desbloqueio" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

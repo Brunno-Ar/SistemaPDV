@@ -31,7 +31,7 @@ const RelatoriosCharts = dynamic(
       </div>
     ),
     ssr: false, // Gráficos não precisam de SSR
-  }
+  },
 );
 
 export type ViewMode = "EFFICIENCY" | "CASH_FLOW";

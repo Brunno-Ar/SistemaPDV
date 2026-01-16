@@ -113,6 +113,9 @@ describe("LotManagerDialog", () => {
     fireEvent.change(screen.getByLabelText("Data de Validade"), {
       target: { value: "2025-12-31" },
     });
+    fireEvent.change(screen.getByLabelText("Custo Unit. (R$)"), {
+      target: { value: "5.00" },
+    });
 
     // Mock do POST de criação
     (global.fetch as jest.Mock).mockResolvedValueOnce({

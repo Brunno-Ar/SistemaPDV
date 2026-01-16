@@ -51,7 +51,7 @@ export default function LoginPage() {
         } else if (result.error.includes("aguardando aprovação")) {
           // Redirecionar para página de bloqueio - empresa pendente
           router.push(
-            `/bloqueado?reason=pendente&email=${encodeURIComponent(email)}`
+            `/bloqueado?reason=pendente&email=${encodeURIComponent(email)}`,
           );
         } else if (
           result.error.includes("Acesso suspenso") ||
@@ -59,7 +59,7 @@ export default function LoginPage() {
         ) {
           // Redirecionar para página de bloqueio - empresa pausada
           router.push(
-            `/bloqueado?reason=pausado&email=${encodeURIComponent(email)}`
+            `/bloqueado?reason=pausado&email=${encodeURIComponent(email)}`,
           );
         } else if (
           result.error.includes("Acesso bloqueado") ||
@@ -67,7 +67,7 @@ export default function LoginPage() {
         ) {
           // Redirecionar para página de bloqueio - mensalidade vencida
           router.push(
-            `/bloqueado?reason=vencido&email=${encodeURIComponent(email)}`
+            `/bloqueado?reason=vencido&email=${encodeURIComponent(email)}`,
           );
         } else {
           setError(result.error);

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     if (!user || !user.empresa) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     // Buscar fatura pendente no Asaas
     try {
       const billingInfo = await asaas.getSubscriptionBillingInfo(
-        empresa.asaasSubscriptionId
+        empresa.asaasSubscriptionId,
       );
 
       if (billingInfo) {
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
             invoiceUrl: billingInfo.invoiceUrl,
             status: "PENDING",
             vencimento: new Date(billingInfo.dueDate).toLocaleDateString(
-              "pt-BR"
+              "pt-BR",
             ),
           },
         });
@@ -67,12 +67,12 @@ export async function GET(request: NextRequest) {
 
       // Se não tem fatura pendente, buscar o histórico para pegar a última
       const history = await asaas.listPaymentHistory(
-        empresa.asaasSubscriptionId
+        empresa.asaasSubscriptionId,
       );
 
       // Procurar por faturas PENDING ou OVERDUE
       const pendingPayment = history.find(
-        (p) => p.status === "PENDING" || p.status === "OVERDUE"
+        (p) => p.status === "PENDING" || p.status === "OVERDUE",
       );
 
       if (pendingPayment) {
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
             invoiceUrl: pendingPayment.invoiceUrl,
             status: pendingPayment.status,
             vencimento: new Date(pendingPayment.dueDate).toLocaleDateString(
-              "pt-BR"
+              "pt-BR",
             ),
           },
         });

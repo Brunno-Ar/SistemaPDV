@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       if (session.user.role !== "master") {
         return NextResponse.json(
           { error: "Acesso Negado: Apenas Master pode filtrar por empresa." },
-          { status: 403 }
+          { status: 403 },
         );
       }
       targetEmpresaId = queryCompanyId; // Sobrescreve o ID alvo
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (!targetEmpresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar equipe:", error);
     return NextResponse.json(
       { error: "Erro ao buscar equipe" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     if (!email || !senha) {
       return NextResponse.json(
         { error: "Email e senha são obrigatórios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,16 +118,16 @@ export async function POST(request: NextRequest) {
       // Fallback specific check for 'gerente' if it's missing from runtime enum but present in schema
       if (role === "gerente") {
         console.warn(
-          "Role 'gerente' requested but not found in Prisma Client Role enum. Client might be stale."
+          "Role 'gerente' requested but not found in Prisma Client Role enum. Client might be stale.",
         );
       }
       return NextResponse.json(
         {
           error: `Função inválida. Funções permitidas: ${validRoles.join(
-            ", "
+            ", ",
           )}`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     if (role && role !== "caixa" && role !== "gerente") {
       return NextResponse.json(
         { error: "Função inválida. Use 'caixa' ou 'gerente'." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Já existe um usuário com este email" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -179,13 +179,13 @@ export async function POST(request: NextRequest) {
         message: "Usuário caixa criado com sucesso",
         usuario: novoUsuario,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Erro ao criar usuário:", error);
     return NextResponse.json(
       { error: "Erro ao criar usuário" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -200,7 +200,7 @@ export async function DELETE(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -210,14 +210,14 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "ID do usuário é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (id === session.user.id) {
       return NextResponse.json(
         { error: "Você não pode excluir sua própria conta" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -229,7 +229,7 @@ export async function DELETE(request: NextRequest) {
     if (!userToDelete) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -240,7 +240,7 @@ export async function DELETE(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Você não tem permissão para excluir este usuário" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -254,7 +254,7 @@ export async function DELETE(request: NextRequest) {
         {
           error: "Não é possível excluir funcionário com histórico de vendas.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -277,7 +277,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Erro ao excluir usuário:", error);
     return NextResponse.json(
       { error: "Erro ao excluir usuário" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

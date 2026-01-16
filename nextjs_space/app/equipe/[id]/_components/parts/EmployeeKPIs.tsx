@@ -54,7 +54,9 @@ export function EmployeeKPIs({
     // Lógica de interpretação PT-BR
     if (cleanValue.includes(",")) {
       // Se tem vírgula, assume formato PT-BR (milhar.centena,decimal)
-      numericValue = parseFloat(cleanValue.replace(/\./g, "").replace(",", "."));
+      numericValue = parseFloat(
+        cleanValue.replace(/\./g, "").replace(",", "."),
+      );
     } else {
       // Se NÃO tem vírgula
       const dots = cleanValue.split(".").length - 1;
@@ -156,10 +158,9 @@ export function EmployeeKPIs({
               val = parseFloat(clean);
 
               if (!val || val === 0) return 0;
-              return (
-                (Number(funcionario.totalVendasMes) / val) *
-                100
-              ).toFixed(1);
+              return ((Number(funcionario.totalVendasMes) / val) * 100).toFixed(
+                1,
+              );
             })()}
             %
           </p>

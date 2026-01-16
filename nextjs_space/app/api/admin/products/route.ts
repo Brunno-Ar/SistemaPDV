@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores podem acessar." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             error:
               "Acesso negado. Apenas usuários master podem visualizar dados de outras empresas.",
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
       empresaId = companyIdParam;
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar produtos:", error);
     return NextResponse.json(
       { error: "Erro interno ao buscar produtos" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         {
           error: "Acesso negado. Apenas administradores podem criar produtos.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
         {
           error: `Já existe um produto chamado "${nome}" cadastrado nesta empresa. Use um nome diferente.`,
         },
-        { status: 409 } // 409 Conflict
+        { status: 409 }, // 409 Conflict
       );
     }
 
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       if (quantidadeLote < 0) {
         return NextResponse.json(
           { error: "Quantidade do lote não pode ser negativa" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       if (existingProduct) {
         return NextResponse.json(
           { error: "SKU já existe nesta empresa. Escolha outro." },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro ao criar produto:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

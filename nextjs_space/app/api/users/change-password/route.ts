@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     if (!currentPassword || !newPassword) {
       return NextResponse.json(
         { error: "Preencha todos os campos" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     if (!user || !user.password) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     if (!isValid) {
       return NextResponse.json(
         { error: "Senha atual incorreta" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     console.error("Erro ao alterar senha:", error);
     return NextResponse.json(
       { error: "Erro interno ao atualizar senha" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

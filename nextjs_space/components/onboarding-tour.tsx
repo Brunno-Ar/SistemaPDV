@@ -78,7 +78,7 @@ export function OnboardingTour() {
       sessionStatus === "authenticated" &&
       session?.user
     ) {
-      console.log("🚀 Iniciando tour...");
+      // console.log("🚀 Iniciando tour...");
       markShownThisSession();
       setRun(true);
     }
@@ -87,7 +87,7 @@ export function OnboardingTour() {
   // Listener para o evento de reset do tour (vindo do botão)
   useEffect(() => {
     const handleTourReset = () => {
-      console.log("🔄 Tour reset event received");
+      // console.log("🔄 Tour reset event received");
       hasInitialized.current = false;
       resetTourInStorage();
       clearShownThisSession();
@@ -135,21 +135,21 @@ export function OnboardingTour() {
     // Se o tour já foi mostrado NESTA SESSÃO do navegador, não mostrar de novo
     // Isso evita o problema de aparecer no F5
     if (wasShownThisSession()) {
-      console.log("⏭️ Tour já foi mostrado nesta sessão do navegador");
+      // console.log("⏭️ Tour já foi mostrado nesta sessão do navegador");
       setRun(false);
       return;
     }
 
     // Se o tour está marcado como completado na SESSÃO (do servidor), não mostrar
     if (tourCompletedFromSession === true) {
-      console.log("✅ Tour já completado (sessão)");
+      // console.log("✅ Tour já completado (sessão)");
       setRun(false);
       return;
     }
 
     // Se o tour está marcado como completado no localStorage, não mostrar
     if (isTourCompletedInStorage()) {
-      console.log("✅ Tour já completado (localStorage)");
+      // console.log("✅ Tour já completado (localStorage)");
       setRun(false);
       return;
     }
@@ -160,10 +160,10 @@ export function OnboardingTour() {
 
       // Delay para garantir que o DOM está pronto
       const timer = setTimeout(() => {
-        console.log("🎯 Iniciando tour pela primeira vez...", {
+        /* console.log("🎯 Iniciando tour pela primeira vez...", {
           role,
           tourCompletedFromSession,
-        });
+        }); */
         markShownThisSession();
         setRun(true);
       }, 1500);

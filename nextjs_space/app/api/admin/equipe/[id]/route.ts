@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // GET: Detalhes do funcionário
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -50,7 +50,7 @@ export async function GET(
     if (!funcionario) {
       return NextResponse.json(
         { error: "Funcionário não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -79,13 +79,13 @@ export async function GET(
         headers: {
           "Cache-Control": "no-store, max-age=0",
         },
-      }
+      },
     );
   } catch (error) {
     console.error("Erro ao buscar detalhes do funcionário:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -93,7 +93,7 @@ export async function GET(
 // PUT: Atualizar meta mensal
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -131,7 +131,7 @@ export async function PUT(
     console.error("Erro ao atualizar meta:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

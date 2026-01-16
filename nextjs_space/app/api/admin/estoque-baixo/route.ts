@@ -18,7 +18,7 @@ export async function GET(_request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,7 +54,7 @@ export async function GET(_request: NextRequest) {
     console.error("Erro ao buscar produtos com estoque baixo:", error);
     return NextResponse.json(
       { error: "Erro ao buscar produtos com estoque baixo" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

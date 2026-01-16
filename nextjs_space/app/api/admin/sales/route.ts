@@ -11,11 +11,13 @@ export async function GET(request: NextRequest) {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores podem acessar." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
       if (session.user.role !== "master") {
         return NextResponse.json(
           { error: "Acesso Negado: Apenas Master pode filtrar por empresa." },
-          { status: 403 }
+          { status: 403 },
         );
       }
       targetEmpresaId = queryCompanyId; // Sobrescreve o ID alvo
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
     if (!targetEmpresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -120,7 +122,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar vendas:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

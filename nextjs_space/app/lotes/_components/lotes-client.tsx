@@ -114,7 +114,7 @@ export default function LotesClient() {
     const qtd = parseFloat(value);
     const unitPrice = parseFloat(formData.precoCompra);
 
-    let updates: Partial<typeof formData> = { quantidade: value };
+    const updates: Partial<typeof formData> = { quantidade: value };
 
     // Se tiver preço unitário definido e quantidade válida, atualiza o total
     if (!isNaN(qtd) && !isNaN(unitPrice)) {
@@ -128,7 +128,7 @@ export default function LotesClient() {
     const total = parseFloat(value);
     const qtd = parseFloat(formData.quantidade);
 
-    let updates: Partial<typeof formData> = { valorTotalLote: value };
+    const updates: Partial<typeof formData> = { valorTotalLote: value };
 
     // Se tiver quantidade e total, calcula unitário
     if (!isNaN(total) && !isNaN(qtd) && qtd > 0) {
@@ -142,7 +142,7 @@ export default function LotesClient() {
     const unitPrice = parseFloat(value);
     const qtd = parseFloat(formData.quantidade);
 
-    let updates: Partial<typeof formData> = { precoCompra: value };
+    const updates: Partial<typeof formData> = { precoCompra: value };
 
     // Se tiver quantidade e preço unitário, atualiza o total
     if (!isNaN(unitPrice) && !isNaN(qtd)) {
@@ -156,7 +156,7 @@ export default function LotesClient() {
     const selectedProduct = products.find((p) => p.id === value);
 
     // Atualiza o ID
-    let updates: Partial<typeof formData> = { produtoId: value };
+    const updates: Partial<typeof formData> = { produtoId: value };
 
     // Se achou o produto e ele tem preço de compra (custo anterior) e não estamos editando um lote existente
     if (selectedProduct && !editingLoteId) {
@@ -167,7 +167,7 @@ export default function LotesClient() {
         const qtd = parseFloat(formData.quantidade);
         if (!isNaN(qtd) && qtd > 0) {
           updates.valorTotalLote = (qtd * selectedProduct.precoCompra).toFixed(
-            2
+            2,
           );
         }
       }
@@ -677,7 +677,7 @@ export default function LotesClient() {
                     <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataValidade
                         ? new Date(lote.dataValidade).toLocaleDateString(
-                            "pt-BR"
+                            "pt-BR",
                           )
                         : "Indeterminado"}
                     </TableCell>

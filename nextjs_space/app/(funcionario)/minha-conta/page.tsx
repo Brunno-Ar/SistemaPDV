@@ -110,7 +110,7 @@ export default function MinhaContaPage() {
                 {salesMonth >= metaMensal
                   ? "Parabéns! Você atingiu sua meta mensal! 🚀"
                   : `Faltam ${formatCurrency(
-                      metaMensal - salesMonth
+                      metaMensal - salesMonth,
                     )} para atingir sua meta.`}
               </p>
             </div>
@@ -148,7 +148,7 @@ export default function MinhaContaPage() {
                         <div>
                           <p className="font-medium text-gray-900 dark:text-white">
                             {new Date(sale.createdAt).toLocaleDateString(
-                              "pt-BR"
+                              "pt-BR",
                             )}
                           </p>
                           <p className="text-xs text-gray-500">
@@ -157,7 +157,7 @@ export default function MinhaContaPage() {
                               {
                                 hour: "2-digit",
                                 minute: "2-digit",
-                              }
+                              },
                             )}
                           </p>
                         </div>
@@ -202,7 +202,7 @@ export default function MinhaContaPage() {
                           <div className="flex flex-col">
                             <span>
                               {new Date(sale.createdAt).toLocaleDateString(
-                                "pt-BR"
+                                "pt-BR",
                               )}
                             </span>
                             <span className="text-xs text-gray-500">
@@ -211,7 +211,7 @@ export default function MinhaContaPage() {
                                 {
                                   hour: "2-digit",
                                   minute: "2-digit",
-                                }
+                                },
                               )}
                             </span>
                           </div>

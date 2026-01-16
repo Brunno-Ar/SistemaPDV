@@ -73,11 +73,16 @@ export function CaixasTable({ data }: CaixasTableProps) {
                     {fechamento ? format(fechamento, "HH:mm") : "-"}
                   </TableCell>
                   <TableCell className="text-right font-bold">
-                    {item.saldoFinal ? formatCurrency(Number(item.saldoFinal)) : "-"}
+                    {item.saldoFinal
+                      ? formatCurrency(Number(item.saldoFinal))
+                      : "-"}
                   </TableCell>
                   <TableCell className="text-center">
                     {item.status === "ABERTO" ? (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      <Badge
+                        variant="outline"
+                        className="bg-blue-50 text-blue-700 border-blue-200"
+                      >
                         Em Aberto
                       </Badge>
                     ) : temDivergencia ? (
@@ -85,7 +90,10 @@ export function CaixasTable({ data }: CaixasTableProps) {
                         Divergência ({formatCurrency(divergencia)})
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <Badge
+                        variant="outline"
+                        className="bg-green-50 text-green-700 border-green-200"
+                      >
                         Fechado OK
                       </Badge>
                     )}

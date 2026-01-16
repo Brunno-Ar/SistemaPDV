@@ -21,7 +21,7 @@ interface SidebarContextProps {
 }
 
 const SidebarContext = createContext<SidebarContextProps | undefined>(
-  undefined
+  undefined,
 );
 
 export const useSidebar = () => {
@@ -138,7 +138,7 @@ export const MobileSidebar = ({
     <>
       <div
         className={cn(
-          "h-16 px-4 py-3 flex flex-row lg:hidden items-center justify-between bg-[#137fec] dark:bg-zinc-900 w-full safe-area-top"
+          "h-16 px-4 py-3 flex flex-row lg:hidden items-center justify-between bg-[#137fec] dark:bg-zinc-900 w-full safe-area-top",
         )}
         {...props}
       >
@@ -167,7 +167,7 @@ export const MobileSidebar = ({
               }}
               className={cn(
                 "fixed h-full w-full inset-0 bg-[#137fec] dark:bg-zinc-900 px-6 pt-safe pb-safe z-[100] flex flex-col justify-between overflow-y-auto",
-                className
+                className,
               )}
             >
               {/* Header do menu mobile */}
@@ -207,7 +207,7 @@ export const SidebarLink = ({
 
   const handleClick = () => {
     // Fecha o menu mobile ao clicar em um link
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setOpen(false);
     }
   };
@@ -222,11 +222,15 @@ export const SidebarLink = ({
         open
           ? "text-white hover:bg-white/10"
           : "text-neutral-700 dark:text-neutral-200 hover:text-black hover:bg-gray-100 dark:hover:bg-zinc-800",
-        className
+        className,
       )}
       {...props}
     >
-      <span className={cn(open ? "text-white" : "text-neutral-700 dark:text-neutral-200")}>
+      <span
+        className={cn(
+          open ? "text-white" : "text-neutral-700 dark:text-neutral-200",
+        )}
+      >
         {link.icon}
       </span>
       <motion.span
@@ -249,7 +253,7 @@ export const SidebarBrand = () => {
       <div
         className={cn(
           "h-8 w-8 rounded-lg flex-shrink-0 transition-colors",
-          open ? "bg-white" : "bg-[#137fec]"
+          open ? "bg-white" : "bg-[#137fec]",
         )}
       />
       <motion.span
@@ -259,7 +263,7 @@ export const SidebarBrand = () => {
         }}
         className={cn(
           "font-bold text-lg whitespace-pre",
-          open ? "text-white" : "text-neutral-700 dark:text-white"
+          open ? "text-white" : "text-neutral-700 dark:text-white",
         )}
       >
         FlowPDV

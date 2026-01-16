@@ -84,7 +84,7 @@ export function LotManagerDialog({
     const qtd = parseFloat(value);
     const unitPrice = parseFloat(newLoteData.precoCompra);
 
-    let updates: any = { quantidade: value };
+    const updates: any = { quantidade: value };
 
     // Se tiver preço unitário definido e quantidade válida, atualiza o total
     if (!isNaN(qtd) && !isNaN(unitPrice)) {
@@ -98,7 +98,7 @@ export function LotManagerDialog({
     const total = parseFloat(value);
     const qtd = parseFloat(newLoteData.quantidade);
 
-    let updates: any = { valorTotalLote: value };
+    const updates: any = { valorTotalLote: value };
 
     // Se tiver quantidade e total, calcula unitário
     if (!isNaN(total) && !isNaN(qtd) && qtd > 0) {
@@ -112,7 +112,7 @@ export function LotManagerDialog({
     const unitPrice = parseFloat(value);
     const qtd = parseFloat(newLoteData.quantidade);
 
-    let updates: any = { precoCompra: value };
+    const updates: any = { precoCompra: value };
 
     // Se tiver quantidade e preço unitário, atualiza o total
     if (!isNaN(unitPrice) && !isNaN(qtd)) {
@@ -502,7 +502,7 @@ export function LotManagerDialog({
                       {productLots.filter((lote) =>
                         hideFinishedLots
                           ? lote.status !== "esgotado" && lote.quantidade > 0
-                          : true
+                          : true,
                       ).length === 0 ? (
                         <TableRow>
                           <TableCell
@@ -518,7 +518,7 @@ export function LotManagerDialog({
                             hideFinishedLots
                               ? lote.status !== "esgotado" &&
                                 lote.quantidade > 0
-                              : true
+                              : true,
                           )
                           .map((lote) => {
                             // Lógica de Status simplificada
@@ -581,7 +581,7 @@ export function LotManagerDialog({
                                 <TableCell className="text-gray-600 dark:text-gray-300">
                                   {lote.dataCompra || lote.createdAt
                                     ? new Date(
-                                        lote.dataCompra || lote.createdAt
+                                        lote.dataCompra || lote.createdAt,
                                       ).toLocaleDateString("pt-BR")
                                     : "-"}
                                 </TableCell>
@@ -590,7 +590,7 @@ export function LotManagerDialog({
                                     <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
                                       <Calendar className="h-3 w-3 text-gray-400" />
                                       {new Date(
-                                        lote.dataValidade
+                                        lote.dataValidade,
                                       ).toLocaleDateString("pt-BR")}
                                     </div>
                                   ) : (

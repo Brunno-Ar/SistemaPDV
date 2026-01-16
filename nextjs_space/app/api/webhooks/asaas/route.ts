@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 // Grace Period em dias (tolerância para pagamento atrasado)
 const GRACE_PERIOD_DAYS = parseInt(
   process.env.ASAAS_GRACE_PERIOD_DAYS || "5",
-  10
+  10,
 );
 
 export async function POST(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       console.error("❌ [Webhook] ASAAS_WEBHOOK_SECRET não configurado");
       return NextResponse.json(
         { error: "Server misconfiguration" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     // Eventos de subscription precisam de subscription.customer
     if (!customerId) {
       console.warn(
-        "⚠️ [Webhook] Payload inválido - sem customer em payment ou subscription"
+        "⚠️ [Webhook] Payload inválido - sem customer em payment ou subscription",
       );
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     if (!empresa) {
       console.warn(
-        `⚠️ [Webhook] Empresa não encontrada para customer: ${payment.customer}`
+        `⚠️ [Webhook] Empresa não encontrada para customer: ${payment.customer}`,
       );
       // Retorna 200 para o Asaas não ficar reenviando
       return NextResponse.json({ message: "Customer not found, ignored" });
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
         const hoje = new Date();
         diasAtraso = Math.floor(
           (hoje.getTime() - dataVencimentoPagamento.getTime()) /
-            (1000 * 60 * 60 * 24)
+            (1000 * 60 * 60 * 24),
         );
       }
 
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
     console.error("❌ [Webhook] Erro ao processar:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

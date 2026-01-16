@@ -12,7 +12,7 @@ describe("UserCard Component", () => {
 
   it("should have 'relative' class for correct badge positioning", () => {
     const { container } = render(
-      <UserCard {...defaultProps} isCurrentUser={true} />
+      <UserCard {...defaultProps} isCurrentUser={true} />,
     );
     // The Card component is the first child of the container
     const cardElement = container.firstChild as HTMLElement;

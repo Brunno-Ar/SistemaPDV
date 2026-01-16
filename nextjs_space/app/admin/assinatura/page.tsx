@@ -106,7 +106,7 @@ export default function AssinaturaPage() {
       window.open(data.billing.invoiceUrl, "_blank");
     } else {
       toast.info(
-        "Para atualizar o cartão, entre em contato com o suporte ou aguarde a próxima fatura."
+        "Para atualizar o cartão, entre em contato com o suporte ou aguarde a próxima fatura.",
       );
     }
   };
@@ -130,12 +130,12 @@ export default function AssinaturaPage() {
       }
 
       toast.success(
-        "Assinatura cancelada. O acesso continua até o fim do período pago."
+        "Assinatura cancelada. O acesso continua até o fim do período pago.",
       );
       fetchData();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Erro ao cancelar assinatura"
+        err instanceof Error ? err.message : "Erro ao cancelar assinatura",
       );
     } finally {
       setCancelling(false);
@@ -452,18 +452,18 @@ export default function AssinaturaPage() {
                           payment.status === "CONFIRMED"
                             ? "default"
                             : payment.status === "OVERDUE"
-                            ? "destructive"
-                            : "secondary"
+                              ? "destructive"
+                              : "secondary"
                         }
                       >
                         {payment.status === "RECEIVED" ||
                         payment.status === "CONFIRMED"
                           ? "Pago"
                           : payment.status === "PENDING"
-                          ? "Pendente"
-                          : payment.status === "OVERDUE"
-                          ? "Vencido"
-                          : payment.status}
+                            ? "Pendente"
+                            : payment.status === "OVERDUE"
+                              ? "Vencido"
+                              : payment.status}
                       </Badge>
                     </TableCell>
                     <TableCell>

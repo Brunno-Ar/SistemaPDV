@@ -13,7 +13,7 @@ export function validateProductData(body: any) {
       isValid: false,
       response: NextResponse.json(
         { error: "Todos os campos obrigatórios devem ser preenchidos" },
-        { status: 400 }
+        { status: 400 },
       ),
     };
   }
@@ -26,7 +26,7 @@ export function validateProductData(body: any) {
           error:
             "Preços devem ser válidos (preço de venda > 0, preço de compra >= 0)",
         },
-        { status: 400 }
+        { status: 400 },
       ),
     };
   }
@@ -36,7 +36,7 @@ export function validateProductData(body: any) {
       isValid: false,
       response: NextResponse.json(
         { error: "Estoque não pode ser negativo" },
-        { status: 400 }
+        { status: 400 },
       ),
     };
   }
@@ -46,7 +46,7 @@ export function validateProductData(body: any) {
       isValid: false,
       response: NextResponse.json(
         { error: "Estoque mínimo não pode ser negativo" },
-        { status: 400 }
+        { status: 400 },
       ),
     };
   }

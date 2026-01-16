@@ -11,6 +11,7 @@ export interface CartItem {
   quantidade: number;
   descontoAplicado: number;
   subtotal: number;
+  precoUnitarioNoMomento: number;
 }
 
 // Interface para pagamentos múltiplos
@@ -115,7 +116,7 @@ export function usePOS() {
     // Listener para quando os produtos forem sincronizados
     const handleProductsSynced = (event: Event) => {
       const customEvent = event as CustomEvent;
-      console.log("Products synced event received:", customEvent.detail);
+      // console.log("Products synced event received:", customEvent.detail);
       // Recarregar produtos do banco local
       loadProductsFromDb();
     };
@@ -137,7 +138,7 @@ export function usePOS() {
     try {
       const dbReady = await ensureDbReady();
       if (!dbReady) {
-        console.log("Banco não está pronto, aguardando...");
+        // console.log("Banco não está pronto, aguardando...");
         // Aguardar um pouco e tentar novamente
         setTimeout(loadProductsFromDb, 500);
         return;
@@ -151,9 +152,9 @@ export function usePOS() {
       hasLoadedProducts.current = true;
 
       if (results.length === 0) {
-        console.log("Nenhum produto encontrado no banco local");
+        // console.log("Nenhum produto encontrado no banco local");
       } else {
-        console.log(`${results.length} produtos carregados do banco local`);
+        // console.log(`${results.length} produtos carregados do banco local`);
       }
     } catch (error) {
       console.error("Erro ao carregar produtos:", error);
@@ -235,7 +236,7 @@ export function usePOS() {
 
         // Se não encontrou produtos, aguarda antes de tentar novamente
         // (provavelmente o sync ainda está em andamento)
-        console.log(`Tentativa ${i + 1}/${maxRetries}: aguardando produtos...`);
+        // console.log(`Tentativa ${i + 1}/${maxRetries}: aguardando produtos...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
         delay = Math.min(delay * 1.5, 2000); // Backoff exponencial com cap
       } catch (error) {
@@ -253,7 +254,7 @@ export function usePOS() {
     try {
       const dbReady = await ensureDbReady();
       if (!dbReady) {
-        console.log("Banco não está pronto para busca");
+        // console.log("Banco não está pronto para busca");
         return;
       }
 
@@ -340,20 +341,23 @@ export function usePOS() {
         const newCart = [...prevCart];
         const newQuantity = newCart[existingItemIndex].quantidade + 1;
         const desconto = newCart[existingItemIndex].descontoAplicado;
+        const precoUsado = newCart[existingItemIndex].precoUnitarioNoMomento;
         newCart[existingItemIndex] = {
           ...newCart[existingItemIndex],
           quantidade: newQuantity,
-          subtotal: newQuantity * product.precoVenda - desconto,
+          subtotal: newQuantity * precoUsado - desconto,
         };
         return newCart;
       } else {
+        const precoNoMomento = product.precoVenda;
         return [
           ...prevCart,
           {
             product,
             quantidade: 1,
             descontoAplicado: 0,
-            subtotal: product.precoVenda,
+            subtotal: precoNoMomento,
+            precoUnitarioNoMomento: precoNoMomento,
           },
         ];
       }
@@ -386,7 +390,8 @@ export function usePOS() {
               ...item,
               quantidade: newQuantity,
               subtotal:
-                newQuantity * item.product.precoVenda - item.descontoAplicado,
+                newQuantity * item.precoUnitarioNoMomento -
+                item.descontoAplicado,
             }
           : item
       )
@@ -397,13 +402,13 @@ export function usePOS() {
     setCart((prevCart) =>
       prevCart.map((item) => {
         if (item.product.id === productId) {
-          const maxDesconto = item.quantidade * item.product.precoVenda;
+          const precoUsado = item.precoUnitarioNoMomento;
+          const maxDesconto = item.quantidade * precoUsado;
           const descontoValido = Math.max(0, Math.min(desconto, maxDesconto));
           return {
             ...item,
             descontoAplicado: descontoValido,
-            subtotal:
-              item.quantidade * item.product.precoVenda - descontoValido,
+            subtotal: item.quantidade * precoUsado - descontoValido,
           };
         }
         return item;
@@ -530,7 +535,7 @@ export function usePOS() {
       items: cart.map((item) => ({
         productId: item.product.id,
         quantidade: item.quantidade,
-        precoUnitario: item.product.precoVenda,
+        precoUnitario: item.precoUnitarioNoMomento,
         descontoAplicado: item.descontoAplicado,
       })),
       payments: paymentsPayload,

@@ -14,7 +14,7 @@ export async function GET() {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -42,7 +42,7 @@ export async function GET() {
     console.error("Erro ao buscar cupons:", error);
     return NextResponse.json(
       { error: "Erro ao buscar cupons" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -66,14 +66,14 @@ export async function POST(request: NextRequest) {
     if (!codigo || descontoPorcentagem === undefined) {
       return NextResponse.json(
         { error: "Código e porcentagem de desconto são obrigatórios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (descontoPorcentagem < 1 || descontoPorcentagem > 100) {
       return NextResponse.json(
         { error: "Desconto deve ser entre 1% e 100%" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     if (existente) {
       return NextResponse.json(
         { error: "Já existe um cupom com este código" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -121,7 +121,7 @@ export async function PUT(request: NextRequest) {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -131,7 +131,7 @@ export async function PUT(request: NextRequest) {
     if (!codigo) {
       return NextResponse.json(
         { error: "Código do cupom é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -143,7 +143,7 @@ export async function PUT(request: NextRequest) {
     if (!existente) {
       return NextResponse.json(
         { error: "Cupom não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -171,7 +171,7 @@ export async function PUT(request: NextRequest) {
     console.error("Erro ao atualizar cupom:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar cupom" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -184,7 +184,7 @@ export async function DELETE(request: NextRequest) {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -194,7 +194,7 @@ export async function DELETE(request: NextRequest) {
     if (!codigo) {
       return NextResponse.json(
         { error: "Código do cupom é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -206,7 +206,7 @@ export async function DELETE(request: NextRequest) {
     if (!existente) {
       return NextResponse.json(
         { error: "Cupom não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -225,7 +225,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Erro ao excluir cupom:", error);
     return NextResponse.json(
       { error: "Erro ao excluir cupom" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

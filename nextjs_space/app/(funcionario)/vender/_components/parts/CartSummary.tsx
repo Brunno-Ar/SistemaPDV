@@ -207,7 +207,9 @@ export function CartSummary({
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                       {item.quantidade} x R${" "}
-                      {item.product.precoVenda.toFixed(2)}
+                      {(
+                        item.precoUnitarioNoMomento ?? item.product.precoVenda
+                      ).toFixed(2)}
                     </p>
                     {/* Discount Input */}
                     <div className="flex items-center gap-2">

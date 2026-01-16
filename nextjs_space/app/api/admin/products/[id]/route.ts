@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,14 +24,14 @@ export async function PUT(
           error:
             "Acesso negado. Apenas administradores podem atualizar produtos.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
     const empresaId = session.user.empresaId;
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const body = await request.json();
@@ -57,7 +57,7 @@ export async function PUT(
     if (!existingProduct) {
       return NextResponse.json(
         { error: "Produto não encontrado ou não pertence à sua empresa" },
-        { status: 404 }
+        { status: 404 },
       );
     }
     // Check for duplicate name
@@ -74,7 +74,7 @@ export async function PUT(
           {
             error: `Já existe outro produto chamado "${nome}" cadastrado nesta empresa. Use um nome diferente.`,
           },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -94,7 +94,7 @@ export async function PUT(
       if (skuExists) {
         return NextResponse.json(
           { error: "SKU já existe em outro produto. Escolha um SKU único." },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -133,8 +133,8 @@ export async function PUT(
       if (Number(precoVenda) !== Number(existingProduct.precoVenda)) {
         changes.push(
           `Venda: R$${Number(existingProduct.precoVenda).toFixed(
-            2
-          )} -> R$${Number(precoVenda).toFixed(2)}`
+            2,
+          )} -> R$${Number(precoVenda).toFixed(2)}`,
         );
       }
       if (estoqueAtual !== existingProduct.estoqueAtual) {
@@ -142,7 +142,7 @@ export async function PUT(
         changes.push(
           `Estoque: ${existingProduct.estoqueAtual} -> ${estoqueAtual} (${
             diff > 0 ? "+" : ""
-          }${diff})`
+          }${diff})`,
         );
       }
       if (
@@ -150,7 +150,7 @@ export async function PUT(
         estoqueMinimo !== existingProduct.estoqueMinimo
       ) {
         changes.push(
-          `Estoque Mín: ${existingProduct.estoqueMinimo} -> ${estoqueMinimo}`
+          `Estoque Mín: ${existingProduct.estoqueMinimo} -> ${estoqueMinimo}`,
         );
       }
 
@@ -183,14 +183,14 @@ export async function PUT(
     console.error("Erro ao atualizar produto:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -205,14 +205,14 @@ export async function DELETE(
           error:
             "Acesso negado. Apenas administradores podem excluir produtos.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
     const empresaId = session.user.empresaId;
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const existingProduct = await prisma.product.findFirst({
@@ -221,7 +221,7 @@ export async function DELETE(
     if (!existingProduct) {
       return NextResponse.json(
         { error: "Produto não encontrado ou não pertence à sua empresa" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -249,7 +249,7 @@ export async function DELETE(
     console.error("Erro ao excluir produto:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

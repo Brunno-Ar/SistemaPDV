@@ -173,7 +173,7 @@ export default function EmpresasClient() {
   const handleAction = async (
     action: string,
     empresaId: string,
-    userId?: string
+    userId?: string,
   ) => {
     try {
       const response = await fetch("/api/master/empresas/actions", {
