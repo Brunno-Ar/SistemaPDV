@@ -335,10 +335,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro ao criar lote:", error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : "Erro interno do servidor";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
