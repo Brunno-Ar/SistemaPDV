@@ -308,24 +308,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // 5. Criar despesa se registerExpense = true e custoLote > 0
-      let expenseId = null;
-      if (registerExpense && custoLote > 0) {
-        const expense = await tx.expense.create({
-          data: {
-            empresaId,
-            userId: session.user.id,
-            description: `Compra de ${quantidade}x ${product.nome} (Lote ${finalNumeroLote})`,
-            amount: custoLote * quantidade, // Custo total do lote
-            category: "ESTOQUE",
-            date: dataCompra ? new Date(dataCompra + "T12:00:00Z") : new Date(),
-            movimentacaoEstoqueId: movimentacao.id,
-          },
-        });
-        expenseId = expense.id;
-      }
-
-      return { novoLote, estoqueTotal: novaQtdTotal, expenseId };
+      return { novoLote, estoqueTotal: novaQtdTotal };
     });
 
     return NextResponse.json({
