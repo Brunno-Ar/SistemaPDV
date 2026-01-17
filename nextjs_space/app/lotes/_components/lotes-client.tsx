@@ -59,6 +59,7 @@ interface Lote {
   quantidade: number;
   produtoId: string;
   precoCompra: number;
+  valorTotalLote: number | null;
   createdAt: string;
   produto: {
     nome: string;
@@ -324,6 +325,7 @@ export default function LotesClient() {
         dataValidade: semValidade ? null : formData.dataValidade,
         quantidade,
         precoCompra: parseCurrency(formData.precoCompra) || 0,
+        valorTotalLote: parseCurrency(formData.valorTotalLote) || 0,
         dataCompra: formData.dataCompra || null,
       };
 
@@ -674,7 +676,11 @@ export default function LotesClient() {
                     </TableCell>
                     <TableCell className="font-semibold text-gray-900 dark:text-gray-100">
                       R${" "}
-                      {(Number(lote.precoCompra) * lote.quantidade).toFixed(2)}
+                      {lote.valorTotalLote
+                        ? Number(lote.valorTotalLote).toFixed(2)
+                        : (Number(lote.precoCompra) * lote.quantidade).toFixed(
+                            2
+                          )}
                     </TableCell>
                     <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataCompra

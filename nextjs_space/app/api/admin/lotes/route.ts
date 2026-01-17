@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
         }
 
         diasParaVencer = Math.ceil(
-          (dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24),
+          (dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
         );
       }
 
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar lotes:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
       dataValidade,
       quantidade,
       precoCompra,
+      valorTotalLote,
       dataCompra,
       registerExpense = true, // Por padrão, lança como despesa
     } = body;
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
     if (!produtoId || !quantidade) {
       return NextResponse.json(
         { error: "Produto e Quantidade são obrigatórios" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -190,7 +191,7 @@ export async function POST(request: NextRequest) {
     if (quantidade <= 0) {
       return NextResponse.json(
         { error: "Quantidade deve ser maior que zero" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -205,7 +206,7 @@ export async function POST(request: NextRequest) {
     if (!product) {
       return NextResponse.json(
         { error: "Produto não encontrado ou não pertence à sua empresa" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -219,7 +220,7 @@ export async function POST(request: NextRequest) {
       if (dataValidadeDate < hoje) {
         return NextResponse.json(
           { error: "Data de validade não pode estar no passado" },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
@@ -235,7 +236,7 @@ export async function POST(request: NextRequest) {
       if (dataCompraDate > hoje) {
         return NextResponse.json(
           { error: "Data de compra não pode ser futura" },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
@@ -251,7 +252,7 @@ export async function POST(request: NextRequest) {
           error:
             "Usuário da sessão não encontrado no banco de dados. Faça login novamente.",
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -279,6 +280,9 @@ export async function POST(request: NextRequest) {
           quantidade,
           produtoId,
           precoCompra: custoLote,
+          valorTotalLote: valorTotalLote
+            ? Number(valorTotalLote)
+            : custoLote * quantidade,
           dataCompra: dataCompra
             ? new Date(dataCompra + "T12:00:00Z")
             : undefined,
@@ -303,7 +307,7 @@ export async function POST(request: NextRequest) {
           tipo: "ENTRADA",
           quantidade,
           motivo: `Entrada de lote ${finalNumeroLote} - Custo: R$${custoLote.toFixed(
-            2,
+            2
           )}`,
         },
       });
@@ -337,7 +341,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro ao criar lote:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -358,7 +362,7 @@ export async function DELETE(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -366,7 +370,7 @@ export async function DELETE(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -376,7 +380,7 @@ export async function DELETE(request: NextRequest) {
     if (!loteId) {
       return NextResponse.json(
         { error: "ID do lote é obrigatório" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -393,7 +397,7 @@ export async function DELETE(request: NextRequest) {
     if (!lote) {
       return NextResponse.json(
         { error: "Lote não encontrado" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -404,7 +408,7 @@ export async function DELETE(request: NextRequest) {
             "Não é possível excluir lote com estoque. Quantidade atual: " +
             lote.quantidade,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -420,7 +424,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Erro ao excluir lote:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -441,7 +445,7 @@ export async function PUT(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -449,7 +453,7 @@ export async function PUT(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -460,13 +464,14 @@ export async function PUT(request: NextRequest) {
       dataValidade,
       quantidade,
       precoCompra,
+      valorTotalLote,
       dataCompra,
     } = body;
 
     if (!id) {
       return NextResponse.json(
         { error: "ID do lote é obrigatório" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -487,7 +492,7 @@ export async function PUT(request: NextRequest) {
     if (!loteAtual) {
       return NextResponse.json(
         { error: "Lote não encontrado" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -496,7 +501,7 @@ export async function PUT(request: NextRequest) {
     if (isNaN(novaQuantidade) || novaQuantidade < 0) {
       return NextResponse.json(
         { error: "Quantidade inválida" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -518,7 +523,7 @@ export async function PUT(request: NextRequest) {
       if (dataCompraDate > hoje) {
         return NextResponse.json(
           { error: "Data de compra não pode ser futura" },
-          { status: 400 },
+          { status: 400 }
         );
       }
     }
@@ -534,7 +539,7 @@ export async function PUT(request: NextRequest) {
           error:
             "Usuário da sessão não encontrado no banco de dados. Faça login novamente.",
         },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -550,6 +555,8 @@ export async function PUT(request: NextRequest) {
           quantidade: novaQuantidade,
           precoCompra:
             precoCompra !== undefined ? Number(precoCompra) : undefined,
+          valorTotalLote:
+            valorTotalLote !== undefined ? Number(valorTotalLote) : undefined,
           dataCompra: dataCompra
             ? new Date(dataCompra + "T12:00:00Z")
             : undefined,
@@ -560,7 +567,7 @@ export async function PUT(request: NextRequest) {
       const changes = [];
       if (diferencaQuantidade !== 0) {
         changes.push(
-          `Qtd: ${diferencaQuantidade > 0 ? "+" : ""}${diferencaQuantidade}`,
+          `Qtd: ${diferencaQuantidade > 0 ? "+" : ""}${diferencaQuantidade}`
         );
       }
       if (numeroLote !== loteAtual.numeroLote) {
@@ -584,8 +591,8 @@ export async function PUT(request: NextRequest) {
       ) {
         changes.push(
           `Custo: R$${Number(loteAtual.precoCompra).toFixed(2)} -> R$${Number(
-            precoCompra,
-          ).toFixed(2)}`,
+            precoCompra
+          ).toFixed(2)}`
         );
       }
       // Check for dataCompra changes
@@ -642,7 +649,7 @@ export async function PUT(request: NextRequest) {
     console.error("Erro ao atualizar lote:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
