@@ -167,7 +167,7 @@ export default function LotesClient() {
         const qtd = parseFloat(formData.quantidade);
         if (!isNaN(qtd) && qtd > 0) {
           updates.valorTotalLote = (qtd * selectedProduct.precoCompra).toFixed(
-            2,
+            2
           );
         }
       }
@@ -626,6 +626,9 @@ export default function LotesClient() {
                     Custo Unit.
                   </TableHead>
                   <TableHead className="text-gray-600 dark:text-gray-400">
+                    Custo Total
+                  </TableHead>
+                  <TableHead className="text-gray-600 dark:text-gray-400">
                     Data Compra
                   </TableHead>
                   <TableHead className="text-gray-600 dark:text-gray-400">
@@ -669,6 +672,10 @@ export default function LotesClient() {
                     <TableCell className="text-gray-600 dark:text-gray-300">
                       R$ {Number(lote.precoCompra).toFixed(2)}
                     </TableCell>
+                    <TableCell className="font-semibold text-gray-900 dark:text-gray-100">
+                      R${" "}
+                      {(Number(lote.precoCompra) * lote.quantidade).toFixed(2)}
+                    </TableCell>
                     <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataCompra
                         ? new Date(lote.dataCompra).toLocaleDateString("pt-BR")
@@ -677,7 +684,7 @@ export default function LotesClient() {
                     <TableCell className="text-gray-600 dark:text-gray-300">
                       {lote.dataValidade
                         ? new Date(lote.dataValidade).toLocaleDateString(
-                            "pt-BR",
+                            "pt-BR"
                           )
                         : "Indeterminado"}
                     </TableCell>

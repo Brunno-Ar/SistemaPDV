@@ -99,6 +99,29 @@ function ProductCard({
               R$ {product.precoCompra.toFixed(2)}
             </p>
           </div>
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Lucro</p>
+            <p
+              className={`text-sm font-semibold ${
+                product.precoVenda - product.precoCompra > 0
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+              }`}
+            >
+              R$ {(product.precoVenda - product.precoCompra).toFixed(2)}
+              <span className="text-xs font-normal ml-1">
+                (
+                {product.precoCompra > 0
+                  ? (
+                      ((product.precoVenda - product.precoCompra) /
+                        product.precoCompra) *
+                      100
+                    ).toFixed(0)
+                  : 0}
+                %)
+              </span>
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-2">
@@ -249,6 +272,25 @@ export function ProductTable({
                       </span>
                       <span className="text-gray-500 dark:text-gray-400 text-xs">
                         Custo: R$ {product.precoCompra.toFixed(2)}
+                      </span>
+                      <span
+                        className={`text-xs font-semibold ${
+                          product.precoVenda - product.precoCompra > 0
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        Lucro: R${" "}
+                        {(product.precoVenda - product.precoCompra).toFixed(2)}{" "}
+                        (
+                        {product.precoCompra > 0
+                          ? (
+                              ((product.precoVenda - product.precoCompra) /
+                                product.precoCompra) *
+                              100
+                            ).toFixed(0)
+                          : 0}
+                        %)
                       </span>
                     </div>
                   </TableCell>
