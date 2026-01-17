@@ -273,27 +273,28 @@ export async function POST(request: NextRequest) {
       }
 
       // 2. Criar o lote
-      const loteData: any = {
-        numeroLote: finalNumeroLote,
-        dataValidade: dataValidadeDate,
-        quantidade,
-        produtoId,
-        precoCompra: custoLote,
-        dataCompra: dataCompra
-          ? new Date(dataCompra + "T12:00:00Z")
-          : undefined,
-      };
-
-      // Adiciona valorTotalLote se disponível
-      if (valorTotalLote !== undefined && valorTotalLote !== null) {
-        loteData.valorTotalLote = Number(valorTotalLote);
-      } else {
-        loteData.valorTotalLote = custoLote * quantidade;
-      }
-
       const novoLote = await tx.lote.create({
-        data: loteData,
+        data: {
+          numeroLote: finalNumeroLote,
+          dataValidade: dataValidadeDate,
+          quantidade,
+          produtoId,
+          precoCompra: custoLote,
+          dataCompra: dataCompra
+            ? new Date(dataCompra + "T12:00:00Z")
+            : undefined,
+        },
       });
+
+      // Atualizar valor total do lote via SQL raw (evita erro se Prisma Client não conhece o campo)
+      const valorTotal = valorTotalLote
+        ? Number(valorTotalLote)
+        : custoLote * quantidade;
+      try {
+        await tx.$executeRaw`UPDATE "lotes" SET "valor_total_lote" = ${valorTotal} WHERE "id" = ${novoLote.id}`;
+      } catch (e) {
+        console.log("Campo valorTotalLote não existe ainda, ignorando...");
+      }
 
       // 3. Atualizar Produto (Estoque e Custo Médio)
       await tx.product.update({
