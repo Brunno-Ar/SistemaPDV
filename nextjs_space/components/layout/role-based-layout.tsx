@@ -27,6 +27,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { useLogout } from "@/hooks/use-logout";
 
 const SidebarUserInfo = ({ session }: { session: any }) => {
   const { open } = useSidebar();
@@ -62,6 +63,7 @@ export default function RoleBasedLayout({
 }) {
   const { data: session } = useSession();
   const role = session?.user?.role;
+  const { performLogout, isLoggingOut } = useLogout();
 
   let links: any[] = [];
 
@@ -255,10 +257,15 @@ export default function RoleBasedLayout({
             </div>
           </div>
           {/* Footer: Perfil e Sair */}
-          <div onClick={() => signOut({ callbackUrl: "/login" })}>
+          <div
+            onClick={() => performLogout("/login")}
+            className={
+              isLoggingOut ? "opacity-50 pointer-events-none" : "cursor-pointer"
+            }
+          >
             <SidebarLink
               link={{
-                label: "Sair",
+                label: isLoggingOut ? "Saindo..." : "Sair",
                 href: "#",
                 icon: <LogOut className="h-5 w-5 text-red-500" />,
               }}

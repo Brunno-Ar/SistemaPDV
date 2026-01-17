@@ -72,15 +72,22 @@ export function MeuCaixa({
     setInputValue(sanitized);
   };
 
+  const [connectionError, setConnectionError] = useState(false);
+
   const fetchStatus = useCallback(async () => {
     try {
+      setConnectionError(false);
       const res = await fetch("/api/caixa", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setCaixa(data.caixaAberto || null);
+      } else {
+        // Se retornar erro que não seja 401/403, pode ser problema temporário
+        if (res.status >= 500) setConnectionError(true);
       }
     } catch (error) {
       console.error("Erro ao buscar status do caixa", error);
+      setConnectionError(true);
     } finally {
       setLoading(false);
     }
@@ -228,7 +235,7 @@ export function MeuCaixa({
       toast({
         title: "Troca PIX registrada!",
         description: `Maquininha: +R$ ${maquininhaNum.toFixed(
-          2,
+          2
         )} | Troco: -R$ ${trocoNum.toFixed(2)} | Taxa: R$ ${taxa.toFixed(2)}`,
         variant: "default",
       });
@@ -354,6 +361,32 @@ export function MeuCaixa({
 
   if (loading) return null;
 
+  if (connectionError) {
+    return (
+      <Card className="border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10 mb-6">
+        <CardContent className="pt-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="bg-yellow-100 dark:bg-yellow-900/40 p-3 rounded-full">
+              <RotateCcw className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                Erro de Conexão
+              </h3>
+              <p className="text-sm text-yellow-600/80 dark:text-yellow-400/80">
+                Não foi possível verificar o status do caixa. Verifique sua
+                internet.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => fetchStatus()} variant="outline">
+            Tentar Novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!caixa) {
     return (
       <Card className="border-l-4 border-l-red-500 bg-red-50 dark:bg-red-900/10 mb-6">
@@ -467,21 +500,21 @@ export function MeuCaixa({
               .filter(
                 (m) =>
                   m.tipo === "VENDA" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
               )
               .reduce((acc, m) => acc + Number(m.valor), 0);
             const suprimentosDinheiro = caixa.movimentacoes
               .filter(
                 (m) =>
                   m.tipo === "SUPRIMENTO" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
               )
               .reduce((acc, m) => acc + Number(m.valor), 0);
             const sangriasDinheiro = caixa.movimentacoes
               .filter(
                 (m) =>
                   m.tipo === "SANGRIA" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
               )
               .reduce((acc, m) => acc + Number(m.valor), 0);
             const saldoDinheiro =
@@ -517,7 +550,7 @@ export function MeuCaixa({
               {formatCurrency(
                 caixa.movimentacoes
                   .filter((m) => m.tipo === "VENDA")
-                  .reduce((acc, m) => acc + m.valor, 0),
+                  .reduce((acc, m) => acc + m.valor, 0)
               )}
             </p>
           </div>
@@ -527,7 +560,7 @@ export function MeuCaixa({
               {formatCurrency(
                 caixa.movimentacoes
                   .filter((m) => m.tipo === "SUPRIMENTO")
-                  .reduce((acc, m) => acc + m.valor, 0),
+                  .reduce((acc, m) => acc + m.valor, 0)
               )}
             </p>
           </div>
@@ -537,7 +570,7 @@ export function MeuCaixa({
               {formatCurrency(
                 caixa.movimentacoes
                   .filter((m) => m.tipo === "SANGRIA")
-                  .reduce((acc, m) => acc + m.valor, 0),
+                  .reduce((acc, m) => acc + m.valor, 0)
               )}
             </p>
           </div>

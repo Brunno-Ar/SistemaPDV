@@ -5,9 +5,13 @@ import { useSession } from "next-auth/react";
 import { db } from "@/lib/local-db";
 import { toast } from "@/hooks/use-toast";
 import { PRODUCTS_SYNCED_EVENT } from "@/lib/events";
+import { useNetwork } from "@/components/network-provider";
+
+// ...
 
 export function SyncManager() {
   const { status } = useSession();
+  const { isOnline } = useNetwork();
   const hasSynced = useRef(false);
 
   // 1. Clear DB on Logout
@@ -22,33 +26,21 @@ export function SyncManager() {
     }
   }, [status]);
 
-  // 2. Initial Load Sync (Download)
-  useEffect(() => {
-    if (status === "authenticated" && navigator.onLine && !hasSynced.current) {
-      hasSynced.current = true;
-      syncProducts();
-    }
-  }, [status]);
-
-  // 3. Sync Loop (Upload Offline Sales)
+  // 2. Initial Load Sync (Download) & 3. Sync Loop (Upload Offline Sales)
   useEffect(() => {
     if (status !== "authenticated") return;
 
-    const handleOnline = () => {
-      // console.log("Back online! Syncing sales...");
+    if (isOnline) {
+      // If we just came online or are online, try to sync offline sales
       syncOfflineSales();
-      syncProducts(); // Refresh catalog too
-    };
 
-    window.addEventListener("online", handleOnline);
-
-    // Initial check if we came online before mounting or just mounted online
-    if (navigator.onLine) {
-      syncOfflineSales();
+      // Only sync products once per session or if explicit refresh needed (simple for now)
+      if (!hasSynced.current) {
+        hasSynced.current = true;
+        syncProducts();
+      }
     }
-
-    return () => window.removeEventListener("online", handleOnline);
-  }, [status]);
+  }, [status, isOnline]);
 
   async function syncProducts() {
     try {

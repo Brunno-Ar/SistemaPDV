@@ -3,6 +3,7 @@ import { toast } from "@/hooks/use-toast";
 import { db, ProductLocal } from "@/lib/local-db";
 import { PRODUCTS_SYNCED_EVENT } from "@/lib/events";
 import { PaymentInput } from "@/types/api";
+import { useNetwork } from "@/components/network-provider";
 
 export interface Product extends ProductLocal {}
 
@@ -74,7 +75,13 @@ export function usePOS() {
   );
   const [lastTroco, setLastTroco] = useState<number | null>(null);
   const [lastPayments, setLastPayments] = useState<PaymentItem[]>([]);
-  const [isOffline, setIsOffline] = useState(false);
+  const { isOnline } = useNetwork();
+  // Legacy local state for display, sync with provider
+  const [isOffline, setIsOffline] = useState(!isOnline);
+
+  useEffect(() => {
+    setIsOffline(!isOnline);
+  }, [isOnline]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const hasLoadedProducts = useRef(false);
@@ -106,12 +113,9 @@ export function usePOS() {
       setMetodoPagamento(savedPayment);
     }
 
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    setIsOffline(!navigator.onLine);
+    // Listener removidos pois agora usamos o useNetwork centralizado
+    // window.addEventListener("online", handleOnline);
+    // window.addEventListener("offline", handleOffline);
 
     // Listener para quando os produtos forem sincronizados
     const handleProductsSynced = (event: Event) => {
@@ -127,8 +131,8 @@ export function usePOS() {
     loadProductsFromDb();
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      // window.removeEventListener("online", handleOnline);
+      // window.removeEventListener("offline", handleOffline);
       window.removeEventListener(PRODUCTS_SYNCED_EVENT, handleProductsSynced);
     };
   }, []);
@@ -545,8 +549,8 @@ export function usePOS() {
     };
 
     try {
-      // Try to send to API first
-      if (navigator.onLine) {
+      // Try to send to API first using robust network check
+      if (isOnline) {
         const response = await fetch("/api/sales", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -555,9 +559,13 @@ export function usePOS() {
 
         const data = await response.json();
 
-        if (!response.ok)
-          throw new Error(data.error || "Erro ao finalizar venda");
+        if (!response.ok) {
+          // Server reachable but returned error (e.g. 400 Bad Request, 500 Internal Error)
+          // DO NOT save offline in this case, show the error!
+          throw new Error(data.error || "Erro ao processar venda no servidor");
+        }
 
+        // ... Success logic ...
         // Atualizar estoque local para refletir na UI imediatamente
         for (const item of cart) {
           const product = await db.products.get(item.product.id);
@@ -579,10 +587,30 @@ export function usePOS() {
           variant: "default",
         });
       } else {
-        throw new Error("Offline"); // Force offline handling
+        throw new TypeError("Offline Mode"); // Force offline handling
       }
-    } catch (error) {
-      console.log("Saving offline:", error);
+    } catch (error: any) {
+      // Only fallback to offline save if it is a NETWORK error or Offline Mode
+      // If message is "Failed to fetch", "Network request failed", or we threw "Offline Mode"
+      const isNetworkError =
+        error.message === "Failed to fetch" ||
+        error.message === "Network request failed" ||
+        error.message === "Offline Mode" ||
+        !isOnline; // Double check context status
+
+      if (!isNetworkError) {
+        // It's a real server error/logic error. Show it and stop.
+        console.error("Server Error:", error);
+        toast({
+          title: "Erro ao Finalizar",
+          description: error.message || "Erro desconhecido ao processar venda.",
+          variant: "destructive",
+        });
+        setFinalizing(false);
+        return;
+      }
+
+      console.log("Saving offline due to network issue:", error);
 
       // Save locally
       try {
@@ -593,7 +621,7 @@ export function usePOS() {
 
         toast({
           title: "Venda Salva Localmente",
-          description: "Será enviada quando houver internet.",
+          description: "Sem conexão estável. Será enviada automaticamente.",
           className: "bg-yellow-500 text-white", // Visual feedback
         });
 

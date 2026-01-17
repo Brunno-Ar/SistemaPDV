@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { useLogout } from "@/hooks/use-logout";
 
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutos
 const WARNING_TIME = 2 * 60 * 1000; // 2 minutos antes de deslogar
@@ -22,6 +23,8 @@ export function InactivityMonitor() {
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
+
+  const { performLogout, isLoggingOut } = useLogout();
 
   // Ref para evitar re-renders desnecessários e implementar debounce
   const lastActivityRef = useRef(Date.now());
@@ -74,7 +77,7 @@ export function InactivityMonitor() {
 
       // Se passou do tempo de inatividade, deslogar
       if (timeSinceActivity >= INACTIVITY_TIMEOUT) {
-        signOut({ callbackUrl: "/login?reason=inactivity" });
+        performLogout("/login?reason=inactivity");
         return;
       }
 
@@ -93,7 +96,7 @@ export function InactivityMonitor() {
     checkInactivity(); // Verificar imediatamente
 
     return () => clearInterval(interval);
-  }, [session, lastActivity, showWarning]);
+  }, [session, lastActivity, showWarning, performLogout]);
 
   // Continuar sessão
   const handleContinue = () => {
@@ -102,7 +105,7 @@ export function InactivityMonitor() {
 
   // Fazer logout manualmente
   const handleLogout = () => {
-    signOut({ callbackUrl: "/login" });
+    performLogout("/login");
   };
 
   if (!session) return null;
@@ -136,9 +139,10 @@ export function InactivityMonitor() {
           <Button
             variant="outline"
             onClick={handleLogout}
+            disabled={isLoggingOut}
             className="flex-1 sm:flex-none"
           >
-            Sair Agora
+            {isLoggingOut ? "Saindo..." : "Sair Agora"}
           </Button>
           <Button
             onClick={handleContinue}

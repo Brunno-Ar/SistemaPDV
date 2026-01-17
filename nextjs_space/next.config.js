@@ -1,10 +1,33 @@
 const path = require("path");
+const defaultRuntimeCaching = require("next-pwa/cache");
+
+// Customize caching strategy for unstable connections
+const customRuntimeCaching = defaultRuntimeCaching.map((entry) => {
+  // Reduce network timeout for NetworkFirst strategies (apis, others)
+  if (entry.options && entry.options.networkTimeoutSeconds) {
+    return {
+      ...entry,
+      options: {
+        ...entry.options,
+        networkTimeoutSeconds: 5, // Fallback to cache after 5s (was 10s)
+      },
+    };
+  }
+  return entry;
+});
+
 const withPWA = require("next-pwa")({
   dest: "public",
   register: true,
   skipWaiting: true,
   disable: false,
   buildExcludes: [/middleware-manifest\.json$/, /react-floater/],
+  // Improved offline support
+  reloadOnOnline: false,
+  fallbacks: {
+    document: "/offline",
+  },
+  runtimeCaching: customRuntimeCaching,
 });
 
 /** @type {import('next').NextConfig} */

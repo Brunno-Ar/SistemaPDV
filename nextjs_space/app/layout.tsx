@@ -10,13 +10,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SyncManager } from "@/components/sync-manager";
 import { Analytics } from "@vercel/analytics/next";
+import { NetworkProvider } from "@/components/network-provider";
 
 import dynamicLoader from "next/dynamic";
 
 const OnboardingTour = dynamicLoader(
   () =>
     import("@/components/onboarding-tour").then((mod) => mod.OnboardingTour),
-  { ssr: false },
+  { ssr: false }
 );
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
@@ -58,17 +59,19 @@ export default async function RootLayout({
         className={`${inter.className} h-full overflow-hidden flex flex-col`}
       >
         <Providers>
-          <SyncManager />
-          <InactivityMonitor />
-          <PasswordChangeAlert />
-          <TrialBanner />
-          {session?.user && <OnboardingTour />}
-          <div
-            id="main-scroll-container"
-            className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
-          >
-            {children}
-          </div>
+          <NetworkProvider>
+            <SyncManager />
+            <InactivityMonitor />
+            <PasswordChangeAlert />
+            <TrialBanner />
+            {session?.user && <OnboardingTour />}
+            <div
+              id="main-scroll-container"
+              className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
+            >
+              {children}
+            </div>
+          </NetworkProvider>
         </Providers>
         <Analytics />
       </body>
