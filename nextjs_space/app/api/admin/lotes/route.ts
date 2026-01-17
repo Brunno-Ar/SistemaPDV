@@ -308,6 +308,20 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // 5. Salvar valor total do lote (via SQL raw para compatibilidade)
+      const valorTotal = valorTotalLote
+        ? Number(valorTotalLote)
+        : custoLote * quantidade;
+      try {
+        await tx.$executeRawUnsafe(
+          `UPDATE "lotes" SET "valor_total_lote" = $1 WHERE "id" = $2`,
+          valorTotal,
+          novoLote.id
+        );
+      } catch (e) {
+        // Ignora silenciosamente se a coluna não existir
+      }
+
       return { novoLote, estoqueTotal: novaQtdTotal };
     });
 
