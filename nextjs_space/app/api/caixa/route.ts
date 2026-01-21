@@ -25,6 +25,7 @@ async function calcularValoresEsperados(
       id: true,
       valorTotal: true,
       metodoPagamento: true,
+      troco: true, // IMPORTANTE: buscar troco para descontar do dinheiro
       payments: true, // Incluir pagamentos múltiplos
     },
   });
@@ -36,13 +37,17 @@ async function calcularValoresEsperados(
   let vendasDebito = 0;
 
   for (const venda of vendas) {
-    // Se a venda tem payments (novo formato), usar eles
+    const trocoVenda = Number(venda.troco) || 0;
+
     if (venda.payments && venda.payments.length > 0) {
+      // Calcular o total recebido em dinheiro nesta venda específica
+      let dinheiroRecebidoNestaVenda = 0;
+
       for (const payment of venda.payments) {
         const valor = Number(payment.amount) || 0;
         switch (payment.method) {
           case "dinheiro":
-            vendasDinheiro += valor;
+            dinheiroRecebidoNestaVenda += valor;
             break;
           case "pix":
             vendasPix += valor;
@@ -55,11 +60,15 @@ async function calcularValoresEsperados(
             break;
         }
       }
+
+      // O valor que realmente ficou no caixa é o recebido menos o troco
+      vendasDinheiro += Math.max(0, dinheiroRecebidoNestaVenda - trocoVenda);
     } else {
       // Formato antigo: usar metodoPagamento diretamente
       const valor = Number(venda.valorTotal) || 0;
       switch (venda.metodoPagamento) {
         case "dinheiro":
+          // No formato antigo, valorTotal já é o valor líquido da venda
           vendasDinheiro += valor;
           break;
         case "pix":
@@ -246,6 +255,7 @@ export async function GET() {
           ...caixaAberto,
           saldoInicial: Number(caixaAberto.saldoInicial), // Converter Decimal para número
           movimentacoes: movimentosUnificados,
+          resumo: await calcularValoresEsperados(session.user.id, caixaAberto),
         },
       });
     }
@@ -495,25 +505,47 @@ export async function POST(request: NextRequest) {
         }
 
         if (!empresa.senhaAutorizacao) {
-          return NextResponse.json(
-            {
-              error:
-                "Senha de autorização não configurada nesta empresa. Contate o administrador.",
+          // FALLBACK: usar senha do admin da empresa
+          const adminUser = await prisma.user.findFirst({
+            where: {
+              empresaId: session.user.empresaId!,
+              role: "admin",
             },
-            { status: 403 },
-          );
-        }
+          });
 
-        const validPass = await bcrypt.compare(
-          authPassword,
-          empresa.senhaAutorizacao,
-        );
+          if (!adminUser || !adminUser.password) {
+            return NextResponse.json(
+              {
+                error:
+                  "Senha de autorização não configurada e administrador não encontrado.",
+              },
+              { status: 403 },
+            );
+          }
 
-        if (!validPass) {
-          return NextResponse.json(
-            { error: "Senha de autorização incorreta." },
-            { status: 403 },
+          const validAdminPass = await bcrypt.compare(
+            authPassword,
+            adminUser.password,
           );
+
+          if (!validAdminPass) {
+            return NextResponse.json(
+              { error: "Senha de autorização incorreta." },
+              { status: 403 },
+            );
+          }
+        } else {
+          const validPass = await bcrypt.compare(
+            authPassword,
+            empresa.senhaAutorizacao,
+          );
+
+          if (!validPass) {
+            return NextResponse.json(
+              { error: "Senha de autorização incorreta." },
+              { status: 403 },
+            );
+          }
         }
       }
 
@@ -573,25 +605,47 @@ export async function POST(request: NextRequest) {
       });
 
       if (!empresa?.senhaAutorizacao) {
-        return NextResponse.json(
-          {
-            error:
-              "Senha de autorização não configurada. Configure no painel de Admin.",
+        // FALLBACK: usar senha do admin da empresa
+        const adminUser = await prisma.user.findFirst({
+          where: {
+            empresaId: session.user.empresaId!,
+            role: "admin",
           },
-          { status: 403 },
-        );
-      }
+        });
 
-      const validPass = await bcrypt.compare(
-        authPassword,
-        empresa.senhaAutorizacao,
-      );
+        if (!adminUser || !adminUser.password) {
+          return NextResponse.json(
+            {
+              error:
+                "Senha de autorização não configurada e administrador não encontrado.",
+            },
+            { status: 403 },
+          );
+        }
 
-      if (!validPass) {
-        return NextResponse.json(
-          { error: "Senha incorreta." },
-          { status: 403 },
+        const validAdminPass = await bcrypt.compare(
+          authPassword,
+          adminUser.password,
         );
+
+        if (!validAdminPass) {
+          return NextResponse.json(
+            { error: "Senha incorreta." },
+            { status: 403 },
+          );
+        }
+      } else {
+        const validPass = await bcrypt.compare(
+          authPassword,
+          empresa.senhaAutorizacao,
+        );
+
+        if (!validPass) {
+          return NextResponse.json(
+            { error: "Senha incorreta." },
+            { status: 403 },
+          );
+        }
       }
 
       return NextResponse.json({ success: true, message: "Autorizado" });

@@ -49,6 +49,18 @@ export interface CaixaData {
     dataHora: string;
     metodoPagamento?: string | null;
   }>;
+  resumo?: {
+    vendasDinheiro: number;
+    vendasPix: number;
+    vendasCartao: number;
+    vendasCredito: number;
+    vendasDebito: number;
+    totalSangrias: number;
+    totalSuprimentos: number;
+    saldoTeoricoDinheiro: number;
+    saldoTeoricoMaquininha: number;
+    totalTeoricoSistema: number;
+  };
 }
 
 export function SharedDashboard({

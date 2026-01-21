@@ -235,7 +235,7 @@ export function MeuCaixa({
       toast({
         title: "Troca PIX registrada!",
         description: `Maquininha: +R$ ${maquininhaNum.toFixed(
-          2
+          2,
         )} | Troco: -R$ ${trocoNum.toFixed(2)} | Taxa: R$ ${taxa.toFixed(2)}`,
         variant: "default",
       });
@@ -492,88 +492,125 @@ export function MeuCaixa({
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 overflow-hidden">
-          {/* Card: Dinheiro em Caixa (calculado) */}
+          {/* Card: Dinheiro em Caixa (calculado via Backend ou Fallback) */}
           {(() => {
-            // Calcular saldo atual de dinheiro - garantindo que todos são números
-            const saldoInicial = Number(caixa.saldoInicial) || 0;
-            const vendasDinheiro = caixa.movimentacoes
-              .filter(
-                (m) =>
-                  m.tipo === "VENDA" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
-              )
-              .reduce((acc, m) => acc + Number(m.valor), 0);
-            const suprimentosDinheiro = caixa.movimentacoes
-              .filter(
-                (m) =>
-                  m.tipo === "SUPRIMENTO" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
-              )
-              .reduce((acc, m) => acc + Number(m.valor), 0);
-            const sangriasDinheiro = caixa.movimentacoes
-              .filter(
-                (m) =>
-                  m.tipo === "SANGRIA" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
-              )
-              .reduce((acc, m) => acc + Number(m.valor), 0);
-            const saldoDinheiro =
-              saldoInicial +
-              vendasDinheiro +
-              suprimentosDinheiro -
-              sangriasDinheiro;
+            let saldoDinheiro = 0;
+            let totalVendas = 0;
+            let totalSuprimentos = 0;
+            let totalSangrias = 0;
+
+            if (caixa.resumo) {
+              // Usar dados precisos do backend
+              saldoDinheiro = caixa.resumo.saldoTeoricoDinheiro;
+              totalVendas =
+                caixa.resumo.vendasDinheiro +
+                caixa.resumo.vendasPix +
+                caixa.resumo.vendasCartao;
+              totalSuprimentos = caixa.resumo.totalSuprimentos;
+              totalSangrias = caixa.resumo.totalSangrias;
+            } else {
+              // Fallback: Calcular saldo atual de dinheiro (Lógica Antiga Simples)
+              const saldoInicial = Number(caixa.saldoInicial) || 0;
+              const vendasDinheiro = caixa.movimentacoes
+                .filter(
+                  (m) =>
+                    m.tipo === "VENDA" &&
+                    (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
+                )
+                .reduce((acc, m) => acc + Number(m.valor), 0);
+              const suprimentosDinheiro = caixa.movimentacoes
+                .filter(
+                  (m) =>
+                    m.tipo === "SUPRIMENTO" &&
+                    (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
+                )
+                .reduce((acc, m) => acc + Number(m.valor), 0);
+              const sangriasDinheiro = caixa.movimentacoes
+                .filter(
+                  (m) =>
+                    m.tipo === "SANGRIA" &&
+                    (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
+                )
+                .reduce((acc, m) => acc + Number(m.valor), 0);
+
+              saldoDinheiro =
+                saldoInicial +
+                vendasDinheiro +
+                suprimentosDinheiro -
+                sangriasDinheiro;
+
+              totalVendas = caixa.movimentacoes
+                .filter((m) => m.tipo === "VENDA")
+                .reduce((acc, m) => acc + m.valor, 0);
+
+              totalSuprimentos = caixa.movimentacoes
+                .filter((m) => m.tipo === "SUPRIMENTO")
+                .reduce((acc, m) => acc + m.valor, 0);
+
+              totalSangrias = caixa.movimentacoes
+                .filter((m) => m.tipo === "SANGRIA")
+                .reduce((acc, m) => acc + m.valor, 0);
+            }
 
             return (
-              <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg shadow-sm border-2 border-green-200 dark:border-green-800">
-                <p className="text-sm text-green-700 dark:text-green-300 font-medium">
-                  💵 Dinheiro em Caixa
-                </p>
-                <p
-                  className={`text-2xl font-bold ${
-                    saldoDinheiro >= 0
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}
-                >
-                  {formatCurrency(saldoDinheiro)}
-                </p>
-                <p className="text-[10px] text-green-600/70 dark:text-green-400/70 mt-1">
-                  Saldo teórico na gaveta
-                </p>
-              </div>
+              <>
+                <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg shadow-sm border-2 border-green-200 dark:border-green-800">
+                  <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+                    💵 Dinheiro em Caixa
+                  </p>
+                  <p
+                    className={`text-2xl font-bold ${
+                      saldoDinheiro >= 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {formatCurrency(saldoDinheiro)}
+                  </p>
+                  <p className="text-[10px] text-green-600/70 dark:text-green-400/70 mt-1">
+                    Saldo teórico na gaveta
+                  </p>
+                  {caixa.resumo && (
+                    <div className="mt-2 text-[10px] text-gray-500 border-t border-green-200/50 pt-1">
+                      Inicial: {formatCurrency(caixa.saldoInicial)}
+                      <br />+ Vendas (Din):{" "}
+                      {formatCurrency(caixa.resumo.vendasDinheiro)}
+                      <br />+ Suprim:{" "}
+                      {formatCurrency(caixa.resumo.totalSuprimentos)}
+                      <br />- Sangrias:{" "}
+                      {formatCurrency(caixa.resumo.totalSangrias)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
+                  <p className="text-sm text-muted-foreground">Vendas Totais</p>
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                    {formatCurrency(totalVendas)}
+                  </p>
+                  {caixa.resumo && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Din: {formatCurrency(caixa.resumo.vendasDinheiro)} • Pix:{" "}
+                      {formatCurrency(caixa.resumo.vendasPix)} • Card:{" "}
+                      {formatCurrency(caixa.resumo.vendasCartao)}
+                    </p>
+                  )}
+                </div>
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
+                  <p className="text-sm text-muted-foreground">Suprimentos</p>
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                    {formatCurrency(totalSuprimentos)}
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
+                  <p className="text-sm text-muted-foreground">Sangrias</p>
+                  <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                    {formatCurrency(totalSangrias)}
+                  </p>
+                </div>
+              </>
             );
           })()}
-
-          <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
-            <p className="text-sm text-muted-foreground">Vendas</p>
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(
-                caixa.movimentacoes
-                  .filter((m) => m.tipo === "VENDA")
-                  .reduce((acc, m) => acc + m.valor, 0)
-              )}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
-            <p className="text-sm text-muted-foreground">Suprimentos</p>
-            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-              {formatCurrency(
-                caixa.movimentacoes
-                  .filter((m) => m.tipo === "SUPRIMENTO")
-                  .reduce((acc, m) => acc + m.valor, 0)
-              )}
-            </p>
-          </div>
-          <div className="bg-white dark:bg-zinc-900 p-4 rounded-lg shadow-sm border dark:border-zinc-800">
-            <p className="text-sm text-muted-foreground">Sangrias</p>
-            <p className="text-xl font-bold text-red-600 dark:text-red-400">
-              {formatCurrency(
-                caixa.movimentacoes
-                  .filter((m) => m.tipo === "SANGRIA")
-                  .reduce((acc, m) => acc + m.valor, 0)
-              )}
-            </p>
-          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 mb-6">

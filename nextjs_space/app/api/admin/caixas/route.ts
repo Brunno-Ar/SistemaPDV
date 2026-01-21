@@ -67,37 +67,70 @@ export async function GET() {
     // Buscar vendas de cada caixa para calcular totais
     const caixasComVendas = await Promise.all(
       caixasAbertos.map(async (caixa) => {
-        // Vendas em dinheiro (para o card de vendas e movimentações)
+        // Vendas do período para identificar pagamentos e troco
         const vendasCaixa = await prisma.sale.findMany({
           where: {
             userId: caixa.usuarioId,
             dataHora: { gte: caixa.dataAbertura },
           },
-          select: {
-            id: true,
-            valorTotal: true,
-            metodoPagamento: true,
-            troco: true,
-            dataHora: true,
+          include: {
+            payments: true,
           },
         });
 
-        // Calcular totais por método
-        const vendasDinheiro = vendasCaixa
-          .filter((v) => v.metodoPagamento === "dinheiro")
-          .reduce((acc, v) => acc + Number(v.valorTotal), 0);
+        // Calcular totais por método de pagamento considerando SalePayment
+        let vendasDinheiro = 0;
+        let vendasPix = 0;
+        let vendasCredito = 0;
+        let vendasDebito = 0;
 
-        const vendasPix = vendasCaixa
-          .filter((v) => v.metodoPagamento === "pix")
-          .reduce((acc, v) => acc + Number(v.valorTotal), 0);
+        for (const venda of vendasCaixa) {
+          const trocoVenda = Number(venda.troco) || 0;
 
-        const vendasCartao = vendasCaixa
-          .filter(
-            (v) =>
-              v.metodoPagamento === "credito" || v.metodoPagamento === "debito",
-          )
-          .reduce((acc, v) => acc + Number(v.valorTotal), 0);
+          if (venda.payments && venda.payments.length > 0) {
+            let dinheiroRecebidoNestaVenda = 0;
+            for (const p of venda.payments) {
+              const valor = Number(p.amount) || 0;
+              switch (p.method) {
+                case "dinheiro":
+                  dinheiroRecebidoNestaVenda += valor;
+                  break;
+                case "pix":
+                  vendasPix += valor;
+                  break;
+                case "credito":
+                  vendasCredito += valor;
+                  break;
+                case "debito":
+                  vendasDebito += valor;
+                  break;
+              }
+            }
+            vendasDinheiro += Math.max(
+              0,
+              dinheiroRecebidoNestaVenda - trocoVenda,
+            );
+          } else {
+            // Fallback para formato antigo
+            const valorTotal = Number(venda.valorTotal) || 0;
+            switch (venda.metodoPagamento) {
+              case "dinheiro":
+                vendasDinheiro += valorTotal;
+                break;
+              case "pix":
+                vendasPix += valorTotal;
+                break;
+              case "credito":
+                vendasCredito += valorTotal;
+                break;
+              case "debito":
+                vendasDebito += valorTotal;
+                break;
+            }
+          }
+        }
 
+        const vendasCartao = vendasCredito + vendasDebito;
         const totalVendas = vendasDinheiro + vendasPix + vendasCartao;
 
         // Calcular movimentações SEPARADAS por método de pagamento

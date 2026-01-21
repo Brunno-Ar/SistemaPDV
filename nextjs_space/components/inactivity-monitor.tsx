@@ -24,7 +24,7 @@ export function InactivityMonitor() {
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
-  const { performLogout, isLoggingOut } = useLogout();
+  const { performLogoutWithClosing, isLoggingOut } = useLogout();
 
   // Ref para evitar re-renders desnecessários e implementar debounce
   const lastActivityRef = useRef(Date.now());
@@ -75,9 +75,9 @@ export function InactivityMonitor() {
       const timeSinceActivity = now - lastActivity;
       const timeUntilLogout = INACTIVITY_TIMEOUT - timeSinceActivity;
 
-      // Se passou do tempo de inatividade, deslogar
+      // Se passou do tempo de inatividade, deslogar (fecha caixa automaticamente por segurança)
       if (timeSinceActivity >= INACTIVITY_TIMEOUT) {
-        performLogout("/login?reason=inactivity");
+        performLogoutWithClosing("/login?reason=inactivity");
         return;
       }
 
@@ -96,16 +96,16 @@ export function InactivityMonitor() {
     checkInactivity(); // Verificar imediatamente
 
     return () => clearInterval(interval);
-  }, [session, lastActivity, showWarning, performLogout]);
+  }, [session, lastActivity, showWarning, performLogoutWithClosing]);
 
   // Continuar sessão
   const handleContinue = () => {
     updateActivity();
   };
 
-  // Fazer logout manualmente
+  // Fazer logout manualmente (fecha caixa por segurança)
   const handleLogout = () => {
-    performLogout("/login");
+    performLogoutWithClosing("/login");
   };
 
   if (!session) return null;
