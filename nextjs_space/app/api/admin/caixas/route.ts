@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { calcularValoresEsperados } from "@/app/api/caixa/route";
 
 export const dynamic = "force-dynamic";
 
@@ -253,5 +254,74 @@ export async function GET() {
       { error: "Erro interno do servidor" },
       { status: 500 },
     );
+  }
+}
+
+/**
+ * POST /api/admin/caixas
+ * Ações administrativas (ex: Force Close)
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
+    ) {
+      return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+    }
+
+    const body = await request.json();
+
+    // === FORCE CLOSE ===
+    if (body.action === "force_close") {
+      const { caixaId } = body;
+      if (!caixaId) {
+        return NextResponse.json({ error: "ID obrigatório" }, { status: 400 });
+      }
+
+      const caixa = await prisma.caixa.findUnique({
+        where: { id: caixaId },
+        include: { movimentacoes: true }, // Necessário para cálculo se usado internamente pela função
+        // Na verdade calcularValoresEsperados busca as vendas internamente, o caixaAberto precisa só de basics + movimentacoes se a função usar.
+        // Verifiquei a função: ela busca vendas e movimentacoes se baseando no ID.
+        // A função pede 'caixaAberto' partial.
+      });
+
+      if (!caixa || caixa.status !== "ABERTO") {
+        return NextResponse.json(
+          { error: "Caixa não encontrado ou fechado" },
+          { status: 404 },
+        );
+      }
+
+      // Calcular
+      const dados = await calcularValoresEsperados(caixa.usuarioId, caixa);
+      const totalTeorico = dados.totalTeoricoSistema;
+
+      await prisma.caixa.update({
+        where: { id: caixaId },
+        data: {
+          status: "FECHADO",
+          dataFechamento: new Date(),
+          saldoFinal: totalTeorico,
+          valorInformadoDinheiro: dados.saldoTeoricoDinheiro,
+          valorInformadoMaquininha: dados.saldoTeoricoMaquininha,
+          justificativa: "Fechamento Forçado pelo Administrador",
+          quebraDeCaixa: 0,
+          divergenciaDinheiro: 0,
+        },
+      });
+
+      return NextResponse.json({ success: true, message: "Caixa fechado!" });
+    }
+
+    return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
+  } catch (error) {
+    console.error("Erro no admin caixa:", error);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

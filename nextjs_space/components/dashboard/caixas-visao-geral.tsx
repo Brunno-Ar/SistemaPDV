@@ -53,9 +53,7 @@ export function CaixasVisaoGeral() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Estado para ocultar caixas de administradores/gerentes
   const [ocultarAdmins, setOcultarAdmins] = useState(() => {
-    // Inicializar com o valor do localStorage (se existir)
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("ocultar-caixas-admins");
       return saved === "true";
@@ -63,7 +61,6 @@ export function CaixasVisaoGeral() {
     return false;
   });
 
-  // Persistir preferência no localStorage
   useEffect(() => {
     localStorage.setItem("ocultar-caixas-admins", String(ocultarAdmins));
   }, [ocultarAdmins]);
@@ -86,12 +83,10 @@ export function CaixasVisaoGeral() {
 
   useEffect(() => {
     fetchData();
-    // Auto-refresh a cada 30 segundos
     const interval = setInterval(() => fetchData(), 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Filtrar caixas e recalcular resumo baseado no filtro
   const { caixasFiltrados, resumoFiltrado } = useMemo(() => {
     if (!data) return { caixasFiltrados: [], resumoFiltrado: null };
 
@@ -99,7 +94,6 @@ export function CaixasVisaoGeral() {
       ? data.caixas.filter((c) => c.funcionarioRole !== "admin")
       : data.caixas;
 
-    // Recalcular resumo baseado apenas nos caixas filtrados
     const resumoFiltrado = {
       totalCaixasAbertos: caixasFiltrados.length,
       totalVendasDia: caixasFiltrados.reduce(
@@ -119,6 +113,38 @@ export function CaixasVisaoGeral() {
 
     return { caixasFiltrados, resumoFiltrado };
   }, [data, ocultarAdmins]);
+
+  const handleForceClose = async (caixaId: string, funcionarioNome: string) => {
+    if (
+      !confirm(
+        `Tem certeza que deseja fechar FORÇADAMENTE o caixa de ${funcionarioNome}?\n\nIsso assumirá que todos os valores do sistema estão corretos e não gerará divergência.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setRefreshing(true);
+      const res = await fetch("/api/admin/caixas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "force_close", caixaId }),
+      });
+
+      if (res.ok) {
+        alert("Caixa fechado com sucesso!");
+        fetchData(true);
+      } else {
+        const err = await res.json();
+        alert(`Erro: ${err.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao fechar caixa.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -182,7 +208,6 @@ export function CaixasVisaoGeral() {
             />
           </Button>
         </div>
-        {/* Checkbox para ocultar admin/gerente */}
         <div className="flex items-center gap-2 mt-2">
           <Checkbox
             id="ocultar-admins"
@@ -200,7 +225,6 @@ export function CaixasVisaoGeral() {
       <CardContent className="space-y-4">
         {/* Resumo Geral */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {/* Card Dinheiro em Caixa - Destaque */}
           <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 p-3 rounded-lg border-2 border-green-300 dark:border-green-700">
             <p className="text-xs text-green-700 dark:text-green-300 font-medium">
               💵 Dinheiro em Caixas
@@ -289,13 +313,24 @@ export function CaixasVisaoGeral() {
                       </p>
                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
-                    Aberto
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() =>
+                        handleForceClose(caixa.id, caixa.funcionario)
+                      }
+                    >
+                      Fechar Caixa
+                    </Button>
+                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                      Aberto
+                    </Badge>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
-                  {/* Dinheiro em Caixa - Destaque */}
                   <div className="col-span-2 md:col-span-1 flex items-center gap-1 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
                     <span className="text-green-700 dark:text-green-300 font-medium">
                       💵

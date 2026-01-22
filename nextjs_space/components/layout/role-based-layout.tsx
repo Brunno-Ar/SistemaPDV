@@ -2,7 +2,6 @@
 
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import {
   Sidebar,
   SidebarBody,
@@ -28,8 +27,6 @@ import {
   Wallet,
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
-import { LogoutConfirmationDialog } from "@/components/layout/logout-confirmation-dialog";
-import { FechamentoCaixaDialog } from "@/app/(funcionario)/dashboard/_components/fechamento-caixa-dialog";
 
 const SidebarUserInfo = ({ session }: { session: any }) => {
   const { open } = useSidebar();
@@ -65,37 +62,10 @@ export default function RoleBasedLayout({
 }) {
   const { data: session } = useSession();
   const role = session?.user?.role;
-  const {
-    checkCaixaStatus,
-    performLogoutWithClosing,
-    performLogoutWithoutClosing,
-    isLoggingOut,
-    isCheckingCaixa,
-  } = useLogout();
-
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [showFechamentoDialog, setShowFechamentoDialog] = useState(false);
-  const [saldoInicialCaixa, setSaldoInicialCaixa] = useState(0);
+  const { logout, isLoggingOut } = useLogout();
 
   const handleLogoutClick = async () => {
-    const status = await checkCaixaStatus();
-
-    if (status?.caixaAberto) {
-      setSaldoInicialCaixa(status.saldoInicial || 0);
-      setShowLogoutDialog(true);
-    } else {
-      performLogoutWithoutClosing("/login");
-    }
-  };
-
-  const handleOpenFechamento = () => {
-    setShowLogoutDialog(false);
-    setShowFechamentoDialog(true);
-  };
-
-  const handleFechamentoSuccess = () => {
-    setShowFechamentoDialog(false);
-    performLogoutWithoutClosing("/login");
+    await logout("/login");
   };
 
   let links: any[] = [];
@@ -293,18 +263,12 @@ export default function RoleBasedLayout({
           <div
             onClick={handleLogoutClick}
             className={
-              isLoggingOut || isCheckingCaixa
-                ? "opacity-50 pointer-events-none"
-                : "cursor-pointer"
+              isLoggingOut ? "opacity-50 pointer-events-none" : "cursor-pointer"
             }
           >
             <SidebarLink
               link={{
-                label: isLoggingOut
-                  ? "Saindo..."
-                  : isCheckingCaixa
-                  ? "Verificando..."
-                  : "Sair",
+                label: isLoggingOut ? "Saindo..." : "Sair",
                 href: "#",
                 icon: <LogOut className="h-5 w-5 text-red-500" />,
               }}
@@ -312,24 +276,6 @@ export default function RoleBasedLayout({
           </div>
         </SidebarBody>
       </Sidebar>
-
-      {/* Dialog de confirmação de logout */}
-      <LogoutConfirmationDialog
-        open={showLogoutDialog}
-        onOpenChange={setShowLogoutDialog}
-        onLogoutWithClosing={() => performLogoutWithClosing("/login")}
-        onLogoutWithoutClosing={() => performLogoutWithoutClosing("/login")}
-        onOpenFechamento={handleOpenFechamento}
-        isLoading={isLoggingOut}
-      />
-
-      {/* Dialog de fechamento de caixa */}
-      <FechamentoCaixaDialog
-        open={showFechamentoDialog}
-        onOpenChange={setShowFechamentoDialog}
-        onSuccess={handleFechamentoSuccess}
-        saldoInicial={saldoInicialCaixa}
-      />
 
       {/* Conteúdo com Scroll Independente */}
       <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-white dark:bg-zinc-950 lg:rounded-tl-2xl border-t lg:border-l border-gray-200 dark:border-zinc-800 lg:m-2 lg:ml-0 shadow-sm">

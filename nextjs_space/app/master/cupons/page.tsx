@@ -39,9 +39,18 @@ import {
   Calendar,
   Users,
   RefreshCw,
+  Store,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+interface EmpresaUso {
+  id: string;
+  nome: string;
+  data: string;
+  status: string;
+}
 
 interface Cupom {
   codigo: string;
@@ -52,6 +61,7 @@ interface Cupom {
   expirado: boolean;
   esgotado: boolean;
   ativo: boolean;
+  empresas: EmpresaUso[];
 }
 
 export default function CuponsPage() {
@@ -59,6 +69,8 @@ export default function CuponsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [empresasDialogOpen, setEmpresasDialogOpen] = useState(false);
+  const [selectedCupom, setSelectedCupom] = useState<Cupom | null>(null);
   const [editMode, setEditMode] = useState(false);
 
   // Form state
@@ -171,8 +183,91 @@ export default function CuponsPage() {
     setDialogOpen(true);
   };
 
+  const openEmpresasDialog = (cupom: Cupom) => {
+    setSelectedCupom(cupom);
+    setEmpresasDialogOpen(true);
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
+      {/* Diálogo de Empresas que usaram o cupom */}
+      <Dialog open={empresasDialogOpen} onOpenChange={setEmpresasDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store className="h-5 w-5 text-blue-500" />
+              Empresas - Cupom {selectedCupom?.codigo}
+            </DialogTitle>
+            <DialogDescription>
+              Lista de empresas que aplicaram este cupom de{" "}
+              {selectedCupom?.descontoPorcentagem}% OFF
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            {selectedCupom?.empresas && selectedCupom.empresas.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Data de Cadastro</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedCupom.empresas.map((emp) => (
+                    <TableRow key={emp.id}>
+                      <TableCell className="font-medium">{emp.nome}</TableCell>
+                      <TableCell>
+                        {format(new Date(emp.data), "dd/MM/yyyy HH:mm", {
+                          locale: ptBR,
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            emp.status === "ATIVO" ? "default" : "secondary"
+                          }
+                          className={
+                            emp.status === "ATIVO"
+                              ? "bg-green-500 hover:bg-green-600"
+                              : ""
+                          }
+                        >
+                          {emp.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            window.open(
+                              `/master/empresas?id=${emp.id}`,
+                              "_blank",
+                            )
+                          }
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Ver Detalhes
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                Nenhuma empresa usou este cupom ainda.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setEmpresasDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -402,8 +497,17 @@ export default function CuponsPage() {
                         : "Sem limite"}
                     </TableCell>
                     <TableCell>
-                      {cupom.usosAtuais}
-                      {cupom.limiteUsos ? ` / ${cupom.limiteUsos}` : ""}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-0 font-medium hover:bg-transparent hover:underline flex items-center gap-1"
+                        onClick={() => openEmpresasDialog(cupom)}
+                        title="Ver empresas que usaram este cupom"
+                      >
+                        {cupom.usosAtuais}
+                        {cupom.limiteUsos ? ` / ${cupom.limiteUsos}` : ""}
+                        <ExternalLink className="h-3 w-3 ml-1 text-muted-foreground" />
+                      </Button>
                     </TableCell>
                     <TableCell>
                       {cupom.ativo ? (

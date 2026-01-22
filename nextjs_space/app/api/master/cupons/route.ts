@@ -22,18 +22,43 @@ export async function GET() {
       orderBy: { codigo: "asc" },
     });
 
-    // Adicionar info se está expirado ou esgotado
+    // Buscar todas as empresas que têm cupom aplicado
+    const empresasComCupom = await prisma.empresa.findMany({
+      where: {
+        cupomAplicado: { not: null },
+      },
+      select: {
+        id: true,
+        nome: true,
+        cupomAplicado: true,
+        dataCriacao: true,
+        status: true,
+      },
+    });
+
+    // Adicionar info se está expirado ou esgotado e as empresas que usaram
     const cuponsFormatados = cupons.map((cupom) => {
       const agora = new Date();
       const expirado = cupom.validoAte ? cupom.validoAte < agora : false;
       const esgotado =
         cupom.limiteUsos !== null && cupom.usosAtuais >= cupom.limiteUsos;
 
+      // Filtrar empresas que usaram ESTE cupom específico
+      const empresasQueUsaram = empresasComCupom
+        .filter((emp) => emp.cupomAplicado === cupom.codigo)
+        .map((emp) => ({
+          id: emp.id,
+          nome: emp.nome,
+          data: emp.dataCriacao,
+          status: emp.status,
+        }));
+
       return {
         ...cupom,
         expirado,
         esgotado,
         ativo: !expirado && !esgotado,
+        empresas: empresasQueUsaram,
       };
     });
 

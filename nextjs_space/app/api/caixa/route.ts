@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * Calcula valores esperados do caixa usando a tabela SalePayment
  * para suportar vendas com múltiplos métodos de pagamento
  */
-async function calcularValoresEsperados(
+export async function calcularValoresEsperados(
   userId: string,
   caixaAberto: Partial<Caixa>,
 ) {
