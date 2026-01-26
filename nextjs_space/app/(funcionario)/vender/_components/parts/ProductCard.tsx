@@ -16,6 +16,16 @@ export function ProductCard({
 }: ProductCardProps) {
   const hasStock = product.estoqueAtual > 0;
 
+  // --- O TREINADOR CORRIGIU AQUI ---
+  // Removemos o domínio da AWS para sobrar apenas o caminho relativo (ex: /produtos/foto.png)
+  // Isso força o navegador a pedir para o seu domínio (flowpdv.com), ativando o Worker.
+  const imageSrc = product.imagemUrl
+    ? product.imagemUrl.replace(
+        "https://banco-imagens-sistema-pdv.s3.sa-east-1.amazonaws.com",
+        "",
+      )
+    : "";
+
   return (
     <div
       role="button"
@@ -41,15 +51,16 @@ export function ProductCard({
         }
       `}
     >
-      {/* Image Container - Explicitly handling rounded corners here to fix visual defects */}
+      {/* Image Container */}
       <div className="relative aspect-square w-full rounded-t-xl overflow-hidden bg-gray-50 dark:bg-zinc-800/50 isolation-isolate">
         {product.imagemUrl ? (
           <Image
-            src={product.imagemUrl}
+            src={imageSrc} // Usamos a URL limpa (sem https://amazon...)
             alt={product.nome}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            unoptimized={true} // <--- O PULO DO GATO: Desliga a Vercel e usa seu Worker
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
