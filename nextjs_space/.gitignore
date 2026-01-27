@@ -55,5 +55,12 @@ start_log_full.txt
 scripts/use-test-db.ps1
 scripts/use-prod-db.ps1
 
+
 # Agent/AI folder
 .agent/
+
+# TestSprite artifacts
+testsprite_tests/
+
+# Next-PWA fallbacks
+public/fallback-*.js
