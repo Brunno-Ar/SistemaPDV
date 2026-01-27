@@ -151,6 +151,7 @@ export const MobileSidebar = ({
         </div>
         <div className="flex items-center z-20">
           <Menu
+            id="mobile-menu-toggle"
             className="text-white cursor-pointer h-6 w-6"
             onClick={() => setOpen(!open)}
           />

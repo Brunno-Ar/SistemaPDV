@@ -610,10 +610,14 @@ export function ProductFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-700 dark:text-gray-300">
+            <Label
+              htmlFor="imagem-produto"
+              className="text-gray-700 dark:text-gray-300"
+            >
               Imagem (Opcional)
             </Label>
             <Input
+              id="imagem-produto"
               type="file"
               accept="image/*"
               onChange={handleFileChange}

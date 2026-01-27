@@ -271,6 +271,7 @@ export default function RoleBasedLayout({
                 label: isLoggingOut ? "Saindo..." : "Sair",
                 href: "#",
                 icon: <LogOut className="h-5 w-5 text-red-500" />,
+                id: "menu-sair",
               }}
             />
           </div>

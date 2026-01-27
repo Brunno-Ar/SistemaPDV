@@ -55,13 +55,12 @@ export async function GET() {
     });
 
     // Produtos com estoque baixo para o Dashboard (TODOS)
-    const topLowStock = await prisma.product.findMany({
+    // Prisma não suporta comparação de colunas no 'where' diretamente (ex: estoqueAtual < estoqueMinimo)
+    // Solução: buscar produtos com estoqueMinimo definido e filtrar no código
+    const allProductsWithMinStock = await prisma.product.findMany({
       where: {
         empresaId,
-        estoqueMinimo: { gt: 0 }, // Ignora se minimo for 0
-        estoqueAtual: {
-          lt: prisma.product.fields.estoqueMinimo, // Menor que o mínimo
-        },
+        estoqueMinimo: { gt: 0 },
       },
       select: {
         id: true,
@@ -73,6 +72,10 @@ export async function GET() {
         imagemUrl: true,
       },
     });
+
+    const topLowStock = allProductsWithMinStock.filter(
+      (p) => p.estoqueAtual < p.estoqueMinimo,
+    );
 
     // Lotes com vencimento próximo (30 dias)
     const dataLimite = new Date();

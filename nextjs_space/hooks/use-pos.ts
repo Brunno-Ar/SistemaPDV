@@ -71,7 +71,7 @@ export function usePOS() {
   const [lastSaleTotal, setLastSaleTotal] = useState(0);
   const [lastPaymentMethod, setLastPaymentMethod] = useState("");
   const [lastValorRecebido, setLastValorRecebido] = useState<number | null>(
-    null
+    null,
   );
   const [lastTroco, setLastTroco] = useState<number | null>(null);
   const [lastPayments, setLastPayments] = useState<PaymentItem[]>([]);
@@ -175,13 +175,13 @@ export function usePOS() {
 
   const total = useMemo(
     () => cart.reduce((acc, item) => acc + item.subtotal, 0),
-    [cart]
+    [cart],
   );
 
   // Cálculo do valor restante (total - pagamentos já adicionados)
   const totalPago = useMemo(
     () => payments.reduce((acc, p) => acc + p.amount, 0),
-    [payments]
+    [payments],
   );
 
   const valorRestante = useMemo(() => {
@@ -218,9 +218,10 @@ export function usePOS() {
   };
 
   // Função auxiliar para aguardar com retry
+  // Otimizado: Menos retries e delay menor para evitar travamento em testes/dev limpo
   const waitForProducts = async (
-    maxRetries: number = 8,
-    initialDelay: number = 300
+    maxRetries: number = 2, // Reduzido de 8 para 2
+    initialDelay: number = 100, // Reduzido de 300 para 100
   ): Promise<Product[]> => {
     let delay = initialDelay;
 
@@ -229,7 +230,7 @@ export function usePOS() {
         const dbReady = await ensureDbReady();
         if (!dbReady) {
           await new Promise((resolve) => setTimeout(resolve, delay));
-          delay = Math.min(delay * 1.5, 2000); // Cap at 2 seconds
+          delay = Math.min(delay * 1.5, 500); // Cap at 500ms
           continue;
         }
 
@@ -239,18 +240,17 @@ export function usePOS() {
         }
 
         // Se não encontrou produtos, aguarda antes de tentar novamente
-        // (provavelmente o sync ainda está em andamento)
         // console.log(`Tentativa ${i + 1}/${maxRetries}: aguardando produtos...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
-        delay = Math.min(delay * 1.5, 2000); // Backoff exponencial com cap
+        delay = Math.min(delay * 1.5, 500);
       } catch (error) {
         console.error(`Tentativa ${i + 1}/${maxRetries} falhou:`, error);
         await new Promise((resolve) => setTimeout(resolve, delay));
-        delay = Math.min(delay * 1.5, 2000);
+        delay = Math.min(delay * 1.5, 500);
       }
     }
 
-    // Após todas as tentativas, retorna vazio (pode ser que realmente não haja produtos)
+    // Após todas as tentativas, retorna vazio imediatamente
     return [];
   };
 
@@ -338,7 +338,7 @@ export function usePOS() {
 
     setCart((prevCart) => {
       const existingItemIndex = prevCart.findIndex(
-        (item) => item.product.id === product.id
+        (item) => item.product.id === product.id,
       );
 
       if (existingItemIndex >= 0) {
@@ -397,8 +397,8 @@ export function usePOS() {
                 newQuantity * item.precoUnitarioNoMomento -
                 item.descontoAplicado,
             }
-          : item
-      )
+          : item,
+      ),
     );
   };
 
@@ -416,13 +416,13 @@ export function usePOS() {
           };
         }
         return item;
-      })
+      }),
     );
   };
 
   const removeFromCart = (productId: string) => {
     setCart((prevCart) =>
-      prevCart.filter((item) => item.product.id !== productId)
+      prevCart.filter((item) => item.product.id !== productId),
     );
   };
 
@@ -447,7 +447,7 @@ export function usePOS() {
         toast({
           title: "Valor excede o restante",
           description: `Para ${method}, o valor máximo é R$ ${valorRestante.toFixed(
-            2
+            2,
           )}.`,
           variant: "destructive",
         });
@@ -463,7 +463,7 @@ export function usePOS() {
       setPayments((prev) => [...prev, newPayment]);
       return true;
     },
-    [valorRestante]
+    [valorRestante],
   );
 
   /**
@@ -519,7 +519,7 @@ export function usePOS() {
       toast({
         title: "Pagamento insuficiente",
         description: `Faltam R$ ${(total - valorEfetivo).toFixed(
-          2
+          2,
         )} para cobrir o total.`,
         variant: "destructive",
       });
@@ -633,7 +633,7 @@ export function usePOS() {
               await db.products.update(item.product.id, {
                 estoqueAtual: Math.max(
                   0,
-                  product.estoqueAtual - item.quantidade
+                  product.estoqueAtual - item.quantidade,
                 ),
               });
             }
