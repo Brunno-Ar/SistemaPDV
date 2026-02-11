@@ -31,10 +31,10 @@ export function UpdatePlanDialog({
   onUpdate,
 }: UpdatePlanDialogProps) {
   const [date, setDate] = useState<string>(
-    empresa.vencimentoPlano ? empresa.vencimentoPlano.split("T")[0] : ""
+    empresa.vencimentoPlano ? empresa.vencimentoPlano.split("T")[0] : "",
   );
   const [diaVencimento, setDiaVencimento] = useState<number>(
-    empresa.diaVencimento || 10
+    empresa.diaVencimento || 10,
   );
   const [loading, setLoading] = useState(false);
 

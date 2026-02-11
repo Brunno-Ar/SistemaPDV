@@ -80,11 +80,11 @@ export default async function MasterDashboard() {
       vencimentoPlano: empresa.vencimentoPlano,
       faturamentoMensal: empresa.sales.reduce(
         (acc, curr) => acc + Number(curr.valorTotal),
-        0
+        0,
       ),
       totalProdutos: empresa._count.products,
       totalVendas: empresa._count.sales,
-    })
+    }),
   );
 
   // 5. Buscar inadimplentes (PAUSADO) para destaque
@@ -116,11 +116,11 @@ export default async function MasterDashboard() {
       vencimentoPlano: empresa.vencimentoPlano,
       faturamentoMensal: empresa.sales.reduce(
         (acc, curr) => acc + Number(curr.valorTotal),
-        0
+        0,
       ),
       totalProdutos: empresa._count.products,
       totalVendas: empresa._count.sales,
-    })
+    }),
   );
 
   return (

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { formatCurrency, parseCurrency } from "@/lib/utils";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -47,12 +47,14 @@ interface FechamentoCaixaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  saldoInicial: number;
 }
 
 export function FechamentoCaixaDialog({
   open,
   onOpenChange,
   onSuccess,
+  saldoInicial,
 }: FechamentoCaixaDialogProps) {
   const [processing, setProcessing] = useState(false);
 
@@ -60,6 +62,10 @@ export function FechamentoCaixaDialog({
   const [valorDinheiro, setValorDinheiro] = useState("");
   const [valorMaquininha, setValorMaquininha] = useState("");
   const [justificativa, setJustificativa] = useState("");
+
+  // Auth Gerente (Divergência)
+  const [authPassword, setAuthPassword] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(false); // Controls visibility of blind audit values
 
   // Estado Conferência
   const [etapaFechamento, setEtapaFechamento] = useState<
@@ -73,6 +79,8 @@ export function FechamentoCaixaDialog({
     setValorDinheiro("");
     setValorMaquininha("");
     setJustificativa("");
+    setAuthPassword("");
+    setIsAuthorized(false);
     setEtapaFechamento("contagem");
     setResultadoConferencia(null);
     setTemDivergencia(false);
@@ -88,6 +96,49 @@ export function FechamentoCaixaDialog({
     onOpenChange(newOpen);
   };
 
+  const verifyManager = async () => {
+    if (!authPassword) {
+      toast({
+        title: "Erro",
+        description: "Informe a senha de autorização.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const res = await fetch("/api/caixa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify_manager",
+          authPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Falha na validação");
+
+      setIsAuthorized(true);
+      toast({
+        title: "Autorizado",
+        description: "Valores revelados com sucesso.",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Acesso Negado",
+        description:
+          error instanceof Error ? error.message : "Erro na validação",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleAction = async (action: "conferir" | "fechar") => {
     setProcessing(true);
     try {
@@ -101,14 +152,31 @@ export function FechamentoCaixaDialog({
         payload.justificativa = justificativa;
 
         // Client-side validation for divergence
-        if (temDivergencia && !justificativa.trim()) {
-          toast({
-            title: "Erro",
-            description: "Justificativa é obrigatória quando há divergência.",
-            variant: "destructive",
-          });
-          setProcessing(false);
-          return;
+        if (temDivergencia) {
+          if (!justificativa.trim()) {
+            toast({
+              title: "Erro",
+              description: "Justificativa é obrigatória quando há divergência.",
+              variant: "destructive",
+            });
+            setProcessing(false);
+            return;
+          }
+
+          // Manager Auth required
+          if (!isAuthorized) {
+            toast({
+              title: "Bloqueio de Segurança",
+              description:
+                "É necessário validar as credenciais do gerente para prosseguir.",
+              variant: "destructive",
+            });
+            setProcessing(false);
+            return;
+          }
+
+          // We send credentials again to ensure atomic verification on backend close action
+          payload.authPassword = authPassword;
         }
       }
 
@@ -275,23 +343,43 @@ export function FechamentoCaixaDialog({
                       {formatCurrency(row.inf)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCurrency(row.sys)}
+                      {!temDivergencia || isAuthorized
+                        ? formatCurrency(row.sys)
+                        : "*****"}
                     </TableCell>
                     <TableCell
                       className={`text-right font-bold ${
-                        Math.abs(row.diff) > 0.009
-                          ? row.diff > 0
-                            ? "text-blue-600"
-                            : "text-red-600"
-                          : "text-green-600"
+                        !temDivergencia || isAuthorized
+                          ? Math.abs(row.diff) > 0.009
+                            ? row.diff > 0
+                              ? "text-blue-600"
+                              : "text-red-600"
+                            : "text-green-600"
+                          : "text-gray-500"
                       }`}
                     >
-                      {formatCurrency(row.diff)}
+                      {!temDivergencia || isAuthorized
+                        ? formatCurrency(row.diff)
+                        : "*****"}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+
+            {/* Exibição do Faturamento Real - Blind Audit: Visible only if Authorized */}
+            {(!temDivergencia || isAuthorized) && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md border border-blue-100 dark:border-blue-900 flex justify-between items-center">
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  💰 Valor Faturado (Vendas Líquidas):
+                </span>
+                <span className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                  {formatCurrency(
+                    resultadoConferencia.informado.total - saldoInicial,
+                  )}
+                </span>
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label className={temDivergencia ? "text-red-600 font-bold" : ""}>
@@ -312,6 +400,40 @@ export function FechamentoCaixaDialog({
                 }
               />
             </div>
+
+            {/* Autenticação de Gerente (Apenas se houver divergência) */}
+            {temDivergencia && (
+              <div className="space-y-4 pt-2 border-t mt-2">
+                <div className="flex items-center gap-2 text-red-600 font-semibold">
+                  <Lock className="h-4 w-4" />
+                  <h4>Autorização de Gerente Necessária</h4>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Senha de Autorização (Gerente)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        autoComplete="off"
+                      />
+                      {!isAuthorized && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={verifyManager}
+                          disabled={processing || !authPassword}
+                        >
+                          Validar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -341,7 +463,8 @@ export function FechamentoCaixaDialog({
                 variant={temDivergencia ? "destructive" : "default"}
                 onClick={() => handleAction("fechar")}
                 disabled={
-                  processing || (temDivergencia && !justificativa.trim())
+                  processing ||
+                  (temDivergencia && (!justificativa.trim() || !isAuthorized))
                 }
                 className={
                   !temDivergencia
@@ -352,8 +475,8 @@ export function FechamentoCaixaDialog({
                 {processing
                   ? "Finalizando..."
                   : temDivergencia
-                  ? "Finalizar com Divergência"
-                  : "Finalizar Fechamento"}
+                    ? "Finalizar Fechamento"
+                    : "Finalizar Fechamento"}
               </Button>
             </>
           )}

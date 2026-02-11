@@ -137,7 +137,7 @@ export default function SignupPage() {
                     onChange={(e) =>
                       actions.handleChange(
                         "telefone",
-                        actions.formatTelefone(e.target.value)
+                        actions.formatTelefone(e.target.value),
                       )
                     }
                     className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-12 py-3.5 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all placeholder:text-gray-400"
@@ -241,7 +241,7 @@ export default function SignupPage() {
                     onChange={(e) =>
                       actions.handleChange(
                         "cpfCnpj",
-                        actions.formatCpfCnpj(e.target.value)
+                        actions.formatCpfCnpj(e.target.value),
                       )
                     }
                     className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-12 py-3.5 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all placeholder:text-gray-400"
@@ -264,7 +264,7 @@ export default function SignupPage() {
                     onChange={(e) =>
                       actions.handleChange(
                         "cep",
-                        actions.formatCep(e.target.value)
+                        actions.formatCep(e.target.value),
                       )
                     }
                     onBlur={actions.handleCepBlur}
@@ -360,7 +360,7 @@ export default function SignupPage() {
                       onChange={(e) => {
                         actions.handleChange(
                           "cupom",
-                          e.target.value.toUpperCase()
+                          e.target.value.toUpperCase(),
                         );
                       }}
                       className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl pl-12 pr-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all placeholder:text-gray-400"

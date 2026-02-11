@@ -146,8 +146,8 @@ export default function BloqueadoPage() {
               content.color === "red"
                 ? "bg-red-50 dark:bg-red-900/20"
                 : content.color === "yellow"
-                ? "bg-yellow-50 dark:bg-yellow-900/20"
-                : "bg-orange-50 dark:bg-orange-900/20"
+                  ? "bg-yellow-50 dark:bg-yellow-900/20"
+                  : "bg-orange-50 dark:bg-orange-900/20"
             }`}
           >
             <div
@@ -155,8 +155,8 @@ export default function BloqueadoPage() {
                 content.color === "red"
                   ? "bg-red-100 dark:bg-red-900/40"
                   : content.color === "yellow"
-                  ? "bg-yellow-100 dark:bg-yellow-900/40"
-                  : "bg-orange-100 dark:bg-orange-900/40"
+                    ? "bg-yellow-100 dark:bg-yellow-900/40"
+                    : "bg-orange-100 dark:bg-orange-900/40"
               }`}
             >
               <AlertTriangle
@@ -164,8 +164,8 @@ export default function BloqueadoPage() {
                   content.color === "red"
                     ? "text-red-600"
                     : content.color === "yellow"
-                    ? "text-yellow-600"
-                    : "text-orange-600"
+                      ? "text-yellow-600"
+                      : "text-orange-600"
                 }`}
               />
             </div>

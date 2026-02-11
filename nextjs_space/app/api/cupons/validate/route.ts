@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     if (!codigo) {
       return NextResponse.json(
         { error: "Código obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     if (!cupom) {
       return NextResponse.json(
         { error: "Cupom inválido ou não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     if (cupom.validoAte && cupom.validoAte < now) {
       return NextResponse.json(
         { error: "Este cupom expirou" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     if (cupom.limiteUsos !== null && cupom.usosAtuais >= cupom.limiteUsos) {
       return NextResponse.json(
         { error: "Limite de usos deste cupom foi atingido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     console.error("Erro ao validar cupom:", error);
     return NextResponse.json(
       { error: "Erro interno ao validar cupom" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

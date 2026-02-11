@@ -137,7 +137,7 @@ export const AudienceSection = () => {
                         ))}
                       </ul>
                     </motion.div>
-                  )
+                  ),
               )}
             </AnimatePresence>
           </div>

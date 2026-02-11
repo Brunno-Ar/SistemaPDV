@@ -115,7 +115,7 @@ export default function MovimentacoesClient({
       const response = await fetch(
         `/api/admin/movimentacoes?${params.toString()}${
           companyId ? `&companyId=${companyId}` : ""
-        }`
+        }`,
       );
       const data = await response.json();
 
@@ -145,7 +145,7 @@ export default function MovimentacoesClient({
     const matchesProduct =
       mov.productName?.toLowerCase().includes(searchLower) ||
       mov.items?.some((item) =>
-        item.productName.toLowerCase().includes(searchLower)
+        item.productName.toLowerCase().includes(searchLower),
       );
 
     return matchesUser || matchesProduct;
@@ -378,7 +378,7 @@ export default function MovimentacoesClient({
   };
 
   const availableLotes = lotes.filter(
-    (l) => l.produtoId === movementFormData.produtoId
+    (l) => l.produtoId === movementFormData.produtoId,
   );
 
   return (
@@ -631,8 +631,8 @@ export default function MovimentacoesClient({
                         mov.type === "ENTRADA"
                           ? "bg-green-100 dark:bg-green-900/30"
                           : mov.type === "AJUSTE_QUEBRA"
-                          ? "bg-red-100 dark:bg-red-900/30"
-                          : "bg-gray-100 dark:bg-zinc-800"
+                            ? "bg-red-100 dark:bg-red-900/30"
+                            : "bg-gray-100 dark:bg-zinc-800"
                       }`}
                     >
                       {getIcon(mov.type)}
@@ -671,8 +671,8 @@ export default function MovimentacoesClient({
                             ["ABERTURA", "SUPRIMENTO"].includes(mov.type)
                               ? "text-green-600 dark:text-green-400"
                               : mov.type === "SANGRIA"
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-purple-600 dark:text-purple-400"
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-purple-600 dark:text-purple-400"
                           }`}
                         >
                           {formatCurrency(mov.totalValue || 0)}
@@ -765,7 +765,7 @@ export default function MovimentacoesClient({
                         {lote.numeroLote} (Qtd: {lote.quantidade}) - Val:{" "}
                         {lote.dataValidade
                           ? new Date(lote.dataValidade).toLocaleDateString(
-                              "pt-BR"
+                              "pt-BR",
                             )
                           : "N/A"}
                       </SelectItem>

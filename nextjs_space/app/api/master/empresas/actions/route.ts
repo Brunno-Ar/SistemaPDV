@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas masters podem executar esta ação." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!action) {
       return NextResponse.json(
         { error: "Ação não especificada." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -59,11 +59,11 @@ export async function POST(request: NextRequest) {
         if (empresaParaAprovar?.asaasSubscriptionId) {
           try {
             await asaas.reactivateSubscription(
-              empresaParaAprovar.asaasSubscriptionId
+              empresaParaAprovar.asaasSubscriptionId,
             );
             await asaas.updateSubscriptionDueDate(
               empresaParaAprovar.asaasSubscriptionId,
-              vencimento
+              vencimento,
             );
           } catch (asaasError) {
             console.error("Erro ao reativar no Asaas:", asaasError);
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -101,14 +101,14 @@ export async function POST(request: NextRequest) {
         if (!empresa) {
           return NextResponse.json(
             { error: "Empresa não encontrada" },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
         // Nova data de vencimento = data atual do vencimento + 30 dias
         const novoVencimentoCalculado = empresa.vencimentoPlano
           ? new Date(
-              empresa.vencimentoPlano.getTime() + 30 * 24 * 60 * 60 * 1000
+              empresa.vencimentoPlano.getTime() + 30 * 24 * 60 * 60 * 1000,
             )
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           try {
             await asaas.updateSubscriptionDueDate(
               empresa.asaasSubscriptionId,
-              novoVencimentoCalculado
+              novoVencimentoCalculado,
             );
             await asaas.reactivateSubscription(empresa.asaasSubscriptionId);
           } catch (asaasError) {
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId || !novoVencimento) {
           return NextResponse.json(
             { error: "empresaId e novoVencimento obrigatórios" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -159,12 +159,12 @@ export async function POST(request: NextRequest) {
           try {
             await asaas.updateSubscriptionDueDate(
               empresaParaAtualizar.asaasSubscriptionId,
-              novaDataVencimento
+              novaDataVencimento,
             );
             // Se estava pausado, reativar no Asaas
             if (empresaParaAtualizar.status === "PAUSADO") {
               await asaas.reactivateSubscription(
-                empresaParaAtualizar.asaasSubscriptionId
+                empresaParaAtualizar.asaasSubscriptionId,
               );
             }
           } catch (asaasError) {
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
         if (!empresaParaPausar) {
           return NextResponse.json(
             { error: "Empresa não encontrada" },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
         if (empresaParaPausar?.asaasSubscriptionId) {
           try {
             await asaas.pauseSubscription(
-              empresaParaPausar.asaasSubscriptionId
+              empresaParaPausar.asaasSubscriptionId,
             );
           } catch (asaasError) {
             console.error("Erro ao pausar no Asaas:", asaasError);
@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
         if (!empresaParaReativar) {
           return NextResponse.json(
             { error: "Empresa não encontrada" },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
         if (empresaParaReativar?.asaasSubscriptionId) {
           try {
             await asaas.reactivateSubscription(
-              empresaParaReativar.asaasSubscriptionId
+              empresaParaReativar.asaasSubscriptionId,
             );
           } catch (asaasError) {
             console.error("Erro ao reativar no Asaas:", asaasError);
@@ -311,7 +311,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -344,7 +344,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
         if (!adminUser) {
           return NextResponse.json(
             { error: "Admin não encontrado para esta empresa" },
-            { status: 404 }
+            { status: 404 },
           );
         }
 
@@ -380,7 +380,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId || !mensagem) {
           return NextResponse.json(
             { error: "empresaId e mensagem são obrigatórios" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -404,7 +404,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -455,7 +455,7 @@ export async function POST(request: NextRequest) {
         if (!empresaId) {
           return NextResponse.json(
             { error: "empresaId obrigatório" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
@@ -466,13 +466,13 @@ export async function POST(request: NextRequest) {
         if (!empresaParaSync?.asaasSubscriptionId) {
           return NextResponse.json(
             { error: "Empresa não tem assinatura no Asaas" },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
         try {
           const subscription = await asaas.getSubscription(
-            empresaParaSync.asaasSubscriptionId
+            empresaParaSync.asaasSubscriptionId,
           );
 
           // Mapear status do Asaas para status do sistema
@@ -509,7 +509,7 @@ export async function POST(request: NextRequest) {
           console.error("Erro ao sincronizar com Asaas:", syncError);
           return NextResponse.json(
             { error: "Erro ao buscar dados do Asaas" },
-            { status: 500 }
+            { status: 500 },
           );
         }
 
@@ -520,7 +520,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro na ação master:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

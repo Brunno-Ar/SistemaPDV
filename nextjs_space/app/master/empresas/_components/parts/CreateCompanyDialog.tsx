@@ -51,11 +51,11 @@ const formatPhone = (value: string) => {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
   if (numbers.length <= 10)
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(
-      6
+      6,
     )}`;
   return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(
     7,
-    11
+    11,
   )}`;
 };
 

@@ -34,7 +34,7 @@ export function ProductGrid({
       const timer = setTimeout(() => setLastAddedId(null), 300);
       return () => clearTimeout(timer);
     },
-    [onAddToCart]
+    [onAddToCart],
   );
 
   const renderEmptyState = () => (

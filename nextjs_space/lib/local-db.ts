@@ -1,4 +1,4 @@
-import Dexie, { Table } from 'dexie';
+import Dexie, { Table } from "dexie";
 
 export interface ProductLocal {
   id: string;
@@ -20,10 +20,10 @@ export class FlowPDVDatabase extends Dexie {
   offlineSales!: Table<OfflineSale, number>;
 
   constructor() {
-    super('FlowPDVDB');
+    super("FlowPDVDB");
     this.version(1).stores({
-      products: 'id, nome, sku', // id is primary key
-      offlineSales: '++id, timestamp'
+      products: "id, nome, sku", // id is primary key
+      offlineSales: "++id, timestamp",
     });
   }
 }

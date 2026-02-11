@@ -23,7 +23,7 @@ export function ClassicLoader({ className }: LoadingProps) {
     <div
       className={cn(
         "flex h-10 w-10 animate-spin items-center justify-center rounded-full border-4 border-primary border-t-transparent",
-        className
+        className,
       )}
     />
   );
@@ -42,7 +42,7 @@ export function PageLoading({ className }: LoadingProps) {
     <div
       className={cn(
         "flex justify-center items-center min-h-[400px]",
-        className
+        className,
       )}
     >
       <ClassicLoader className="h-12 w-12" />
@@ -117,7 +117,7 @@ const AnimatedLoadingSkeleton = ({ className }: { className?: string }) => {
         repeat: Infinity, // Loop animation infinitely
         ease: [0.4, 0, 0.2, 1], // Ease function for smooth animation
         times: shuffledPositions.map(
-          (_, i) => i / (shuffledPositions.length - 1)
+          (_, i) => i / (shuffledPositions.length - 1),
         ),
       },
     };
@@ -177,7 +177,7 @@ const AnimatedLoadingSkeleton = ({ className }: { className?: string }) => {
     <motion.div
       className={cn(
         "w-full max-w-4xl mx-auto p-6 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-100 dark:border-zinc-800",
-        className
+        className,
       )}
       variants={frameVariants}
       initial="hidden"
@@ -424,7 +424,7 @@ export function LoadingOverlay({
     <div
       className={cn(
         "fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm",
-        className
+        className,
       )}
     >
       <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 flex flex-col items-center gap-4 shadow-2xl border border-gray-200 dark:border-zinc-800">

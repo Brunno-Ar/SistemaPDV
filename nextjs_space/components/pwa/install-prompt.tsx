@@ -38,7 +38,7 @@ export function InstallPrompt({ variant = "floating" }: InstallPromptProps) {
       e.preventDefault();
       globalDeferredPrompt = e;
       setDeferredPrompt(e);
-      console.log("Captured beforeinstallprompt event");
+      // console.log("Captured beforeinstallprompt event");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -64,7 +64,7 @@ export function InstallPrompt({ variant = "floating" }: InstallPromptProps) {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
+    // console.log(`User response to the install prompt: ${outcome}`);
     globalDeferredPrompt = null;
     setDeferredPrompt(null);
   };

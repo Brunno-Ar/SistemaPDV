@@ -124,7 +124,7 @@ export function ProductFormDialog({
     const qtd = parseFloat(value);
     const unitPrice = parseFloat(formData.precoCompra);
 
-    let updates: Partial<typeof formData> = { loteInicial: value };
+    const updates: Partial<typeof formData> = { loteInicial: value };
 
     if (!isNaN(qtd) && !isNaN(unitPrice)) {
       updates.valorTotalLoteInicial = (qtd * unitPrice).toFixed(2);
@@ -137,7 +137,7 @@ export function ProductFormDialog({
     const total = parseFloat(value);
     const qtd = parseFloat(formData.loteInicial);
 
-    let updates: Partial<typeof formData> = { valorTotalLoteInicial: value };
+    const updates: Partial<typeof formData> = { valorTotalLoteInicial: value };
 
     if (!isNaN(total) && !isNaN(qtd) && qtd > 0) {
       updates.precoCompra = (total / qtd).toFixed(2);
@@ -150,7 +150,7 @@ export function ProductFormDialog({
     const unitPrice = parseFloat(value);
     const qtd = parseFloat(formData.loteInicial);
 
-    let updates: Partial<typeof formData> = { precoCompra: value };
+    const updates: Partial<typeof formData> = { precoCompra: value };
 
     if (formData.loteInicial && !isNaN(unitPrice) && !isNaN(qtd)) {
       updates.valorTotalLoteInicial = (qtd * unitPrice).toFixed(2);

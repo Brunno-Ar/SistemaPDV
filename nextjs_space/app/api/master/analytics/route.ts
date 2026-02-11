@@ -12,7 +12,7 @@ export async function GET() {
     if (!session?.user || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas Master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function GET() {
     });
     const volumeTransacionado = todasVendas.reduce(
       (acc, sale) => acc + Number(sale.valorTotal),
-      0
+      0,
     );
 
     // Vendas Hoje
@@ -61,7 +61,7 @@ export async function GET() {
     console.error("Erro ao buscar analytics master:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

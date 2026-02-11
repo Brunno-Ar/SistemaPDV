@@ -1,8 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-interface InteractiveHoverButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface InteractiveHoverButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   text?: string;
 }
 
@@ -18,7 +17,7 @@ const InteractiveHoverButton = React.forwardRef<
       ref={ref}
       className={cn(
         "group relative w-auto min-w-[140px] cursor-pointer overflow-hidden rounded-full border bg-background p-2 px-6 text-center font-semibold",
-        className
+        className,
       )}
       {...props}
     >

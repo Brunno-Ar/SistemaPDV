@@ -86,7 +86,7 @@ export function useSignupForm() {
 
   const handleChange = (
     field: keyof SignupFormData,
-    value: string | boolean
+    value: string | boolean,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -98,10 +98,10 @@ export function useSignupForm() {
       return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
     if (numbers.length <= 10)
       return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(
-        6
+        6,
       )}`;
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(
-      7
+      7,
     )}`;
   };
 
@@ -113,11 +113,11 @@ export function useSignupForm() {
         return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
       if (numbers.length <= 9)
         return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
-          6
+          6,
         )}`;
       return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(
         6,
-        9
+        9,
       )}-${numbers.slice(9, 11)}`;
     } else {
       const cnpj = numbers.slice(0, 14);
@@ -128,11 +128,11 @@ export function useSignupForm() {
       if (cnpj.length <= 12)
         return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(
           5,
-          8
+          8,
         )}/${cnpj.slice(8)}`;
       return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(
         5,
-        8
+        8,
       )}/${cnpj.slice(8, 12)}-${cnpj.slice(12)}`;
     }
   };

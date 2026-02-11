@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { empresa } = user as any;
+    const { empresa } = user;
 
     if (!empresa.asaasSubscriptionId) {
       return NextResponse.json(
@@ -51,8 +51,7 @@ export async function POST(request: Request) {
     // Registrar motivo do cancelamento
     // Verifica se tabela Cancelamento existe no prisma client gerado
     try {
-      const prismaAny = prisma as any;
-      await prismaAny.cancelamento.create({
+      await prisma.cancelamento.create({
         data: {
           empresaId: empresa.id,
           motivo: motivo || "Motivo não informado",
@@ -69,7 +68,7 @@ export async function POST(request: Request) {
     await prisma.empresa.update({
       where: { id: empresa.id },
       data: {
-        status: "CANCELADO" as any,
+        status: "CANCELADO",
       },
     });
 

@@ -14,7 +14,7 @@ export async function GET() {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -47,7 +47,7 @@ export async function GET() {
     const empresasFormatadas = empresas.map((empresa) => {
       const faturamentoTotal = empresa.sales.reduce(
         (acc, sale) => acc + Number(sale.valorTotal),
-        0
+        0,
       );
 
       const faturamentoMensal = empresa.sales.reduce((acc, sale) => {
@@ -79,7 +79,7 @@ export async function GET() {
     console.error("Erro ao buscar empresas:", error);
     return NextResponse.json(
       { error: "Erro ao buscar empresas" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     if (!nomeEmpresa || !adminEmail || !adminSenha) {
       return NextResponse.json(
         { error: "Nome da empresa, email e senha do admin são obrigatórios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Já existe um usuário com este email" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -179,13 +179,13 @@ export async function POST(request: NextRequest) {
           nome: result.admin.nome,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Erro ao criar empresa:", error);
     return NextResponse.json(
       { error: "Erro ao criar empresa" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -198,7 +198,7 @@ export async function DELETE(request: NextRequest) {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -209,7 +209,7 @@ export async function DELETE(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "ID da empresa é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -221,7 +221,7 @@ export async function DELETE(request: NextRequest) {
     if (!empresa) {
       return NextResponse.json(
         { error: "Empresa não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -232,13 +232,13 @@ export async function DELETE(request: NextRequest) {
         // Tenta cancelar, mas se falhar (ex: já cancelada), segue o jogo
         await asaas.cancelSubscription(empresa.asaasSubscriptionId);
         console.log(
-          `✅ Assinatura ${empresa.asaasSubscriptionId} cancelada no Asaas`
+          `✅ Assinatura ${empresa.asaasSubscriptionId} cancelada no Asaas`,
         );
       } catch (asaasError: any) {
         // Loga mas não joga erro pra cima
         console.warn(
           `⚠️ Ignorando erro ao cancelar assinatura Asaas (${empresa.asaasSubscriptionId}):`,
-          asaasError.message || asaasError
+          asaasError.message || asaasError,
         );
       }
     }
@@ -251,7 +251,7 @@ export async function DELETE(request: NextRequest) {
         // Loga mas não joga erro pra cima
         console.warn(
           `⚠️ Ignorando erro ao deletar cliente Asaas (${empresa.asaasCustomerId}):`,
-          asaasError.message || asaasError
+          asaasError.message || asaasError,
         );
       }
     }
@@ -368,13 +368,13 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json(
       { message: "Empresa excluída com sucesso" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Erro ao excluir empresa:", error);
     return NextResponse.json(
       { error: `Erro ao excluir empresa: ${error.message || error}` },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

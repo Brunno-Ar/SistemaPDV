@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
           error:
             "É necessário aceitar os Termos de Uso e Política de Privacidade",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
           error:
             "Email, senha, nome, nome da empresa e CPF/CNPJ são obrigatórios",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
           error:
             "Endereço completo (Logradouro, Número, Bairro, CEP, Cidade, UF) é obrigatório para emissão de Nota Fiscal",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -71,14 +71,14 @@ export async function POST(request: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Formato de email inválido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Senha deve ter no mínimo 6 caracteres" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     if (cpfCnpjClean.length !== 11 && cpfCnpjClean.length !== 14) {
       return NextResponse.json(
         { error: "CPF deve ter 11 dígitos ou CNPJ deve ter 14 dígitos" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       limiteUsos: number | null;
     } | null = null;
     let subscriptionPrice = parseFloat(
-      process.env.NEXT_PUBLIC_PLAN_PRICE || "49.90"
+      process.env.NEXT_PUBLIC_PLAN_PRICE || "49.90",
     );
 
     if (cupom) {
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       if (cupomDb.validoAte && cupomDb.validoAte < now) {
         return NextResponse.json(
           { error: "Este cupom expirou e não pode mais ser utilizado" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       ) {
         return NextResponse.json(
           { error: "O limite de usos deste cupom foi atingido" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: "Já existe uma conta com este email" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
     if (existingEmpresa) {
       return NextResponse.json(
         { error: "Este CPF/CNPJ já está cadastrado no sistema" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -190,9 +190,8 @@ export async function POST(request: NextRequest) {
     if (!isFreeAccount) {
       try {
         // 1. Criar/Recuperar Cliente no Asaas
-        const existingAsaasCustomer = await asaas.findCustomerByCpfCnpj(
-          cpfCnpjClean
-        );
+        const existingAsaasCustomer =
+          await asaas.findCustomerByCpfCnpj(cpfCnpjClean);
 
         if (existingAsaasCustomer) {
           asaasCustomer = existingAsaasCustomer;
@@ -209,7 +208,7 @@ export async function POST(request: NextRequest) {
               bairro,
               cep,
               complemento: "", // Opcional
-            }
+            },
           );
 
           createdAsaasCustomerId = asaasCustomer.id;
@@ -219,7 +218,7 @@ export async function POST(request: NextRequest) {
         // 2. Criar Assinatura (com preço ajustado pelo cupom)
         asaasSubscription = await asaas.createSubscription(
           asaasCustomer.id,
-          subscriptionPrice
+          subscriptionPrice,
         );
       } catch (asaasError: unknown) {
         console.error("❌ Erro na integração Asaas:", asaasError);
@@ -240,13 +239,13 @@ export async function POST(request: NextRequest) {
         ) {
           return NextResponse.json(
             { error: "CPF/CNPJ inválido. Verifique os dados informados." },
-            { status: 400 }
+            { status: 400 },
           );
         }
 
         return NextResponse.json(
           { error: "Erro ao configurar pagamento: " + errorMessage },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -254,7 +253,7 @@ export async function POST(request: NextRequest) {
       if (!asaasCustomer || !asaasSubscription) {
         return NextResponse.json(
           { error: "Erro ao configurar pagamento. Tente novamente." },
-          { status: 500 }
+          { status: 500 },
         );
       }
     } else {
@@ -278,7 +277,7 @@ export async function POST(request: NextRequest) {
             // Conta normal: Trial de X dias
             const trialDays = parseInt(
               process.env.NEXT_PUBLIC_TRIAL_DAYS || "14",
-              10
+              10,
             );
             vencimento = new Date();
             vencimento.setDate(vencimento.getDate() + trialDays);
@@ -332,7 +331,7 @@ export async function POST(request: NextRequest) {
           }
 
           return { empresa, admin };
-        }
+        },
       );
 
       // Enviar email de verificação

@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -34,7 +34,7 @@ export async function POST(
     if (!newPassword) {
       return NextResponse.json(
         { error: "Senha é obrigatória" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -53,7 +53,7 @@ export async function POST(
     console.error("Erro ao resetar senha:", error);
     return NextResponse.json(
       { error: "Erro interno ao resetar senha" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

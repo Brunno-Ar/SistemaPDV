@@ -14,10 +14,15 @@ export async function POST() {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user || session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
+    if (
+      !session?.user ||
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
+    ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -25,7 +30,7 @@ export async function POST() {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,7 +54,7 @@ export async function POST() {
 
       const realStock = product.lotes.reduce(
         (sum, lote) => sum + lote.quantidade,
-        0
+        0,
       );
 
       if (product.estoqueAtual !== realStock) {
@@ -57,7 +62,7 @@ export async function POST() {
           prisma.product.update({
             where: { id: product.id },
             data: { estoqueAtual: realStock },
-          })
+          }),
         );
         updatedCount++;
       }
@@ -77,7 +82,7 @@ export async function POST() {
     console.error("Erro ao recalcular estoque:", error);
     return NextResponse.json(
       { error: "Erro interno ao recalcular estoque" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

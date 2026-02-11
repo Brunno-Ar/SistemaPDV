@@ -20,14 +20,14 @@ export async function POST() {
     if (!user || user.role !== "admin") {
       return NextResponse.json(
         { error: "Apenas administradores podem solicitar desbloqueio" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     if (!user.empresa) {
       return NextResponse.json(
         { error: "Empresa não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function POST() {
     if (status !== "PAUSADO") {
       return NextResponse.json(
         { error: "O desbloqueio só está disponível para contas suspensas" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -47,14 +47,14 @@ export async function POST() {
       const diff = now.getTime() - new Date(ultimoDesbloqueio).getTime();
       if (diff < vinteDias) {
         const diasRestantes = Math.ceil(
-          (vinteDias - diff) / (24 * 60 * 60 * 1000)
+          (vinteDias - diff) / (24 * 60 * 60 * 1000),
         );
         return NextResponse.json(
           {
             error: `Desbloqueio indisponível. Tente novamente em ${diasRestantes} dias.`,
             unavailable: true,
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -82,7 +82,7 @@ export async function POST() {
     console.error("❌ Erro ao desbloquear:", error);
     return NextResponse.json(
       { error: "Erro ao processar solicitação" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

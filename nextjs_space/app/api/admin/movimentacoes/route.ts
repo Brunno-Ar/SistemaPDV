@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não encontrada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -283,7 +283,7 @@ export async function GET(request: NextRequest) {
         quantity: 1,
         totalValue: Number(caixa.saldoFinal),
         reason: `Saldo Final: R$ ${Number(caixa.saldoFinal).toFixed(
-          2
+          2,
         )} | Quebra: R$ ${Number(caixa.quebraDeCaixa).toFixed(2)}`,
       })),
     ];
@@ -300,7 +300,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar movimentações:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -321,7 +321,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -340,7 +340,7 @@ export async function POST(request: NextRequest) {
     if (!produtoId || !tipo || !quantidade) {
       return NextResponse.json(
         { error: "Produto, Tipo e Quantidade são obrigatórios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -348,7 +348,7 @@ export async function POST(request: NextRequest) {
     if (isNaN(qtd) || qtd <= 0) {
       return NextResponse.json(
         { error: "Quantidade deve ser um número positivo" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
           error:
             "É obrigatório selecionar um Lote para registrar saídas ou perdas.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -417,7 +417,7 @@ export async function POST(request: NextRequest) {
           // Verificar estoque negativo no lote
           if (lote.quantidade + delta < 0) {
             throw new Error(
-              `Estoque insuficiente no lote. Disponível: ${lote.quantidade}`
+              `Estoque insuficiente no lote. Disponível: ${lote.quantidade}`,
             );
           }
 
@@ -431,7 +431,7 @@ export async function POST(request: NextRequest) {
           if (produto.estoqueAtual + delta < 0) {
             // Permitir negativo? Geralmente não.
             throw new Error(
-              `Estoque insuficiente. Disponível: ${produto.estoqueAtual}`
+              `Estoque insuficiente. Disponível: ${produto.estoqueAtual}`,
             );
           }
         }
@@ -456,7 +456,7 @@ export async function POST(request: NextRequest) {
         });
 
         return mov;
-      }
+      },
     );
 
     return NextResponse.json(result);
@@ -465,7 +465,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro ao criar movimentação:", error);
     return NextResponse.json(
       { error: error.message || "Erro interno do servidor" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

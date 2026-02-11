@@ -269,8 +269,8 @@ export function TransactionDialog({
                 ? "Registrando..."
                 : processingLabel
               : isTrocaPix
-              ? "Confirmar Troca"
-              : confirmLabel}
+                ? "Confirmar Troca"
+                : confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -27,7 +27,7 @@ export default function DashboardClient() {
   const { data: session } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
   const [caixaData, setCaixaData] = useState<CaixaData | null | undefined>(
-    undefined
+    undefined,
   );
   const [loading, setLoading] = useState(true);
 

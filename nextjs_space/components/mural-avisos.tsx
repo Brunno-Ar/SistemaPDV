@@ -50,8 +50,8 @@ export function MuralAvisos() {
       if (response.ok) {
         setAvisos((prev) =>
           prev.map((aviso) =>
-            aviso.id === id ? { ...aviso, lido: true } : aviso
-          )
+            aviso.id === id ? { ...aviso, lido: true } : aviso,
+          ),
         );
         toast({
           title: "Aviso lido",
@@ -95,17 +95,19 @@ export function MuralAvisos() {
             {avisosNaoLidos.map((aviso) => (
               <div
                 key={aviso.id}
-                className={`p-4 rounded-lg border ${aviso.importante
+                className={`p-4 rounded-lg border ${
+                  aviso.importante
                     ? "bg-red-50 border-red-200"
                     : "bg-blue-50 border-blue-200"
-                  }`}
+                }`}
               >
                 <div className="flex justify-between items-start mb-2">
                   <span
-                    className={`text-xs font-bold px-2 py-1 rounded ${aviso.importante
+                    className={`text-xs font-bold px-2 py-1 rounded ${
+                      aviso.importante
                         ? "bg-red-100 text-red-700"
                         : "bg-blue-100 text-blue-700"
-                      }`}
+                    }`}
                   >
                     {aviso.importante ? "IMPORTANTE" : "Aviso"}
                   </span>

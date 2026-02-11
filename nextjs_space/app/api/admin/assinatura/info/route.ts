@@ -18,7 +18,7 @@ export async function GET(_req: NextRequest) {
   if (!empresaId) {
     return NextResponse.json(
       { error: "Empresa não encontrada" },
-      { status: 404 }
+      { status: 404 },
     );
   }
 
@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest) {
     if (!empresa) {
       return NextResponse.json(
         { error: "Empresa não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -48,7 +48,7 @@ export async function GET(_req: NextRequest) {
 
     // Buscar info atual da assinatura (fatura aberta)
     const billingInfo = await asaas.getSubscriptionBillingInfo(
-      empresa.asaasSubscriptionId
+      empresa.asaasSubscriptionId,
     );
 
     // Buscar histórico

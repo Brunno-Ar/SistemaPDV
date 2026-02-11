@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores podem acessar." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       if (session.user.role !== "master") {
         return NextResponse.json(
           { error: "Acesso Negado: Apenas Master pode filtrar por empresa." },
-          { status: 403 }
+          { status: 403 },
         );
       }
       targetEmpresaId = queryCompanyId;
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     if (!targetEmpresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -141,12 +141,12 @@ export async function GET(request: NextRequest) {
 
       // Criar datas UTC que correspondem ao inicio do dia BRL (03:00 UTC)
       timelineStart = new Date(
-        Date.UTC(startParts[0], startParts[1] - 1, startParts[2], 3, 0, 0)
+        Date.UTC(startParts[0], startParts[1] - 1, startParts[2], 3, 0, 0),
       );
 
       // Fim do dia BRL (23:59:59 BRL = 02:59:59 UTC do dia seguinte)
       timelineEnd = new Date(
-        Date.UTC(endParts[0], endParts[1] - 1, endParts[2], 3, 0, 0)
+        Date.UTC(endParts[0], endParts[1] - 1, endParts[2], 3, 0, 0),
       );
       timelineEnd.setDate(timelineEnd.getDate() + 1);
       timelineEnd.setMilliseconds(-1);
@@ -243,7 +243,7 @@ export async function GET(request: NextRequest) {
       ([date, values]) => ({
         date,
         ...values,
-      })
+      }),
     );
 
     // --- 3. DADOS SECUNDÁRIOS (Produtos e Métodos) ---
@@ -307,7 +307,7 @@ export async function GET(request: NextRequest) {
         metodo,
         total: values.count,
         valor: values.total,
-      })
+      }),
     );
 
     return NextResponse.json({
@@ -343,7 +343,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar analytics:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     if (!email) {
       return NextResponse.json(
         { error: "Email é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json(
         { error: "Nenhum usuário encontrado com este e-mail." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     console.error("Forgot password error:", error);
     return NextResponse.json(
       { error: "Erro ao processar solicitação" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

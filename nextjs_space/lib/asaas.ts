@@ -14,7 +14,7 @@ const INTEREST_PERCENT = parseFloat(process.env.ASAAS_INTEREST_PERCENT || "1"); 
 // Validação na inicialização (apenas log, não quebra o build)
 if (!ASAAS_API_KEY) {
   console.warn(
-    "⚠️ ASAAS_API_KEY não está definida. As chamadas de integração irão falhar."
+    "⚠️ ASAAS_API_KEY não está definida. As chamadas de integração irão falhar.",
   );
 }
 
@@ -67,7 +67,7 @@ interface AsaasError {
 function logError(
   method: string,
   error: unknown,
-  context?: Record<string, unknown>
+  context?: Record<string, unknown>,
 ) {
   console.error(`❌ [Asaas.${method}] Error:`, {
     message: error instanceof Error ? error.message : String(error),
@@ -81,7 +81,7 @@ function logError(
  */
 async function asaasRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<{ ok: boolean; data: T; status: number }> {
   const url = `${ASAAS_API_URL}${endpoint}`;
 
@@ -119,13 +119,13 @@ export const asaas = {
   async findCustomerByCpfCnpj(cpfCnpj: string): Promise<AsaasCustomer | null> {
     try {
       const { ok, data } = await asaasRequest<{ data: AsaasCustomer[] }>(
-        `/customers?cpfCnpj=${encodeURIComponent(cpfCnpj)}`
+        `/customers?cpfCnpj=${encodeURIComponent(cpfCnpj)}`,
       );
 
       if (ok && data.data && data.data.length > 0) {
         console.log(
           "✅ [Asaas.findCustomerByCpfCnpj] Customer found:",
-          data.data[0].id
+          data.data[0].id,
         );
         return data.data[0];
       }
@@ -142,7 +142,7 @@ export const asaas = {
    */
   async updateCustomer(
     customerId: string,
-    updates: { name?: string; email?: string; mobilePhone?: string }
+    updates: { name?: string; email?: string; mobilePhone?: string },
   ): Promise<AsaasCustomer> {
     console.log("📝 [Asaas.updateCustomer] Updating:", customerId);
 
@@ -151,7 +151,7 @@ export const asaas = {
       {
         method: "POST",
         body: JSON.stringify(updates),
-      }
+      },
     );
 
     if (!ok) {
@@ -180,7 +180,7 @@ export const asaas = {
       bairro: string;
       cep: string;
       complemento?: string;
-    }
+    },
   ): Promise<AsaasCustomer> {
     if (!cpfCnpj) throw new Error("CPF/CNPJ é obrigatório");
 
@@ -226,7 +226,7 @@ export const asaas = {
       {
         method: "POST",
         body: JSON.stringify(payload),
-      }
+      },
     );
 
     if (!ok) {
@@ -252,7 +252,7 @@ export const asaas = {
     console.log("🔍 [Asaas.getCustomer]", customerId);
 
     const { ok, data } = await asaasRequest<AsaasCustomer & AsaasError>(
-      `/customers/${customerId}`
+      `/customers/${customerId}`,
     );
 
     if (!ok) {
@@ -271,7 +271,7 @@ export const asaas = {
    */
   async createSubscription(
     customerId: string,
-    customValue?: number
+    customValue?: number,
   ): Promise<AsaasSubscription> {
     const nextDueDate = new Date();
     nextDueDate.setDate(nextDueDate.getDate() + TRIAL_DAYS);
@@ -309,7 +309,7 @@ export const asaas = {
             type: "PERCENTAGE",
           },
         }),
-      }
+      },
     );
 
     if (!ok) {
@@ -334,11 +334,11 @@ export const asaas = {
    * Fetches the current billing information (next invoice).
    */
   async getSubscriptionBillingInfo(
-    subscriptionId: string
+    subscriptionId: string,
   ): Promise<BillingInfo | null> {
     try {
       const { ok, data } = await asaasRequest<{ data: BillingInfo[] }>(
-        `/payments?subscription=${subscriptionId}&status=PENDING&limit=1`
+        `/payments?subscription=${subscriptionId}&status=PENDING&limit=1`,
       );
 
       if (!ok) {
@@ -370,11 +370,11 @@ export const asaas = {
    * Fetches payment history for the subscription.
    */
   async listPaymentHistory(
-    subscriptionId: string
+    subscriptionId: string,
   ): Promise<PaymentHistoryItem[]> {
     try {
       const { ok, data } = await asaasRequest<{ data: PaymentHistoryItem[] }>(
-        `/payments?subscription=${subscriptionId}&limit=10`
+        `/payments?subscription=${subscriptionId}&limit=10`,
       );
 
       if (!ok) {
@@ -399,7 +399,7 @@ export const asaas = {
       {
         method: "POST",
         body: JSON.stringify({ status: "INACTIVE" }),
-      }
+      },
     );
 
     if (!ok) {
@@ -424,7 +424,7 @@ export const asaas = {
       {
         method: "POST",
         body: JSON.stringify({ status: "ACTIVE" }),
-      }
+      },
     );
 
     if (!ok) {
@@ -446,7 +446,7 @@ export const asaas = {
 
     const { ok, status, data } = await asaasRequest<AsaasError>(
       `/subscriptions/${subscriptionId}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
 
     if (status === 204 || ok) {
@@ -465,13 +465,13 @@ export const asaas = {
    */
   async updateSubscriptionDueDate(
     subscriptionId: string,
-    newDueDate: Date
+    newDueDate: Date,
   ): Promise<boolean> {
     const dueDateStr = newDueDate.toISOString().split("T")[0];
     console.log(
       "📅 [Asaas.updateSubscriptionDueDate]",
       subscriptionId,
-      dueDateStr
+      dueDateStr,
     );
 
     const { ok, data } = await asaasRequest<AsaasSubscription & AsaasError>(
@@ -479,7 +479,7 @@ export const asaas = {
       {
         method: "POST",
         body: JSON.stringify({ nextDueDate: dueDateStr }),
-      }
+      },
     );
 
     if (!ok) {
@@ -501,7 +501,7 @@ export const asaas = {
    */
   async updateSubscriptionValue(
     subscriptionId: string,
-    newValue: number
+    newValue: number,
   ): Promise<boolean> {
     console.log("💰 [Asaas.updateSubscriptionValue]", subscriptionId, newValue);
 
@@ -510,7 +510,7 @@ export const asaas = {
       {
         method: "POST",
         body: JSON.stringify({ value: newValue }),
-      }
+      },
     );
 
     if (!ok) {
@@ -534,7 +534,7 @@ export const asaas = {
     console.log("🔍 [Asaas.getSubscription]", subscriptionId);
 
     const { ok, data } = await asaasRequest<AsaasSubscription & AsaasError>(
-      `/subscriptions/${subscriptionId}`
+      `/subscriptions/${subscriptionId}`,
     );
 
     if (!ok) {
@@ -557,7 +557,7 @@ export const asaas = {
     try {
       const { ok, status } = await asaasRequest<AsaasError>(
         `/customers/${customerId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
       if (status === 204 || ok) {

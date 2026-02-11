@@ -82,7 +82,7 @@ export default function FuncionarioDetalhes({
   const fetchFuncionario = async () => {
     try {
       const response = await fetch(
-        `/api/admin/equipe/${funcionarioId}?t=${new Date().getTime()}`
+        `/api/admin/equipe/${funcionarioId}?t=${new Date().getTime()}`,
       );
       if (!response.ok) throw new Error("Erro ao carregar funcionário");
       const data = await response.json();
@@ -91,7 +91,7 @@ export default function FuncionarioDetalhes({
         Number(data.metaMensal || 0).toLocaleString("pt-BR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        })
+        }),
       );
     } catch (error) {
       console.error(error);
@@ -115,7 +115,7 @@ export default function FuncionarioDetalhes({
         if (cleanValue.includes(",")) {
           // PT-BR format: 1.000,00 -> 1000.00
           numericMeta = parseFloat(
-            cleanValue.replace(/\./g, "").replace(",", ".")
+            cleanValue.replace(/\./g, "").replace(",", "."),
           );
         } else {
           // Se tem ponto mas não tem vírgula, assume que o ponto é milhar (pt-BR)
@@ -155,7 +155,7 @@ export default function FuncionarioDetalhes({
         Number(updatedData.metaMensal).toLocaleString("pt-BR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        })
+        }),
       );
     } catch (error) {
       console.error(error);

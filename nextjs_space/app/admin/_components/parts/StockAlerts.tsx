@@ -164,7 +164,7 @@ export function StockAlerts({
                 const diasParaVencer = Math.ceil(
                   (new Date(lote.dataValidade).getTime() -
                     new Date().getTime()) /
-                    (1000 * 60 * 60 * 24)
+                    (1000 * 60 * 60 * 24),
                 );
                 return (
                   <div

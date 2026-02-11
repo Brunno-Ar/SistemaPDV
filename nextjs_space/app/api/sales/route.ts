@@ -22,7 +22,7 @@ const VALID_PAYMENT_METHODS = ["dinheiro", "debito", "credito", "pix"] as const;
 async function descontarLotesFEFO(
   tx: TransactionClient,
   produtoId: string,
-  quantidadeNecessaria: number
+  quantidadeNecessaria: number,
 ): Promise<{
   lotesUsados: string[];
   quantidadeTotal: number;
@@ -87,7 +87,7 @@ function validateAndNormalizePayments(
   metodoPagamento: string | undefined,
   valorTotal: number,
   valorRecebido: number | undefined,
-  troco: number | undefined
+  troco: number | undefined,
 ):
   | {
       normalizedPayments: PaymentInput[];
@@ -135,7 +135,7 @@ function validateAndNormalizePayments(
     if (diferenca > 0.01) {
       return {
         error: `Soma dos pagamentos (R$ ${valorEfetivo.toFixed(
-          2
+          2,
         )}) não corresponde ao total da venda (R$ ${valorTotal.toFixed(2)})`,
       };
     }
@@ -158,7 +158,7 @@ function validateAndNormalizePayments(
   if (
     metodoPagamento &&
     VALID_PAYMENT_METHODS.includes(
-      metodoPagamento as (typeof VALID_PAYMENT_METHODS)[number]
+      metodoPagamento as (typeof VALID_PAYMENT_METHODS)[number],
     )
   ) {
     // Calcular troco para dinheiro
@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
       } else {
         return NextResponse.json(
           { error: "Caixa fechado. Abra o caixa para realizar vendas." },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: "Itens são obrigatórios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
             error:
               "Todos os itens devem ter productId, quantidade e preço unitário",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
             error:
               "Quantidade deve ser maior que zero e preço não pode ser negativo",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -270,7 +270,29 @@ export async function POST(request: NextRequest) {
     if (valorTotal < 0) {
       return NextResponse.json(
         { error: "Valor total da venda não pode ser negativo" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    // Validação de consistência: verificar se os subtotais dos itens batem com o total
+    const subtotaisCalculados = itemsTyped.map((item) => ({
+      productId: item.productId,
+      quantidade: item.quantidade,
+      precoUnitario: item.precoUnitario,
+      desconto: item.descontoAplicado || 0,
+      subtotalCalculado:
+        item.precoUnitario * item.quantidade - (item.descontoAplicado || 0),
+    }));
+    const somaSubtotais = subtotaisCalculados.reduce(
+      (acc, item) => acc + item.subtotalCalculado,
+      0,
+    );
+    if (Math.abs(somaSubtotais - valorTotal) > 0.01) {
+      console.warn(
+        `[VENDA] Discrepância detectada! Soma subtotais: ${somaSubtotais.toFixed(
+          2,
+        )}, valorTotal: ${valorTotal.toFixed(2)}. ` +
+          `Detalhes: ${JSON.stringify(subtotaisCalculados)}`,
       );
     }
 
@@ -280,13 +302,13 @@ export async function POST(request: NextRequest) {
       metodoPagamento,
       valorTotal,
       valorRecebido,
-      troco
+      troco,
     );
 
     if ("error" in paymentValidation) {
       return NextResponse.json(
         { error: paymentValidation.error },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -305,7 +327,7 @@ export async function POST(request: NextRequest) {
     if (products.length !== productIds.length) {
       return NextResponse.json(
         { error: "Produtos não encontrados ou não pertencem à sua empresa" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -314,7 +336,7 @@ export async function POST(request: NextRequest) {
       if (!product) {
         return NextResponse.json(
           { error: `Produto não encontrado: ${item.productId}` },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -323,7 +345,7 @@ export async function POST(request: NextRequest) {
           {
             error: `Estoque insuficiente para ${product.nome}. Disponível: ${product.estoqueAtual}`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -341,7 +363,7 @@ export async function POST(request: NextRequest) {
         // Calcular valor recebido (soma de todos os pagamentos)
         const totalRecebido = normalizedPayments.reduce(
           (sum, p) => sum + p.amount,
-          0
+          0,
         );
 
         const sale = await tx.sale.create({
@@ -369,7 +391,7 @@ export async function POST(request: NextRequest) {
         // Processar itens da venda
         for (const item of itemsTyped) {
           const product = products.find(
-            (p: Product) => p.id === item.productId
+            (p: Product) => p.id === item.productId,
           )!;
           const descontoAplicado = item.descontoAplicado || 0;
           const subtotal =
@@ -422,7 +444,7 @@ export async function POST(request: NextRequest) {
               quantidade: -item.quantidade,
               motivo: `Venda #${sale.id.substring(
                 0,
-                8
+                8,
               )} - Lotes: ${lotesUsados.join(", ")}`,
             },
           });
@@ -433,7 +455,7 @@ export async function POST(request: NextRequest) {
       {
         maxWait: 5000,
         timeout: 20000,
-      }
+      },
     );
 
     // Formatar resposta com métodos de pagamento

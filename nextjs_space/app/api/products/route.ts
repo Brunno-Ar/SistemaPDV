@@ -28,7 +28,7 @@ async function signUrlsInBatches(products: any[], batchSize = 10) {
           precoVenda: Number(product.precoVenda),
           imagemUrl: signedUrl || product.imagemUrl,
         };
-      })
+      }),
     );
     results.push(...batchResults);
   }
@@ -51,7 +51,7 @@ export async function GET() {
     if (!isMaster && !empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

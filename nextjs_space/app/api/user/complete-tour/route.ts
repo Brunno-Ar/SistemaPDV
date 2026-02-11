@@ -28,30 +28,30 @@ export async function POST() {
 }
 
 export async function PUT(req: Request) {
-    try {
-      const session = await getServerSession(authOptions);
+  try {
+    const session = await getServerSession(authOptions);
 
-      if (!session || !session.user) {
-        return new NextResponse("Unauthorized", { status: 401 });
-      }
-
-      const body = await req.json();
-
-      if (body.reset) {
-          await prisma.user.update({
-            where: {
-              id: session.user.id,
-            },
-            data: {
-              tourCompleted: false,
-            },
-          });
-          return NextResponse.json({ success: true });
-      }
-
-      return new NextResponse("Bad Request", { status: 400 });
-    } catch (error) {
-      console.error("[TOUR_RESET]", error);
-      return new NextResponse("Internal Error", { status: 500 });
+    if (!session || !session.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
+
+    const body = await req.json();
+
+    if (body.reset) {
+      await prisma.user.update({
+        where: {
+          id: session.user.id,
+        },
+        data: {
+          tourCompleted: false,
+        },
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    return new NextResponse("Bad Request", { status: 400 });
+  } catch (error) {
+    console.error("[TOUR_RESET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
+}

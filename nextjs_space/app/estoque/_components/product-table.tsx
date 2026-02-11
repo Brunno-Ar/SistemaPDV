@@ -31,7 +31,12 @@ interface ProductTableProps {
 }
 
 // Componente de Card para Mobile
-function ProductCard({ product, onEdit, onDelete, onManageLots }: {
+function ProductCard({
+  product,
+  onEdit,
+  onDelete,
+  onManageLots,
+}: {
   product: Product;
   onEdit: (product: Product) => void;
   onDelete: (productId: string) => void;
@@ -65,7 +70,9 @@ function ProductCard({ product, onEdit, onDelete, onManageLots }: {
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Categoria</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Categoria
+            </p>
             <p className="text-sm text-gray-900 dark:text-gray-100">
               {product.category?.nome || "-"}
             </p>
@@ -77,13 +84,17 @@ function ProductCard({ product, onEdit, onDelete, onManageLots }: {
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Preço Venda</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Preço Venda
+            </p>
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               R$ {product.precoVenda.toFixed(2)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Preço Custo</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Preço Custo
+            </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               R$ {product.precoCompra.toFixed(2)}
             </p>
@@ -296,7 +307,8 @@ export function ProductTable({
                               Excluir Produto
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
-                              Tem certeza que deseja excluir &quot;{product.nome}&quot;?
+                              Tem certeza que deseja excluir &quot;
+                              {product.nome}&quot;?
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

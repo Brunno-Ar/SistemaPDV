@@ -8,10 +8,7 @@ export async function GET(request: NextRequest) {
     // 1. Authorization Check
     const authHeader = request.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Define cutoff date (Today - 3 days)
@@ -40,9 +37,9 @@ export async function GET(request: NextRequest) {
         users: {
           where: { role: "admin" },
           select: { email: true, nome: true },
-          take: 1
-        }
-      }
+          take: 1,
+        },
+      },
     });
 
     // 4. Update status to PAUSADO
@@ -62,7 +59,7 @@ export async function GET(request: NextRequest) {
         nome: company.nome,
         vencimento: company.vencimentoPlano,
         bloqueadoEm: new Date(),
-        adminEmail: company.users[0]?.email
+        adminEmail: company.users[0]?.email,
       });
     }
 
@@ -71,12 +68,11 @@ export async function GET(request: NextRequest) {
       blockedCount: blockedCompaniesLog.length,
       details: blockedCompaniesLog,
     });
-
   } catch (error) {
     console.error("Cron Job Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

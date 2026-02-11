@@ -75,7 +75,7 @@ export function UserCard({
           ? "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20"
           : "border-gray-200 dark:border-zinc-800 hover:shadow-md",
         onClick && "cursor-pointer",
-        className
+        className,
       )}
     >
       <CardHeader className="pb-3">
@@ -98,7 +98,7 @@ export function UserCard({
                     <CardDescription className="flex items-center space-x-1 mt-1">
                       <span
                         className={`inline-block px-2 py-1 text-xs rounded ${getRoleBadgeColor(
-                          role
+                          role,
                         )}`}
                       >
                         {getRoleLabel(role)}

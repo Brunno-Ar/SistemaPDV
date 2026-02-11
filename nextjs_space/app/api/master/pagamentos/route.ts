@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     if (!session || session.user.role !== "master") {
       return NextResponse.json(
         { error: "Acesso negado. Apenas usuários master." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "empresaId é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,14 +36,14 @@ export async function GET(request: NextRequest) {
     if (!empresa) {
       return NextResponse.json(
         { error: "Empresa não encontrada" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (!empresa.asaasCustomerId) {
       return NextResponse.json(
         { error: "Esta empresa não possui conta no Asaas (conta gratuita)" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     if (!ASAAS_API_KEY) {
       return NextResponse.json(
         { error: "ASAAS_API_KEY não configurada" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -66,14 +66,14 @@ export async function GET(request: NextRequest) {
           access_token: ASAAS_API_KEY,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
       console.error("Erro Asaas:", await response.text());
       return NextResponse.json(
         { error: "Erro ao buscar pagamentos no Asaas" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         boletoUrl: p.bankSlipUrl, // Link do boleto
         pixUrl: p.pixTransaction?.qrCodeUrl || null, // QR Code PIX
         descricao: p.description,
-      })
+      }),
     );
 
     return NextResponse.json({
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
     console.error("Erro ao buscar pagamentos:", error);
     return NextResponse.json(
       { error: "Erro interno ao buscar pagamentos" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

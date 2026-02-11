@@ -228,7 +228,7 @@ export function MeuCaixa({
       toast({
         title: "Troca PIX registrada!",
         description: `Maquininha: +R$ ${maquininhaNum.toFixed(
-          2
+          2,
         )} | Troco: -R$ ${trocoNum.toFixed(2)} | Taxa: R$ ${taxa.toFixed(2)}`,
         variant: "default",
       });
@@ -458,7 +458,7 @@ export function MeuCaixa({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 overflow-hidden">
           {/* Card: Dinheiro em Caixa (calculado) */}
           {(() => {
             // Calcular saldo atual de dinheiro - garantindo que todos são números
@@ -467,21 +467,21 @@ export function MeuCaixa({
               .filter(
                 (m) =>
                   m.tipo === "VENDA" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
               )
               .reduce((acc, m) => acc + Number(m.valor), 0);
             const suprimentosDinheiro = caixa.movimentacoes
               .filter(
                 (m) =>
                   m.tipo === "SUPRIMENTO" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
               )
               .reduce((acc, m) => acc + Number(m.valor), 0);
             const sangriasDinheiro = caixa.movimentacoes
               .filter(
                 (m) =>
                   m.tipo === "SANGRIA" &&
-                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+                  (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
               )
               .reduce((acc, m) => acc + Number(m.valor), 0);
             const saldoDinheiro =
@@ -517,7 +517,7 @@ export function MeuCaixa({
               {formatCurrency(
                 caixa.movimentacoes
                   .filter((m) => m.tipo === "VENDA")
-                  .reduce((acc, m) => acc + m.valor, 0)
+                  .reduce((acc, m) => acc + m.valor, 0),
               )}
             </p>
           </div>
@@ -527,7 +527,7 @@ export function MeuCaixa({
               {formatCurrency(
                 caixa.movimentacoes
                   .filter((m) => m.tipo === "SUPRIMENTO")
-                  .reduce((acc, m) => acc + m.valor, 0)
+                  .reduce((acc, m) => acc + m.valor, 0),
               )}
             </p>
           </div>
@@ -537,77 +537,32 @@ export function MeuCaixa({
               {formatCurrency(
                 caixa.movimentacoes
                   .filter((m) => m.tipo === "SANGRIA")
-                  .reduce((acc, m) => acc + m.valor, 0)
+                  .reduce((acc, m) => acc + m.valor, 0),
               )}
             </p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 mb-6">
-          <Dialog
-            open={dialogOpen === "suprimento"}
-            onOpenChange={(o) => handleDialogOpenChange(o, "suprimento")}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => setDialogOpen("suprimento")}
           >
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                <ArrowUpCircle className="h-4 w-4 mr-2" />
-                Suprimento
-              </Button>
-            </DialogTrigger>
-          </Dialog>
+            <ArrowUpCircle className="h-4 w-4 mr-2" />
+            Suprimento
+          </Button>
 
-          <TransactionDialog
-            open={dialogOpen === "suprimento"}
-            onOpenChange={(o) => handleDialogOpenChange(o, "suprimento")}
-            title="Realizar Suprimento"
-            description="Adicione dinheiro ao caixa."
-            confirmLabel="Confirmar Suprimento"
-            processingLabel="Adicionando..."
-            onConfirm={() => handleAction("suprimento")}
-            processing={processing}
-            inputValue={inputValue}
-            setInputValue={setInputValue}
-            descriptionValue={description}
-            setDescriptionValue={setDescription}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-          />
-
-          <Dialog
-            open={dialogOpen === "sangria"}
-            onOpenChange={(o) => handleDialogOpenChange(o, "sangria")}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => setDialogOpen("sangria")}
           >
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                <ArrowDownCircle className="h-4 w-4 mr-2" />
-                Sangria
-              </Button>
-            </DialogTrigger>
-          </Dialog>
-
-          <TransactionDialog
-            open={dialogOpen === "sangria"}
-            onOpenChange={(o) => handleDialogOpenChange(o, "sangria")}
-            title="Realizar Sangria"
-            description="Retire dinheiro do caixa."
-            confirmLabel="Confirmar Sangria"
-            processingLabel="Retirando..."
-            onConfirm={() => handleAction("sangria")}
-            processing={processing}
-            inputValue={inputValue}
-            setInputValue={setInputValue}
-            descriptionValue={description}
-            setDescriptionValue={setDescription}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            // Props para Troca PIX (Movido para Sangria)
-            allowTrocaPix={true}
-            isTrocaPix={isTrocaPix}
-            setIsTrocaPix={setIsTrocaPix}
-            trocaPixTrocoValue={trocaPixTrocoValue}
-            setTrocaPixTrocoValue={setTrocaPixTrocoValue}
-            onConfirmTrocaPix={handleTrocaPix}
-          />
+            <ArrowDownCircle className="h-4 w-4 mr-2" />
+            Sangria
+          </Button>
 
           {simpleMode ? (
             <Button
@@ -620,28 +575,71 @@ export function MeuCaixa({
               {processing ? "Fechando..." : "Fechar Rápido"}
             </Button>
           ) : (
-            <>
-              <Button
-                variant="destructive"
-                className="w-full sm:w-auto"
-                onClick={() => setDialogOpen("fechar")}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Fechar Caixa
-              </Button>
-
-              <FechamentoCaixaDialog
-                open={dialogOpen === "fechar"}
-                onOpenChange={(open) => !open && setDialogOpen(null)}
-                onSuccess={async () => {
-                  setDialogOpen(null);
-                  await fetchStatus();
-                  router.refresh();
-                }}
-              />
-            </>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={() => setDialogOpen("fechar")}
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Fechar Caixa
+            </Button>
           )}
         </div>
+
+        {/* Dialogs movidos para evitar interferência no layout flex */}
+        <TransactionDialog
+          open={dialogOpen === "suprimento"}
+          onOpenChange={(o) => handleDialogOpenChange(o, "suprimento")}
+          title="Realizar Suprimento"
+          description="Adicione dinheiro ao caixa."
+          confirmLabel="Confirmar Suprimento"
+          processingLabel="Adicionando..."
+          onConfirm={() => handleAction("suprimento")}
+          processing={processing}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          descriptionValue={description}
+          setDescriptionValue={setDescription}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+        />
+
+        <TransactionDialog
+          open={dialogOpen === "sangria"}
+          onOpenChange={(o) => handleDialogOpenChange(o, "sangria")}
+          title="Realizar Sangria"
+          description="Retire dinheiro do caixa."
+          confirmLabel="Confirmar Sangria"
+          processingLabel="Retirando..."
+          onConfirm={() => handleAction("sangria")}
+          processing={processing}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          descriptionValue={description}
+          setDescriptionValue={setDescription}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          // Props para Troca PIX (Movido para Sangria)
+          allowTrocaPix={true}
+          isTrocaPix={isTrocaPix}
+          setIsTrocaPix={setIsTrocaPix}
+          trocaPixTrocoValue={trocaPixTrocoValue}
+          setTrocaPixTrocoValue={setTrocaPixTrocoValue}
+          onConfirmTrocaPix={handleTrocaPix}
+        />
+
+        {!simpleMode && (
+          <FechamentoCaixaDialog
+            open={dialogOpen === "fechar"}
+            onOpenChange={(open) => !open && setDialogOpen(null)}
+            saldoInicial={Number(caixa.saldoInicial)}
+            onSuccess={async () => {
+              setDialogOpen(null);
+              await fetchStatus();
+              router.refresh();
+            }}
+          />
+        )}
       </CardContent>
     </Card>
   );

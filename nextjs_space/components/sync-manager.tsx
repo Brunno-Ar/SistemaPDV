@@ -16,7 +16,7 @@ export function SyncManager() {
       hasSynced.current = false;
       db.delete()
         .then(() => {
-          console.log("Local DB cleared on logout");
+          // console.log("Local DB cleared on logout");
         })
         .catch((err) => console.error("Error clearing DB", err));
     }
@@ -35,7 +35,7 @@ export function SyncManager() {
     if (status !== "authenticated") return;
 
     const handleOnline = () => {
-      console.log("Back online! Syncing sales...");
+      // console.log("Back online! Syncing sales...");
       syncOfflineSales();
       syncProducts(); // Refresh catalog too
     };
@@ -64,7 +64,7 @@ export function SyncManager() {
         await db.products.bulkAdd(products);
       });
 
-      console.log("Products synced:", products.length);
+      // console.log("Products synced:", products.length);
 
       // Emitir evento de sucesso
       window.dispatchEvent(

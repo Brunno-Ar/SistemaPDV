@@ -149,6 +149,7 @@ model Empresa {
   liberacaoTemporariaAte DateTime? @map("liberacao_temporaria_ate")
   ultimoDesbloqueio      DateTime? @map("ultimo_desbloqueio")
   cupomAplicado          String?   @map("cupom_aplicado")
+  senhaAutorizacao       String?   @map("senha_autorizacao") @db.Text
 
   cicloPagamento  String        @default("MENSAL") @map("ciclo_pagamento") // Mantido por legado, mas use 'ciclo'
   formaPagamento  String        @default("BOLETO_PIX") @map("forma_pagamento")

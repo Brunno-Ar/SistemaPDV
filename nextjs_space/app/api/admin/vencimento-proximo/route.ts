@@ -11,7 +11,9 @@ export async function GET() {
 
     if (
       !session?.user ||
-      (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente")
+      (session.user.role !== "admin" &&
+        session.user.role !== "master" &&
+        session.user.role !== "gerente")
     ) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 });
     }
@@ -20,7 +22,7 @@ export async function GET() {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +61,7 @@ export async function GET() {
     console.error("Erro ao buscar lotes próximos do vencimento:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

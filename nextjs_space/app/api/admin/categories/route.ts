@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest) {
     if (!session?.user?.empresaId) {
       return NextResponse.json(
         { error: "Acesso negado ou empresa não identificada" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function GET(_request: NextRequest) {
     console.error("Erro ao buscar categorias:", error);
     return NextResponse.json(
       { error: "Erro interno ao buscar categorias" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
           error:
             "Acesso negado. Apenas administradores podem criar categorias.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (!nome || typeof nome !== "string" || nome.trim() === "") {
       return NextResponse.json(
         { error: "O nome da categoria é obrigatório" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     if (existingCategory) {
       return NextResponse.json(
         { error: "Já existe uma categoria com este nome" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     console.error("Erro ao criar categoria:", error);
     return NextResponse.json(
       { error: "Erro interno ao criar categoria" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

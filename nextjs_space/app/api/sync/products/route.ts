@@ -30,7 +30,7 @@ async function signUrlsInBatches(products: any[], batchSize = 10) {
               // Retorna null para mostrar o placeholder
               console.error(
                 `[SYNC] Erro ao assinar URL para produto ${product.id} (path: ${product.imagemUrl})`,
-                e
+                e,
               );
               finalImageUrl = null;
             }
@@ -45,7 +45,7 @@ async function signUrlsInBatches(products: any[], batchSize = 10) {
           estoqueAtual: product.estoqueAtual,
           imagemUrl: finalImageUrl,
         };
-      })
+      }),
     );
     results.push(...batchResults);
   }

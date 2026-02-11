@@ -102,8 +102,8 @@ export function RelatoriosTable({ recentSales }: RelatoriosTableProps) {
                         sale.margem > 30
                           ? "default"
                           : sale.margem > 15
-                          ? "secondary"
-                          : "destructive"
+                            ? "secondary"
+                            : "destructive"
                       }
                     >
                       {(sale.margem || 0).toFixed(1)}%

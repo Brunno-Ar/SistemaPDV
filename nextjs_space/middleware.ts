@@ -76,7 +76,7 @@ export default withAuth(
       if (token?.role !== "master") {
         return NextResponse.json(
           { error: "Acesso negado. Apenas usuários master." },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -90,7 +90,7 @@ export default withAuth(
       ) {
         return NextResponse.json(
           { error: "Acesso negado. Apenas administradores e gerentes." },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -115,7 +115,7 @@ export default withAuth(
         return !!token;
       },
     },
-  }
+  },
 );
 
 export const config = {

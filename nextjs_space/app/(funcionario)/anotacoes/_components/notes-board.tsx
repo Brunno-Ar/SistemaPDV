@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Edit, Save, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, Save, X, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -276,7 +276,9 @@ export default function NotesBoard({ initialNotes }: { initialNotes: Note[] }) {
               <Plus className="w-8 h-8 opacity-50" />
             </div>
             <p>Nenhuma anotação ainda.</p>
-            <p className="text-sm mt-1">Clique em "Nova Nota" para começar.</p>
+            <p className="text-sm mt-1">
+              Clique em &quot;Nova Nota&quot; para começar.
+            </p>
           </div>
         )}
       </div>

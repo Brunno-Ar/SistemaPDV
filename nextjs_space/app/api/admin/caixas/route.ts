@@ -25,7 +25,7 @@ export async function GET() {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function GET() {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -94,7 +94,7 @@ export async function GET() {
         const vendasCartao = vendasCaixa
           .filter(
             (v) =>
-              v.metodoPagamento === "credito" || v.metodoPagamento === "debito"
+              v.metodoPagamento === "credito" || v.metodoPagamento === "debito",
           )
           .reduce((acc, v) => acc + Number(v.valorTotal), 0);
 
@@ -105,7 +105,7 @@ export async function GET() {
           .filter(
             (m) =>
               m.tipo === "SANGRIA" &&
-              (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+              (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
           )
           .reduce((acc, m) => acc + Number(m.valor), 0);
 
@@ -114,7 +114,7 @@ export async function GET() {
             (m) =>
               m.tipo === "SANGRIA" &&
               m.metodoPagamento &&
-              m.metodoPagamento !== "dinheiro"
+              m.metodoPagamento !== "dinheiro",
           )
           .reduce((acc, m) => acc + Number(m.valor), 0);
 
@@ -122,7 +122,7 @@ export async function GET() {
           .filter(
             (m) =>
               m.tipo === "SUPRIMENTO" &&
-              (!m.metodoPagamento || m.metodoPagamento === "dinheiro")
+              (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
           )
           .reduce((acc, m) => acc + Number(m.valor), 0);
 
@@ -131,7 +131,7 @@ export async function GET() {
             (m) =>
               m.tipo === "SUPRIMENTO" &&
               m.metodoPagamento &&
-              m.metodoPagamento !== "dinheiro"
+              m.metodoPagamento !== "dinheiro",
           )
           .reduce((acc, m) => acc + Number(m.valor), 0);
 
@@ -186,10 +186,10 @@ export async function GET() {
             })),
           ].sort(
             (a, b) =>
-              new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime()
+              new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime(),
           ),
         };
-      })
+      }),
     );
 
     // Resumo geral
@@ -197,16 +197,16 @@ export async function GET() {
       totalCaixasAbertos: caixasAbertos.length,
       totalVendasDia: caixasComVendas.reduce(
         (acc, c) => acc + c.vendas.total,
-        0
+        0,
       ),
       totalSangrias: caixasComVendas.reduce((acc, c) => acc + c.sangrias, 0),
       totalSuprimentos: caixasComVendas.reduce(
         (acc, c) => acc + c.suprimentos,
-        0
+        0,
       ),
       totalDinheiroCaixas: caixasComVendas.reduce(
         (acc, c) => acc + c.dinheiroCaixa,
-        0
+        0,
       ),
     };
 
@@ -218,7 +218,7 @@ export async function GET() {
     console.error("Erro ao buscar caixas:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

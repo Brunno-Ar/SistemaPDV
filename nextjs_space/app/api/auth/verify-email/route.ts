@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     if (!token) {
       return NextResponse.json(
         { error: "Token não fornecido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     if (!user) {
       return NextResponse.json(
         { error: "Usuário não encontrado" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
     console.error("Erro ao verificar email:", error);
     return NextResponse.json(
       { error: "Erro interno ao verificar email" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

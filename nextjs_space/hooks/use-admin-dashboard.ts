@@ -37,7 +37,7 @@ interface LoteVencimento {
 
 export function useAdminDashboard() {
   const [produtosEstoqueBaixo, setProdutosEstoqueBaixo] = useState<Product[]>(
-    []
+    [],
   );
   const [lotesVencimentoProximo, setLotesVencimentoProximo] = useState<
     LoteVencimento[]

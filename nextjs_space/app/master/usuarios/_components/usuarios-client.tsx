@@ -234,7 +234,7 @@ export default function UsuariosClient() {
             <div className="text-sm font-semibold text-green-900 dark:text-green-100">
               {masters.length > 0
                 ? new Date(
-                    masters[masters.length - 1].createdAt
+                    masters[masters.length - 1].createdAt,
                   ).toLocaleDateString("pt-BR")
                 : "N/A"}
             </div>

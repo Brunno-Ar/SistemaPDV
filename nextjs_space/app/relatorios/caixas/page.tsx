@@ -4,7 +4,13 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/ui/page-header";
 import { CaixasTable } from "./_components/caixas-table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default async function RelatoriosCaixasPage() {
   const session = await getServerSession(authOptions);

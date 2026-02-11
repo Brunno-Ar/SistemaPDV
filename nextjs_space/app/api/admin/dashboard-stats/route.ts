@@ -22,7 +22,7 @@ export async function GET() {
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Apenas administradores e gerentes." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -31,7 +31,7 @@ export async function GET() {
     if (!empresaId) {
       return NextResponse.json(
         { error: "Empresa não identificada" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -215,7 +215,7 @@ export async function GET() {
     console.error("Erro ao buscar estatísticas do dashboard:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

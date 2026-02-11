@@ -13,7 +13,11 @@ export default async function RelatoriosPage() {
   }
 
   // Verificar se é Admin
-  if (session.user.role !== "admin" && session.user.role !== "master" && session.user.role !== "gerente") {
+  if (
+    session.user.role !== "admin" &&
+    session.user.role !== "master" &&
+    session.user.role !== "gerente"
+  ) {
     redirect("/vender");
   }
 
