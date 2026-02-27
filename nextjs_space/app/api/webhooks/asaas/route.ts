@@ -93,9 +93,97 @@ export async function POST(req: NextRequest) {
         data: {
           status: "ATIVO",
           vencimentoPlano: novoVencimento,
-          webhookEventId: eventId, // Salvar para idempotência
+          webhookEventId: eventId,
         },
       });
+
+      // ========== MEMBER GET MEMBER: RECOMPENSA ==========
+      // Verifica se esta empresa que acabou de pagar é uma indicação pendente
+      try {
+        const conversaoPendente = await prisma.memberConversion.findUnique({
+          where: { novaEmpresaId: empresa.id },
+          include: {
+            link: {
+              include: {
+                empresa: true,
+              },
+            },
+          },
+        });
+
+        if (
+          conversaoPendente &&
+          conversaoPendente.status === "TRIAL" &&
+          !conversaoPendente.mesGratisGerado
+        ) {
+          const empresaIndicadora = conversaoPendente.link.empresa;
+
+          // 1. Atualizar status da conversão para PAGO
+          await prisma.memberConversion.update({
+            where: { id: conversaoPendente.id },
+            data: {
+              status: "PAGO",
+              mesGratisGerado: true,
+            },
+          });
+
+          // 2. Estender vencimento da empresa INDICADORA em +1 mês
+          const hoje = new Date();
+          let novoVencimentoIndicador: Date;
+
+          if (
+            empresaIndicadora.vencimentoPlano &&
+            empresaIndicadora.vencimentoPlano > hoje
+          ) {
+            novoVencimentoIndicador = new Date(
+              empresaIndicadora.vencimentoPlano,
+            );
+          } else {
+            novoVencimentoIndicador = new Date();
+          }
+
+          const diaAtual = novoVencimentoIndicador.getDate();
+          novoVencimentoIndicador.setMonth(
+            novoVencimentoIndicador.getMonth() + 1,
+          );
+          if (novoVencimentoIndicador.getDate() !== diaAtual) {
+            novoVencimentoIndicador.setDate(0);
+          }
+
+          await prisma.empresa.update({
+            where: { id: empresaIndicadora.id },
+            data: {
+              vencimentoPlano: novoVencimentoIndicador,
+              status: "ATIVO",
+            },
+          });
+
+          // 3. Sincronizar novo vencimento com o Asaas (se a indicadora tiver assinatura)
+          if (empresaIndicadora.asaasSubscriptionId) {
+            try {
+              const { asaas } = await import("@/lib/asaas");
+              await asaas.updateSubscriptionDueDate(
+                empresaIndicadora.asaasSubscriptionId,
+                novoVencimentoIndicador,
+              );
+            } catch (asaasErr) {
+              console.warn(
+                "⚠️ [MGM] Falha ao atualizar vencimento no Asaas para indicador:",
+                asaasErr,
+              );
+            }
+          }
+
+          console.log(
+            `🎁 [MGM] Recompensa aplicada! Empresa "${empresaIndicadora.nome}" ganhou +1 mês (novo venc: ${novoVencimentoIndicador.toISOString()}) pela indicação da empresa "${empresa.nome}"`,
+          );
+        }
+      } catch (mgmError) {
+        console.error(
+          "⚠️ [MGM] Erro ao processar recompensa de indicação:",
+          mgmError,
+        );
+      }
     } else if (event === "PAYMENT_OVERDUE") {
       // Pagamento atrasado: Verificar grace period antes de pausar
 
