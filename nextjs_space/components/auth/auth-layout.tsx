@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { Sparkles } from "@/components/Sparkles";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ReactNode } from "react";
+import Image from "next/image";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -38,10 +39,13 @@ export function AuthLayout({
         }`}
       >
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-            <span className="text-white font-bold text-xl">F</span>
-          </div>
-          <span className="text-xl font-bold tracking-tight">Flow PDV</span>
+          <Image
+            src="/logo.png"
+            alt="Flow PDV Logo"
+            width={120}
+            height={40}
+            className="group-hover:scale-105 transition-transform h-auto w-auto max-h-10"
+          />
         </Link>
       </div>
 
@@ -58,10 +62,14 @@ export function AuthLayout({
         {formPosition === "right" && (
           <div className="absolute top-8 left-8 z-20">
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="text-white font-bold text-xl">F</span>
-              </div>
-              <span className="text-xl font-bold tracking-tight">Flow PDV</span>
+              <Image
+                src="/logo.png"
+                alt="FlowPDV"
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-lg group-hover:scale-110 transition-transform"
+              />
+              <span className="text-xl font-bold tracking-tight">FlowPDV</span>
             </Link>
           </div>
         )}

@@ -6,6 +6,7 @@ import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useTheme } from "next-themes";
+import Image from "next/image";
 
 interface Links {
   label: string;
@@ -144,9 +145,13 @@ export const MobileSidebar = ({
       >
         {/* Logo visível no mobile */}
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center">
-            <span className="text-[#137fec] font-bold text-lg">F</span>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="FlowPDV"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-lg"
+          />
           <span className="font-bold text-lg text-white">FlowPDV</span>
         </div>
         <div className="flex items-center z-20">
@@ -174,9 +179,13 @@ export const MobileSidebar = ({
               {/* Header do menu mobile */}
               <div className="flex items-center justify-between py-4 border-b border-white/20 mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center">
-                    <span className="text-[#137fec] font-bold text-lg">F</span>
-                  </div>
+                  <Image
+                    src="/logo.png"
+                    alt="FlowPDV"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 rounded-lg"
+                  />
                   <span className="font-bold text-lg text-white">FlowPDV</span>
                 </div>
                 <div
@@ -251,11 +260,12 @@ export const SidebarBrand = () => {
   const { open } = useSidebar();
   return (
     <div className="flex items-center gap-2 mb-8">
-      <div
-        className={cn(
-          "h-8 w-8 rounded-lg flex-shrink-0 transition-colors",
-          open ? "bg-white" : "bg-[#137fec]",
-        )}
+      <Image
+        src="/logo.png"
+        alt="FlowPDV"
+        width={32}
+        height={32}
+        className="h-8 w-8 rounded-lg flex-shrink-0"
       />
       <motion.span
         animate={{

@@ -12,6 +12,7 @@ import {
   Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -130,11 +131,15 @@ export default function BloqueadoPage() {
       >
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">F</span>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="FlowPDV"
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-lg"
+          />
           <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Flow PDV
+            FlowPDV
           </span>
         </div>
 
