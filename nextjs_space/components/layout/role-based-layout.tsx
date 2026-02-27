@@ -84,19 +84,24 @@ export default function RoleBasedLayout({
         icon: <Store className="h-5 w-5 flex-shrink-0" />,
       },
       {
+        label: "Planos",
+        href: "/master/planos",
+        icon: <CreditCard className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
         label: "Cupons",
         href: "/master/cupons",
-        icon: <CreditCard className="h-5 w-5 flex-shrink-0" />,
+        icon: <Gift className="h-5 w-5 flex-shrink-0" />, // Changed to Gift since CreditCard is used for Planos
       },
       {
         label: "Indicações",
         href: "/master/indicacoes",
-        icon: <Gift className="h-5 w-5 flex-shrink-0" />,
+        icon: <Users className="h-5 w-5 flex-shrink-0" />, // Changed to Users or similar
       },
       {
         label: "Usuários",
         href: "/master/usuarios",
-        icon: <Users className="h-5 w-5 flex-shrink-0" />,
+        icon: <User className="h-5 w-5 flex-shrink-0" />,
       },
       {
         label: "Configurações",

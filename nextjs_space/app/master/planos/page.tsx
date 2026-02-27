@@ -1,32 +1,30 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import PlanosClient from "./_components/planos-client";
 
-export default function PlanosPage() {
+export default async function PlanosPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "master") {
+    redirect("/vender");
+  }
+
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">
-          Precificação Dinâmica de Planos
-        </h2>
-      </div>
+    <div className="h-full">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <header className="flex flex-col gap-1 mb-8">
+          <h1 className="text-3xl font-black tracking-tight text-gray-900 dark:text-white">
+            Precificação Dinâmica
+          </h1>
+          <p className="text-base text-gray-500 dark:text-gray-400">
+            Reajuste do valor da assinatura e sincronização manual em tempo
+            real.
+          </p>
+        </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Painel de Planos</CardTitle>
-          <CardDescription>
-            Reajuste do valor da assinatura e sincronização em tempo real com a
-            API do Asaas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>Componente a ser implementado...</p>
-        </CardContent>
-      </Card>
+        <PlanosClient />
+      </div>
     </div>
   );
 }
