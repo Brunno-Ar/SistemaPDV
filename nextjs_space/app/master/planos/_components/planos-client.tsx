@@ -40,6 +40,7 @@ interface EmpresaPlan {
   valorAtual?: number | null;
   statusAsaas?: string;
   loadingValor?: boolean;
+  indicadosPagos?: number;
 }
 
 export default function PlanosClient() {
@@ -219,6 +220,7 @@ export default function PlanosClient() {
               <TableHead>Empresa</TableHead>
               <TableHead>Documento</TableHead>
               <TableHead>Status Asaas</TableHead>
+              <TableHead className="text-center">Indicações (Ativas)</TableHead>
               <TableHead className="text-right">Valor do Plano</TableHead>
               <TableHead className="text-center">Ações</TableHead>
             </TableRow>
@@ -276,6 +278,19 @@ export default function PlanosClient() {
                       <div className="flex items-center text-zinc-400 text-xs gap-1">
                         <Loader2 className="w-3 h-3 animate-spin" /> Sync...
                       </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {empresa.indicadosPagos != null &&
+                    empresa.indicadosPagos > 0 ? (
+                      <Badge
+                        variant="secondary"
+                        className="bg-amber-100 text-amber-800 hover:bg-amber-200"
+                      >
+                        ⭐ {empresa.indicadosPagos} indicações
+                      </Badge>
+                    ) : (
+                      <span className="text-zinc-400 text-xs">Nenhuma</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right font-medium">

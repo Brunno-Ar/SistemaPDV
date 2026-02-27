@@ -17,6 +17,15 @@ export async function getEmpresasComAssinatura() {
         asaasSubscriptionId: true,
         cpfCnpj: true,
         status: true,
+        _count: {
+          select: {
+            indicados: {
+              where: {
+                status: "PAGO",
+              },
+            },
+          },
+        },
       },
       orderBy: {
         nome: "asc",
@@ -26,6 +35,7 @@ export async function getEmpresasComAssinatura() {
     return empresas.map((empresa) => ({
       ...empresa,
       asaasSubscriptionId: empresa.asaasSubscriptionId as string,
+      indicadosPagos: empresa._count.indicados,
     }));
   } catch (error) {
     console.error("Erro ao buscar empresas:", error);
