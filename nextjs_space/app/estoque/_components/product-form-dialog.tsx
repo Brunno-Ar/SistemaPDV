@@ -20,6 +20,7 @@ import { Plus, Package } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { parseCurrency } from "@/lib/utils";
+import { calculateMargin } from "@/lib/product-utils";
 import Image from "next/image";
 
 interface Category {
@@ -412,6 +413,18 @@ export function ProductFormDialog({
                 required
                 className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-gray-700 dark:text-gray-300">
+                Margem (%)
+              </Label>
+              <div className="flex h-10 w-full items-center rounded-md border border-input bg-gray-100 dark:bg-zinc-800 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-700">
+                {calculateMargin(
+                  parseCurrency(formData.precoVenda),
+                  parseCurrency(formData.precoCompra),
+                ).toFixed(2)}
+                %
+              </div>
             </div>
           </div>
 

@@ -100,7 +100,7 @@ function ProductCard({
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Lucro</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Margem</p>
             <p
               className={`text-sm font-semibold ${
                 product.precoVenda - product.precoCompra > 0
@@ -111,10 +111,10 @@ function ProductCard({
               R$ {(product.precoVenda - product.precoCompra).toFixed(2)}
               <span className="text-xs font-normal ml-1">
                 (
-                {product.precoCompra > 0
+                {product.precoVenda > 0
                   ? (
                       ((product.precoVenda - product.precoCompra) /
-                        product.precoCompra) *
+                        product.precoVenda) *
                       100
                     ).toFixed(0)
                   : 0}
@@ -280,13 +280,13 @@ export function ProductTable({
                             : "text-red-600 dark:text-red-400"
                         }`}
                       >
-                        Lucro: R${" "}
+                        Margem: R${" "}
                         {(product.precoVenda - product.precoCompra).toFixed(2)}{" "}
                         (
-                        {product.precoCompra > 0
+                        {product.precoVenda > 0
                           ? (
                               ((product.precoVenda - product.precoCompra) /
-                                product.precoCompra) *
+                                product.precoVenda) *
                               100
                             ).toFixed(0)
                           : 0}
