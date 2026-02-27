@@ -17,7 +17,7 @@ import dynamicLoader from "next/dynamic";
 const OnboardingTour = dynamicLoader(
   () =>
     import("@/components/onboarding-tour").then((mod) => mod.OnboardingTour),
-  { ssr: false }
+  { ssr: false },
 );
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
@@ -29,8 +29,9 @@ export const metadata: Metadata = {
   title: "FlowPDV - Sistema de Gestão",
   description: "Sistema de Ponto de Venda com controle de estoque",
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/logo.png",
   },
   manifest: "/manifest.json",
   openGraph: {
