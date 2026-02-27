@@ -58,9 +58,14 @@ scripts/use-prod-db.ps1
 
 # Agent/AI folder
 .agent/
+.agents/
 
 # TestSprite artifacts
 testsprite_tests/
 
 # Next-PWA fallbacks
 public/fallback-*.js
+
+# Relatórios de teste/auditoria
+report-*.json
+lint-log.txt
