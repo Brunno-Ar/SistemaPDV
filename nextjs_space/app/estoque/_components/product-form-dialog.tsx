@@ -20,7 +20,7 @@ import { Plus, Package } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { parseCurrency } from "@/lib/utils";
-import { calculateMargin } from "@/lib/product-utils";
+import { calculateMargin } from "@/lib/product-calc";
 import Image from "next/image";
 
 interface Category {
