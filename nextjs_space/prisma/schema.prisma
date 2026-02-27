@@ -166,6 +166,8 @@ model Empresa {
   cancelamentos Cancelamento[]
   notes         Note[]
   expenses      Expense[]
+  indicacoes    MemberLink[]     @relation("Indicador")
+  indicados     MemberConversion[] @relation("Indicado")
 
   @@map("empresas")
 }
@@ -431,4 +433,52 @@ model Expense {
   @@index([date])
   @@index([category])
   @@map("expenses")
+}
+
+// ----------------------------------------------------------------------
+// MEMBER GET MEMBER (Sistema de Indicações)
+// ----------------------------------------------------------------------
+
+// Tabela que guarda o código único de indicação gerado para uma empresa
+model MemberLink {
+  id          String   @id @default(cuid())
+  empresaId   String   @unique @map("empresa_id") // Cada empresa (Indicador) tem apenas 1 link ativo
+  codigoURL   String   @unique @map("codigo_url") // Ex: "loja-do-joao-123"
+  ativo       Boolean  @default(true)
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  // Métricas rápidas de funil
+  cliques     Int      @default(0)
+
+  // Relacionamentos
+  empresa     Empresa  @relation("Indicador", fields: [empresaId], references: [id], onDelete: Cascade)
+  conversoes  MemberConversion[]
+
+  @@index([codigoURL])
+  @@map("member_links")
+}
+
+// Tabela que rastreia os cadastros feitos usando um link de indicação
+model MemberConversion {
+  id              String   @id @default(cuid())
+  linkId          String   @map("link_id")
+  novaEmpresaId   String   @unique @map("nova_empresa_id") // A nova empresa que se cadastrou trial
+  status          StatusConversao @default(TRIAL)
+  
+  // Rastreamento de recompensa
+  mesGratisGerado Boolean  @default(false) @map("mes_gratis_gerado")
+  criadoEm        DateTime @default(now()) @map("criado_em")
+  atualizadoEm    DateTime @updatedAt @map("atualizado_em")
+
+  // Relacionamentos
+  link          MemberLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  novaEmpresa   Empresa    @relation("Indicado", fields: [novaEmpresaId], references: [id], onDelete: Restrict)
+
+  @@index([linkId])
+  @@map("member_conversions")
+}
+
+enum StatusConversao {
+  TRIAL
+  PAGO
 }

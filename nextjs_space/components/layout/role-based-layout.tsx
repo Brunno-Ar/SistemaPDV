@@ -25,6 +25,7 @@ import {
   CreditCard,
   StickyNote,
   Wallet,
+  Gift,
 } from "lucide-react";
 import { useLogout } from "@/hooks/use-logout";
 
@@ -86,6 +87,11 @@ export default function RoleBasedLayout({
         label: "Cupons",
         href: "/master/cupons",
         icon: <CreditCard className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
+        label: "Indicações",
+        href: "/master/indicacoes",
+        icon: <Gift className="h-5 w-5 flex-shrink-0" />,
       },
       {
         label: "Usuários",
@@ -190,6 +196,12 @@ export default function RoleBasedLayout({
         href: "/relatorios",
         icon: <BarChart3 className="h-5 w-5 flex-shrink-0" />,
         id: "menu-relatorios",
+      },
+      {
+        label: "Indicações",
+        href: "/admin/indicacoes",
+        icon: <Gift className="h-5 w-5 flex-shrink-0" />,
+        id: "menu-indicacoes",
       },
       {
         label: "Minha Conta",

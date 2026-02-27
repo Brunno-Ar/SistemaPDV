@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export interface SignupFormData {
   email: string;
@@ -27,6 +27,8 @@ interface CupomStatus {
 
 export function useSignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
@@ -34,6 +36,16 @@ export function useSignupForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [cupomStatus, setCupomStatus] = useState<CupomStatus | null>(null);
+
+  useEffect(() => {
+    if (refCode) {
+      fetch("/api/referral/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref: refCode }),
+      }).catch(() => {});
+    }
+  }, [refCode]);
 
   const [formData, setFormData] = useState<SignupFormData>({
     email: "",
@@ -232,6 +244,7 @@ export function useSignupForm() {
         cupom:
           formData.cupom && cupomStatus?.valid ? formData.cupom : undefined,
         termsAccepted: formData.termsAccepted,
+        ref: refCode || undefined,
       };
 
       const signupResponse = await fetch("/api/signup", {
