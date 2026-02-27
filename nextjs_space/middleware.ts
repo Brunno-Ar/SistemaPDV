@@ -120,6 +120,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/((?!api/auth|api/profile|api/webhooks|login|signup|_next/static|_next/image|favicon.ico|favicon.svg|sw.js|manifest.json|workbox-.*).*)",
+    "/((?!api/auth|api/profile|api/webhooks|login|signup|_next/static|_next/image|favicon.ico|favicon.svg|favicon.png|logo.png|icon.png|apple-icon.png|sw.js|manifest.json|workbox-.*).*)",
   ],
 };

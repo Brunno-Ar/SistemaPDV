@@ -21,7 +21,7 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
     try {
       // Try to fetch a small resource (favicon or specific ping endpoint)
       // Cache-busting to prevent false positives
-      const res = await fetch("/favicon.svg?" + Date.now(), {
+      const res = await fetch("/favicon.png?" + Date.now(), {
         method: "HEAD",
         cache: "no-store",
       });
