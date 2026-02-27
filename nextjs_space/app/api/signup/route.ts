@@ -330,6 +330,24 @@ export async function POST(request: NextRequest) {
             });
           }
 
+          // 4. Vincular indicação (Member Get Member)
+          const refCode = body.ref;
+          if (refCode && typeof refCode === "string") {
+            const memberLink = await tx.memberLink.findUnique({
+              where: { codigoURL: refCode },
+            });
+
+            if (memberLink && memberLink.ativo) {
+              await tx.memberConversion.create({
+                data: {
+                  linkId: memberLink.id,
+                  novaEmpresaId: empresa.id,
+                  status: "TRIAL",
+                },
+              });
+            }
+          }
+
           return { empresa, admin };
         },
       );
