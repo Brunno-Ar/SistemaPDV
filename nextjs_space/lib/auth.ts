@@ -48,40 +48,43 @@ export const authOptions: AuthOptions = {
           const empresa: any = user.empresa;
           const status = empresa.status as string;
           const now = new Date();
+          const roleTag =
+            user.role === "admin" ? "[ROLE:admin]" : "[ROLE:employee]";
 
-          // 1. Empresa pendente de aprovação
           if (status === "PENDENTE") {
             throw new Error(
-              "Sua empresa está aguardando aprovação do administrador. Tente novamente mais tarde.",
+              `${roleTag}Sua empresa está aguardando aprovação do administrador. Tente novamente mais tarde.`,
             );
           }
 
-          // 2. Empresa pausada/suspensa
+          if (status === "CANCELADO") {
+            throw new Error(
+              `${roleTag}Esta empresa foi cancelada. Entre em contato com o suporte.`,
+            );
+          }
+
           if (status === "PAUSADO") {
             const liberacaoAte = empresa.liberacaoTemporariaAte;
-            // Se tiver liberação temporária válida, permite o acesso
             if (liberacaoAte && new Date(liberacaoAte) > now) {
               // Acesso liberado temporariamente
             } else {
-              throw new Error("Pagamento Pendente. Regularize para acessar.");
+              throw new Error(
+                `${roleTag}Pagamento Pendente. Regularize para acessar.`,
+              );
             }
           }
 
-          // 3. Mensalidade vencida (apenas para empresas ativas ou em teste)
           if (
             (status === "ATIVO" || status === "EM_TESTE") &&
             empresa.vencimentoPlano
           ) {
             const toleranceDate = new Date(empresa.vencimentoPlano);
-            // Tolerância de 10 dias apenas para ATIVO. EM_TESTE bloqueia imediatamente?
-            // User disse: "O bloqueio só acontece se ele não pagar após 14 dias" (referindo-se ao trial)
-            // Vou dar 1 dia de tolerância para o trial para evitar bloqueio no minuto exato
             const toleranceDays = status === "EM_TESTE" ? 1 : 10;
             toleranceDate.setDate(toleranceDate.getDate() + toleranceDays);
 
             if (now > toleranceDate) {
               throw new Error(
-                "Acesso bloqueado. O pagamento da sua mensalidade não foi realizado. Entre em contato com o suporte.",
+                `${roleTag}Acesso bloqueado. O pagamento da sua mensalidade não foi realizado.`,
               );
             }
           }
@@ -94,6 +97,7 @@ export const authOptions: AuthOptions = {
           role: user.role,
           empresaId: user.empresaId,
           empresaNome: user.empresa?.nome,
+          empresaStatus: (user.empresa as any)?.status || null,
           vencimentoPlano: user.empresa?.vencimentoPlano?.toISOString(),
           liberacaoTemporariaAte: (
             user.empresa as any
@@ -113,22 +117,24 @@ export const authOptions: AuthOptions = {
       return true;
     },
     async jwt({ token, user, trigger, session }) {
-      // Se é um novo login, adiciona os dados do usuário
       if (user) {
         token.role = user.role;
         token.empresaId = user.empresaId;
         token.empresaNome = user.empresaNome;
+        token.empresaStatus = user.empresaStatus;
         token.vencimentoPlano = user.vencimentoPlano;
         token.liberacaoTemporariaAte = user.liberacaoTemporariaAte;
         token.tourCompleted = user.tourCompleted;
         token.lastActivity = Date.now();
       }
 
-      // Atualizar última atividade se for um update manual
       if (trigger === "update") {
         token.lastActivity = Date.now();
         if (session?.tourCompleted !== undefined) {
           token.tourCompleted = session.tourCompleted;
+        }
+        if (session?.empresaStatus !== undefined) {
+          token.empresaStatus = session.empresaStatus;
         }
       }
 
@@ -140,6 +146,7 @@ export const authOptions: AuthOptions = {
         session.user.role = token.role as string;
         session.user.empresaId = token.empresaId as string;
         session.user.empresaNome = token.empresaNome as string;
+        session.user.empresaStatus = token.empresaStatus as string;
         session.user.vencimentoPlano = token.vencimentoPlano as string;
         session.user.liberacaoTemporariaAte = token.liberacaoTemporariaAte as
           | string

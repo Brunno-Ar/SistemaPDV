@@ -48,29 +48,37 @@ export default function LoginPage() {
       if (result?.error) {
         if (result.error === "CredentialsSignin") {
           setError("Email ou senha inválidos");
-        } else if (result.error.includes("aguardando aprovação")) {
-          // Redirecionar para página de bloqueio - empresa pendente
-          router.push(
-            `/bloqueado?reason=pendente&email=${encodeURIComponent(email)}`,
-          );
-        } else if (
-          result.error.includes("Acesso suspenso") ||
-          result.error.includes("Pagamento não identificado")
-        ) {
-          // Redirecionar para página de bloqueio - empresa pausada
-          router.push(
-            `/bloqueado?reason=pausado&email=${encodeURIComponent(email)}`,
-          );
-        } else if (
-          result.error.includes("Acesso bloqueado") ||
-          result.error.includes("mensalidade")
-        ) {
-          // Redirecionar para página de bloqueio - mensalidade vencida
-          router.push(
-            `/bloqueado?reason=vencido&email=${encodeURIComponent(email)}`,
-          );
         } else {
-          setError(result.error);
+          const roleMatch = result.error.match(/\[ROLE:(admin|employee)\]/);
+          const userRole = roleMatch ? roleMatch[1] : "employee";
+          const cleanError = result.error.replace(/\[ROLE:\w+\]/, "").trim();
+          const encodedEmail = encodeURIComponent(email);
+
+          if (cleanError.includes("aguardando aprovação")) {
+            router.push(
+              `/bloqueado?reason=pendente&email=${encodedEmail}&role=${userRole}`,
+            );
+          } else if (cleanError.includes("cancelada")) {
+            router.push(
+              `/bloqueado?reason=cancelado&email=${encodedEmail}&role=${userRole}`,
+            );
+          } else if (
+            cleanError.includes("Pagamento Pendente") ||
+            cleanError.includes("Regularize")
+          ) {
+            router.push(
+              `/bloqueado?reason=pausado&email=${encodedEmail}&role=${userRole}`,
+            );
+          } else if (
+            cleanError.includes("Acesso bloqueado") ||
+            cleanError.includes("mensalidade")
+          ) {
+            router.push(
+              `/bloqueado?reason=vencido&email=${encodedEmail}&role=${userRole}`,
+            );
+          } else {
+            setError(cleanError);
+          }
         }
       } else {
         const currentTime = Date.now().toString();

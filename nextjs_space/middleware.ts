@@ -6,7 +6,6 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Se o usuário já estiver logado e tentar acessar login ou signup, redireciona para a home correta
     if (token && (path === "/login" || path === "/signup")) {
       if (token.role === "master") {
         return NextResponse.redirect(new URL("/master", req.url));
@@ -15,6 +14,37 @@ export default withAuth(
         return NextResponse.redirect(new URL("/gerente", req.url));
       }
       return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    // Bloqueio SaaS: redirecionar empresas inadimplentes (exceto master e página bloqueado)
+    if (
+      token &&
+      token.role !== "master" &&
+      !path.startsWith("/bloqueado") &&
+      !path.startsWith("/api/billing") &&
+      !path.startsWith("/api/public") &&
+      !path.startsWith("/api/auth")
+    ) {
+      const empresaStatus = token.empresaStatus as string;
+
+      if (empresaStatus === "PAUSADO" || empresaStatus === "CANCELADO") {
+        const liberacaoAte = token.liberacaoTemporariaAte as string | undefined;
+        const hasValidRelease =
+          liberacaoAte && new Date(liberacaoAte) > new Date();
+
+        if (!hasValidRelease) {
+          const role = token.role === "admin" ? "admin" : "employee";
+          const reason =
+            empresaStatus === "CANCELADO" ? "cancelado" : "pausado";
+          const email = token.email || "";
+          return NextResponse.redirect(
+            new URL(
+              `/bloqueado?reason=${reason}&email=${encodeURIComponent(email)}&role=${role}`,
+              req.url,
+            ),
+          );
+        }
+      }
     }
 
     // Rotas exclusivas do MASTER
@@ -50,7 +80,6 @@ export default withAuth(
       path.startsWith("/admin") ||
       path.startsWith("/lotes")
     ) {
-      // Se for gerente tentando acessar /admin, redireciona para /gerente (dashboard dele)
       if (path.startsWith("/admin") && token?.role === "gerente") {
         return NextResponse.redirect(new URL("/gerente", req.url));
       }
@@ -98,7 +127,6 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Permitir acesso às rotas de auth
         if (
           req.nextUrl.pathname === "/" ||
           req.nextUrl.pathname.startsWith("/api/auth") ||
@@ -106,12 +134,14 @@ export default withAuth(
           req.nextUrl.pathname.startsWith("/signup") ||
           req.nextUrl.pathname.startsWith("/api/signup") ||
           req.nextUrl.pathname.startsWith("/api/webhooks") ||
-          req.nextUrl.pathname.startsWith("/api/cupons/validate")
+          req.nextUrl.pathname.startsWith("/api/cupons/validate") ||
+          req.nextUrl.pathname.startsWith("/bloqueado") ||
+          req.nextUrl.pathname.startsWith("/api/billing") ||
+          req.nextUrl.pathname.startsWith("/api/public")
         ) {
           return true;
         }
 
-        // Verificar se tem token válido para outras rotas protegidas
         return !!token;
       },
     },

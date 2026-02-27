@@ -9,6 +9,7 @@ declare module "next-auth" {
       role: string;
       empresaId?: string | null;
       empresaNome?: string | null;
+      empresaStatus?: string | null;
       status?: string | null;
       vencimentoPlano?: string | null;
       liberacaoTemporariaAte?: string | null;
@@ -21,6 +22,7 @@ declare module "next-auth" {
     role: string;
     empresaId?: string | null;
     empresaNome?: string | null;
+    empresaStatus?: string | null;
     status?: string | null;
     vencimentoPlano?: string | null;
     liberacaoTemporariaAte?: string | null;
@@ -33,6 +35,7 @@ declare module "next-auth/jwt" {
     role: string;
     empresaId?: string | null;
     empresaNome?: string | null;
+    empresaStatus?: string | null;
     status?: string | null;
     vencimentoPlano?: string | null;
     liberacaoTemporariaAte?: string | null;
