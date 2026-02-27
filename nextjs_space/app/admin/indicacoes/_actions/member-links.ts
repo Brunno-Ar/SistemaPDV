@@ -27,9 +27,26 @@ export async function getOrCreateMemberLink() {
     },
   });
 
-  // Se não tem, cria um baseado no ID da empresa
+  // Se não tem, gera um código aleatório único de 8 caracteres
   if (!link) {
-    const defaultCodigo = `link-${empresaId.substring(0, 8)}`;
+    let isUnique = false;
+    let defaultCodigo = "";
+
+    while (!isUnique) {
+      const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+      defaultCodigo = Array.from({ length: 8 })
+        .map(() => chars.charAt(Math.floor(Math.random() * chars.length)))
+        .join("");
+
+      const existing = await prisma.memberLink.findUnique({
+        where: { codigoURL: defaultCodigo },
+      });
+
+      if (!existing) {
+        isUnique = true;
+      }
+    }
+
     link = await prisma.memberLink.create({
       data: {
         empresaId,
