@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MuralAvisos } from "@/components/mural-avisos";
 import { formatCurrency } from "@/lib/utils";
-import { RestartTourButton } from "@/components/restart-tour-button";
 
 interface Sale {
   id: string;
@@ -66,7 +65,6 @@ export default function MinhaContaPage() {
             Acompanhe seu desempenho e histórico de vendas.
           </p>
         </div>
-        <RestartTourButton />
       </div>
 
       {/* Meta e Progresso */}

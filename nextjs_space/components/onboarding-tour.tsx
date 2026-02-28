@@ -87,19 +87,18 @@ export function OnboardingTour() {
   // Listener para o evento de reset do tour (vindo do botão)
   useEffect(() => {
     const handleTourReset = () => {
-      // console.log("🔄 Tour reset event received");
       hasInitialized.current = false;
       resetTourInStorage();
       clearShownThisSession();
-      // Pequeno delay para garantir que a sessão foi atualizada
       setTimeout(() => {
-        startTour();
-      }, 500);
+        markShownThisSession();
+        setRun(true);
+      }, 800);
     };
 
     window.addEventListener(TOUR_RESET_EVENT, handleTourReset);
     return () => window.removeEventListener(TOUR_RESET_EVENT, handleTourReset);
-  }, [startTour, resetTourInStorage, clearShownThisSession]);
+  }, [resetTourInStorage, clearShownThisSession, markShownThisSession]);
 
   // Lógica principal para decidir quando iniciar o tour
   useEffect(() => {
