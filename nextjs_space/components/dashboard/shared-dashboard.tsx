@@ -16,6 +16,7 @@ import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button
 import { MuralAvisos } from "@/components/mural-avisos";
 import { MeuCaixa } from "@/app/(funcionario)/dashboard/_components/meu-caixa";
 import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
+import { EmployeeOnboardingChecklist } from "@/components/features/onboarding-tour/employee-onboarding-checklist";
 
 export interface DashboardMetrics {
   salesToday: number;
@@ -88,6 +89,8 @@ export function SharedDashboard({
         </h1>
         <p className="text-gray-500 dark:text-gray-400">{subtitle}</p>
       </div>
+
+      <EmployeeOnboardingChecklist />
 
       {/* Caixa Widget - Passa dados pré-carregados */}
       <MeuCaixa initialData={caixaData} />
