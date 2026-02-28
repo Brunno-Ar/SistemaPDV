@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
+import Joyride, { CallBackProps, STATUS, Step, ACTIONS } from "react-joyride";
 import { useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { TOUR_RESET_EVENT } from "@/lib/events";
 
 const TOUR_COMPLETED_KEY = "flowpdv_tour_completed";
@@ -11,21 +11,17 @@ const TOUR_SHOWN_THIS_SESSION_KEY = "flowpdv_tour_shown_session";
 
 export function OnboardingTour() {
   const [run, setRun] = useState(false);
-  const [_isReady, setIsReady] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
   const { data: session, update, status: sessionStatus } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
 
-  // Use ref para controlar se o tour já foi iniciado nesta sessão de componente
   const hasInitialized = useRef(false);
 
-  // Obter valores diretamente da sessão cliente
   const role = session?.user?.role || "funcionario";
   const userId = session?.user?.id;
-
-  // tourCompleted da sessão - undefined enquanto carrega, true/false quando carregado
   const tourCompletedFromSession = session?.user?.tourCompleted;
 
-  // Bloqueio imediato de renderização em páginas públicas
   const publicPages = [
     "/login",
     "/forgot-password",
@@ -35,54 +31,69 @@ export function OnboardingTour() {
   ];
   const isPublicPage = publicPages.some((page) => pathname?.startsWith(page));
 
-  // Função para verificar se o tour foi mostrado nesta sessão do navegador (sessionStorage)
   const wasShownThisSession = useCallback(() => {
     if (typeof window === "undefined") return false;
     return sessionStorage.getItem(TOUR_SHOWN_THIS_SESSION_KEY) === "true";
   }, []);
 
-  // Função para marcar que o tour foi mostrado nesta sessão
   const markShownThisSession = useCallback(() => {
     if (typeof window === "undefined") return;
     sessionStorage.setItem(TOUR_SHOWN_THIS_SESSION_KEY, "true");
   }, []);
 
-  // Função para limpar o flag de sessão (usado no reset)
   const clearShownThisSession = useCallback(() => {
     if (typeof window === "undefined") return;
     sessionStorage.removeItem(TOUR_SHOWN_THIS_SESSION_KEY);
   }, []);
 
-  // Função para marcar tour como completado no localStorage (por userId)
   const markTourCompletedInStorage = useCallback(() => {
     if (typeof window === "undefined" || !userId) return;
     localStorage.setItem(`${TOUR_COMPLETED_KEY}_${userId}`, "true");
   }, [userId]);
 
-  // Função para verificar se está completado no localStorage
   const isTourCompletedInStorage = useCallback(() => {
     if (typeof window === "undefined" || !userId) return false;
     return localStorage.getItem(`${TOUR_COMPLETED_KEY}_${userId}`) === "true";
   }, [userId]);
 
-  // Função para resetar tour no localStorage
   const resetTourInStorage = useCallback(() => {
     if (typeof window === "undefined" || !userId) return;
     localStorage.removeItem(`${TOUR_COMPLETED_KEY}_${userId}`);
   }, [userId]);
 
-  // Função para iniciar o tour
-  const startTour = useCallback(() => {
-    if (
-      role !== "master" &&
-      sessionStatus === "authenticated" &&
-      session?.user
-    ) {
-      // console.log("🚀 Iniciando tour...");
-      markShownThisSession();
-      setRun(true);
+  const getDashboardPath = useCallback(() => {
+    if (role === "admin") return "/admin";
+    if (role === "gerente") return "/gerente";
+    return "/dashboard";
+  }, [role]);
+
+  // Forçar sidebar a ficar aberto/fechado durante o tour
+  const forceSidebarOpen = useCallback((open: boolean) => {
+    const sidebar = document.querySelector(
+      ".hidden.lg\\:flex .h-full",
+    ) as HTMLElement;
+    if (!sidebar) return;
+
+    if (open) {
+      sidebar.style.width = "300px";
+      sidebar.style.pointerEvents = "none";
+      sidebar.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+    } else {
+      sidebar.style.width = "";
+      sidebar.style.pointerEvents = "";
+      sidebar.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
     }
-  }, [role, sessionStatus, session?.user, markShownThisSession]);
+  }, []);
+
+  // Quando o tour começa ou para, manipular o sidebar
+  useEffect(() => {
+    if (run) {
+      const timer = setTimeout(() => forceSidebarOpen(true), 200);
+      return () => clearTimeout(timer);
+    } else {
+      forceSidebarOpen(false);
+    }
+  }, [run, forceSidebarOpen]);
 
   // Listener para o evento de reset do tour (vindo do botão)
   useEffect(() => {
@@ -90,80 +101,80 @@ export function OnboardingTour() {
       hasInitialized.current = false;
       resetTourInStorage();
       clearShownThisSession();
-      setTimeout(() => {
-        markShownThisSession();
-        setRun(true);
-      }, 800);
+
+      const dashPath = getDashboardPath();
+      const isOnDashboard = pathname === dashPath;
+
+      if (!isOnDashboard) {
+        router.push(dashPath);
+      }
+
+      setTimeout(
+        () => {
+          markShownThisSession();
+          setStepIndex(0);
+          setRun(true);
+        },
+        isOnDashboard ? 800 : 1500,
+      );
     };
 
     window.addEventListener(TOUR_RESET_EVENT, handleTourReset);
     return () => window.removeEventListener(TOUR_RESET_EVENT, handleTourReset);
-  }, [resetTourInStorage, clearShownThisSession, markShownThisSession]);
+  }, [
+    resetTourInStorage,
+    clearShownThisSession,
+    markShownThisSession,
+    getDashboardPath,
+    pathname,
+    router,
+  ]);
 
   // Lógica principal para decidir quando iniciar o tour
   useEffect(() => {
-    // NUNCA rodar em páginas públicas
     if (isPublicPage) {
       setRun(false);
-      setIsReady(false);
       return;
     }
 
-    // Aguardar sessão carregar completamente
-    if (sessionStatus === "loading") {
-      setIsReady(false);
-      return;
-    }
+    if (sessionStatus === "loading") return;
 
-    // Só executa se o usuário estiver autenticado
     if (sessionStatus !== "authenticated" || !session?.user) {
       setRun(false);
-      setIsReady(false);
       return;
     }
 
-    // Agora a sessão está pronta
-    setIsReady(true);
-
-    // Se é master, NUNCA mostrar tour
     if (role === "master") {
       setRun(false);
       return;
     }
 
-    // Se o tour já foi mostrado NESTA SESSÃO do navegador, não mostrar de novo
-    // Isso evita o problema de aparecer no F5
     if (wasShownThisSession()) {
-      // console.log("⏭️ Tour já foi mostrado nesta sessão do navegador");
       setRun(false);
       return;
     }
 
-    // Se o tour está marcado como completado na SESSÃO (do servidor), não mostrar
     if (tourCompletedFromSession === true) {
-      // console.log("✅ Tour já completado (sessão)");
       setRun(false);
       return;
     }
 
-    // Se o tour está marcado como completado no localStorage, não mostrar
     if (isTourCompletedInStorage()) {
-      // console.log("✅ Tour já completado (localStorage)");
       setRun(false);
       return;
     }
 
-    // Se tourCompleted é explicitamente FALSE (ou seja, nunca fez o tour), mostrar
     if (tourCompletedFromSession === false && !hasInitialized.current) {
       hasInitialized.current = true;
 
-      // Delay para garantir que o DOM está pronto
+      const dashPath = getDashboardPath();
+      if (pathname !== dashPath) {
+        router.push(dashPath);
+      }
+
       const timer = setTimeout(() => {
-        /* console.log("🎯 Iniciando tour pela primeira vez...", {
-          role,
-          tourCompletedFromSession,
-        }); */
         markShownThisSession();
+        setStepIndex(0);
         setRun(true);
       }, 1500);
 
@@ -178,22 +189,30 @@ export function OnboardingTour() {
     wasShownThisSession,
     isTourCompletedInStorage,
     markShownThisSession,
+    getDashboardPath,
+    pathname,
+    router,
   ]);
 
-  // Não renderizar em páginas públicas ou enquanto carregando sessão
   if (isPublicPage || sessionStatus !== "authenticated" || !session?.user) {
     return null;
   }
 
   const handleJoyrideCallback = async (data: CallBackProps) => {
-    const { status } = data;
+    const { status, action, index, type } = data;
     const finishedStatuses: string[] = [STATUS.FINISHED, STATUS.SKIPPED];
+
+    if (type === "step:after" && action === ACTIONS.NEXT) {
+      setStepIndex(index + 1);
+    } else if (type === "step:after" && action === ACTIONS.PREV) {
+      setStepIndex(index - 1);
+    }
 
     if (finishedStatuses.includes(status)) {
       setRun(false);
-      hasInitialized.current = true; // Marcar como inicializado para evitar re-trigger
+      setStepIndex(0);
+      hasInitialized.current = true;
 
-      // Salvar no localStorage IMEDIATAMENTE para evitar re-aparição no F5
       markTourCompletedInStorage();
 
       try {
@@ -228,16 +247,22 @@ export function OnboardingTour() {
       target: "#menu-vender",
       content:
         "🛍️ Aqui é o coração da operação: O PDV. Onde suas vendas acontecem de forma rápida e segura.",
+      placement: "right",
+      disableBeacon: true,
     },
     {
       target: "#menu-estoque",
       content:
         "📦 O Controle de Lotes e Estoque fica aqui. Cadastre produtos para começar a vender.",
+      placement: "right",
+      disableBeacon: true,
     },
     {
       target: "#menu-relatorios",
       content:
         "📊 Por fim, seus Relatórios Financeiros. Toda sua inteligência de dados em um só lugar.",
+      placement: "right",
+      disableBeacon: true,
     },
   ];
 
@@ -260,15 +285,21 @@ export function OnboardingTour() {
     {
       target: "#menu-vender",
       content: "🛍️ PDV: Acompanhe as vendas ou opere o caixa.",
+      placement: "right",
+      disableBeacon: true,
     },
     {
       target: "#menu-estoque",
       content: "📦 Estoque: Gerencie os produtos, categorias e lotes da loja.",
+      placement: "right",
+      disableBeacon: true,
     },
     {
       target: "#menu-movimentacoes",
       content:
         "📉 Movimentações: Acompanhe entradas e saídas do estoque em tempo real.",
+      placement: "right",
+      disableBeacon: true,
     },
   ];
 
@@ -292,11 +323,15 @@ export function OnboardingTour() {
       target: "#menu-vender",
       content:
         "🛍️ PDV: Acesse o caixa para realizar vendas. É super rápido e intuitivo!",
+      placement: "right",
+      disableBeacon: true,
     },
     {
       target: "#menu-minha-conta",
       content:
         "👤 Minha Conta: Gerencie seus dados e veja suas próprias vendas.",
+      placement: "right",
+      disableBeacon: true,
     },
   ];
 
@@ -316,35 +351,46 @@ export function OnboardingTour() {
     <Joyride
       steps={steps}
       run={run}
+      stepIndex={stepIndex}
       continuous
       showSkipButton
       showProgress
       scrollToFirstStep={false}
       disableScrollParentFix={true}
-      spotlightClicks={true}
+      spotlightClicks={false}
+      disableOverlayClose={true}
       callback={handleJoyrideCallback}
+      floaterProps={{
+        disableAnimation: true,
+      }}
       styles={{
         options: {
           primaryColor: "#137fec",
-          zIndex: 1000,
+          zIndex: 10000,
           arrowColor: "#fff",
           backgroundColor: "#fff",
-          overlayColor: "rgba(0, 0, 0, 0.6)",
+          overlayColor: "rgba(0, 0, 0, 0.5)",
           textColor: "#333",
         },
-        tooltip: {
+        overlay: {
+          zIndex: 9999,
+        },
+        spotlight: {
           borderRadius: "12px",
+        },
+        tooltip: {
+          borderRadius: "16px",
           boxShadow:
-            "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-          padding: "20px",
+            "0 20px 40px -5px rgba(0, 0, 0, 0.15), 0 10px 15px -5px rgba(0, 0, 0, 0.1)",
+          padding: "24px",
         },
         tooltipContainer: {
           textAlign: "left",
         },
         buttonNext: {
           backgroundColor: "#137fec",
-          borderRadius: "8px",
-          padding: "10px 20px",
+          borderRadius: "10px",
+          padding: "10px 24px",
           fontWeight: 600,
           fontSize: "14px",
         },
