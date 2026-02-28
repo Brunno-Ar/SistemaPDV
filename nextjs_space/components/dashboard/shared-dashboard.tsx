@@ -15,7 +15,7 @@ import Link from "next/link";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { MuralAvisos } from "@/components/mural-avisos";
 import { MeuCaixa } from "@/app/(funcionario)/dashboard/_components/meu-caixa";
-import { AnimatedLoadingSkeleton } from "@/components/ui/loading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmployeeOnboardingChecklist } from "@/components/features/onboarding-tour/employee-onboarding-checklist";
 
 export interface DashboardMetrics {
@@ -34,7 +34,7 @@ interface SharedDashboardProps {
   metrics: DashboardMetrics | null;
   caixaData: CaixaData | null | undefined;
   loading: boolean;
-  children?: ReactNode; // For extra content like stock alerts
+  children?: ReactNode;
 }
 
 export interface CaixaData {
@@ -64,6 +64,37 @@ export interface CaixaData {
   };
 }
 
+function KpiCardSkeleton() {
+  return (
+    <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Skeleton className="h-4 w-[90px]" />
+        <Skeleton className="h-8 w-8 rounded-lg" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-8 w-[120px] mb-1" />
+        <Skeleton className="h-3 w-[100px]" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChartSkeleton() {
+  return (
+    <Card className="sm:col-span-2 lg:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[280px] sm:h-[250px]">
+      <CardHeader className="pb-2">
+        <Skeleton className="h-5 w-[160px]" />
+      </CardHeader>
+      <CardContent className="pl-2 pb-2 h-[160px] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2 text-gray-400">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-500" />
+          <span className="text-xs">Carregando gráfico...</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function SharedDashboard({
   title,
   subtitle,
@@ -72,17 +103,9 @@ export function SharedDashboard({
   loading,
   children,
 }: SharedDashboardProps) {
-  if (loading) {
-    return (
-      <div className="container mx-auto py-10">
-        <AnimatedLoadingSkeleton />
-      </div>
-    );
-  }
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
+      {/* Header - sempre visível imediatamente */}
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           {title}
@@ -92,72 +115,82 @@ export function SharedDashboard({
 
       <EmployeeOnboardingChecklist />
 
-      {/* Caixa Widget - Passa dados pré-carregados */}
+      {/* Caixa Widget */}
       <MeuCaixa initialData={caixaData} />
 
-      {/* KPI Grid */}
+      {/* KPI Grid - mostra skeleton individual para cada card */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Vendas Hoje
-            </CardTitle>
-            <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {formatCurrency(metrics?.salesToday || 0)}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Total acumulado hoje
-            </p>
-          </CardContent>
-        </Card>
+        {loading ? (
+          <>
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
+          </>
+        ) : (
+          <>
+            <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Vendas Hoje
+                </CardTitle>
+                <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                  <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {formatCurrency(metrics?.salesToday || 0)}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Total acumulado hoje
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Vendas no Mês
-            </CardTitle>
-            <div className="h-8 w-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {formatCurrency(metrics?.salesMonth || 0)}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Total acumulado este mês
-            </p>
-          </CardContent>
-        </Card>
+            <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Vendas no Mês
+                </CardTitle>
+                <div className="h-8 w-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                  <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {formatCurrency(metrics?.salesMonth || 0)}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Total acumulado este mês
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-              Itens Vendidos
-            </CardTitle>
-            <div className="h-8 w-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <Package className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {metrics?.totalItemsSold || 0}
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Produtos vendidos este mês
-            </p>
-          </CardContent>
-        </Card>
+            <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Itens Vendidos
+                </CardTitle>
+                <div className="h-8 w-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                  <Package className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {metrics?.totalItemsSold || 0}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Produtos vendidos este mês
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Main Area */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
-        {/* Shortcuts (Left - 2 cols on lg) */}
+        {/* Shortcuts */}
         <Card className="sm:col-span-1 lg:col-span-2 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl flex flex-col">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -184,60 +217,64 @@ export function SharedDashboard({
           </CardContent>
         </Card>
 
-        {/* Chart (Right - 5 cols on lg, full width on sm) */}
-        <Card className="sm:col-span-2 lg:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[280px] sm:h-[250px]">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-              Desempenho Semanal
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pl-2 pb-2 h-[160px]">
-            <div className="h-full w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={metrics?.weeklySales || []}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#e5e7eb"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#888888"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `R$${value}`}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "transparent" }}
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      borderRadius: "8px",
-                      border: "1px solid #e5e7eb",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    }}
-                    formatter={(value: number) => [
-                      formatCurrency(value),
-                      "Vendas",
-                    ]}
-                  />
-                  <Bar
-                    dataKey="total"
-                    fill="#137fec"
-                    radius={[4, 4, 0, 0]}
-                    barSize={30}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Chart */}
+        {loading ? (
+          <ChartSkeleton />
+        ) : (
+          <Card className="sm:col-span-2 lg:col-span-5 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 shadow-sm rounded-xl h-[280px] sm:h-[250px]">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                Desempenho Semanal
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pl-2 pb-2 h-[160px]">
+              <div className="h-full w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={metrics?.weeklySales || []}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#e5e7eb"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#888888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `R$${value}`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "transparent" }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        borderRadius: "8px",
+                        border: "1px solid #e5e7eb",
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      }}
+                      formatter={(value: number) => [
+                        formatCurrency(value),
+                        "Vendas",
+                      ]}
+                    />
+                    <Bar
+                      dataKey="total"
+                      fill="#137fec"
+                      radius={[4, 4, 0, 0]}
+                      barSize={30}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Mural de Avisos */}
