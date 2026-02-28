@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, Lock, ShieldCheck } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { RestartTourButton } from "@/components/restart-tour-button";
 
 export default function ConfiguracoesPage() {
   const { resolvedTheme } = useTheme();
@@ -164,7 +165,24 @@ export default function ConfiguracoesPage() {
         </div>
 
         {/* PWA / App Section */}
-        <InstallPrompt variant="inline" />
+        <div className="flex flex-col gap-6">
+          <InstallPrompt variant="inline" />
+
+          {/* Tutoriais Section */}
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6 shadow-sm">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
+              Tutoriais e Guias
+            </h2>
+            <div className="flex flex-col space-y-2">
+              <span className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Esqueceu como as funções principais do sistema funcionam?
+                Reinicie o seu tour de boas-vindas interativo a qualquer
+                momento.
+              </span>
+              <RestartTourButton />
+            </div>
+          </div>
+        </div>
 
         {/* Security Section */}
         <div className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-6 shadow-sm">

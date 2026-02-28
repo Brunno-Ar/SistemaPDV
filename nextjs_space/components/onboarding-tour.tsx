@@ -213,8 +213,13 @@ export function OnboardingTour() {
       target: "body",
       content: (
         <div className="text-center">
-          <h3 className="font-bold text-lg mb-2">Bem-vindo ao FlowPDV!</h3>
-          <p>Vamos fazer um tour rápido pelas funcionalidades do sistema.</p>
+          <h3 className="font-bold text-lg mb-2 text-blue-600">
+            Bem-vindo ao FlowPDV! 👋
+          </h3>
+          <p className="text-sm text-gray-600">
+            Vamos te mostrar como dominar o sistema em 4 passos rápidos para
+            você começar a vender hoje mesmo.
+          </p>
         </div>
       ),
       placement: "center",
@@ -222,27 +227,18 @@ export function OnboardingTour() {
     },
     {
       target: "#menu-vender",
-      content: "Aqui você realiza as vendas no PDV (Ponto de Venda).",
+      content:
+        "🛍️ Aqui é o coração da operação: O PDV. Onde suas vendas acontecem de forma rápida e segura.",
     },
     {
       target: "#menu-estoque",
-      content: "Gerencie seus produtos e estoque nesta área.",
-    },
-    {
-      target: "#menu-movimentacoes",
-      content: "Acompanhe todas as movimentações de estoque e financeiras.",
-    },
-    {
-      target: "#menu-equipe",
-      content: "Gerencie os membros da sua equipe e permissões.",
+      content:
+        "📦 O Controle de Lotes e Estoque fica aqui. Cadastre produtos para começar a vender.",
     },
     {
       target: "#menu-relatorios",
-      content: "Visualize relatórios detalhados de vendas e financeiro.",
-    },
-    {
-      target: "#card-faturamento",
-      content: "Acompanhe seu faturamento diário aqui.",
+      content:
+        "📊 Por fim, seus Relatórios Financeiros. Toda sua inteligência de dados em um só lugar.",
     },
   ];
 
@@ -251,8 +247,12 @@ export function OnboardingTour() {
       target: "body",
       content: (
         <div className="text-center">
-          <h3 className="font-bold text-lg mb-2">Bem-vindo ao FlowPDV!</h3>
-          <p>Vamos fazer um tour rápido pelas funcionalidades do sistema.</p>
+          <h3 className="font-bold text-lg mb-2 text-blue-600">
+            Bem-vindo ao FlowPDV, Gerente! 👋
+          </h3>
+          <p className="text-sm text-gray-600">
+            Descubra as principais ferramentas para gerenciar a loja.
+          </p>
         </div>
       ),
       placement: "center",
@@ -260,19 +260,16 @@ export function OnboardingTour() {
     },
     {
       target: "#menu-vender",
-      content: "Aqui você realiza as vendas no PDV (Ponto de Venda).",
+      content: "🛍️ PDV: Acompanhe as vendas ou opere o caixa.",
     },
     {
       target: "#menu-estoque",
-      content: "Gerencie seus produtos e estoque nesta área.",
+      content: "📦 Estoque: Gerencie os produtos, categorias e lotes da loja.",
     },
     {
       target: "#menu-movimentacoes",
-      content: "Acompanhe as movimentações de estoque e financeiras.",
-    },
-    {
-      target: "#card-faturamento",
-      content: "Acompanhe seu faturamento diário aqui.",
+      content:
+        "📉 Movimentações: Acompanhe entradas e saídas do estoque em tempo real.",
     },
   ];
 
@@ -281,8 +278,12 @@ export function OnboardingTour() {
       target: "body",
       content: (
         <div className="text-center">
-          <h3 className="font-bold text-lg mb-2">Bem-vindo ao FlowPDV!</h3>
-          <p>Vamos conhecer seu ambiente de trabalho.</p>
+          <h3 className="font-bold text-lg mb-2 text-blue-600">
+            Bem-vindo ao FlowPDV! 👋
+          </h3>
+          <p className="text-sm text-gray-600">
+            Vamos conhecer seu ambiente de trabalho.
+          </p>
         </div>
       ),
       placement: "center",
@@ -290,15 +291,13 @@ export function OnboardingTour() {
     },
     {
       target: "#menu-vender",
-      content: "Acesse o caixa para realizar vendas.",
-    },
-    {
-      target: "#mural-avisos",
-      content: "Fique atento aos avisos e comunicados da empresa aqui.",
+      content:
+        "🛍️ PDV: Acesse o caixa para realizar vendas. É super rápido e intuitivo!",
     },
     {
       target: "#menu-minha-conta",
-      content: "Gerencie seus dados e veja suas vendas.",
+      content:
+        "👤 Minha Conta: Gerencie seus dados e veja suas próprias vendas.",
     },
   ];
 

@@ -190,6 +190,11 @@ export async function GET() {
       return acc + (receitaItem - custoItem);
     }, 0);
 
+    // Verificacao para o onboarding
+    const totalVendasAllTime = await prisma.sale.count({
+      where: { empresaId },
+    });
+
     // Cálculo de dias para vencimento
     let diasParaVencimento = null;
     if (session.user.vencimentoPlano) {
@@ -210,6 +215,7 @@ export async function GET() {
         lucroSemana,
         topLowStock: topLowStockSorted,
         diasParaVencimento,
+        totalVendasAllTime,
       },
       produtosEstoqueBaixo: topLowStockSorted, // Legacy support for direct access
       lotesVencimentoProximo: lotesVencimentoProximo,

@@ -7,6 +7,7 @@ import { StatsCards, StockAlerts, QuickAccess } from "./parts";
 import { useSession } from "next-auth/react";
 import { AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { OnboardingChecklist } from "@/components/features/onboarding-tour/onboarding-checklist";
 
 export default function DashboardClient() {
   useSession(); // Manter para reatividade da sessão
@@ -89,6 +90,8 @@ export default function DashboardClient() {
     <div className="space-y-6">
       {getExpirationAlert()}
       <PageHeader title="Dashboard" description="Visão geral do sistema" />
+
+      <OnboardingChecklist />
 
       {/* KPI Cards first as requested */}
       <StatsCards stats={stats} />
