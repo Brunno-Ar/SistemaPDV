@@ -1101,7 +1101,7 @@ export function OnboardingTour() {
       return;
     }
 
-    if (tourCompletedFromSession === false && !hasInitialized.current) {
+    if (!tourCompletedFromSession && !hasInitialized.current) {
       hasInitialized.current = true;
 
       const dashPath = getDashboardPath();
