@@ -1,23 +1,25 @@
-## 🚀 O que mudou?
+## O que mudou?
 
-<!-- Descreva brevemente as mudanças feitas nesse PR -->
+<!-- Descreva brevemente o que foi feito neste PR. -->
 
-- Adicionada base para o sistema de Indicações (Member Get Member).
+- Criação e estruturação da feature onboarding-tour
+- Interface focada na ativação do primeiro cadastro e primeira venda de teste
 
-## 🧪 Como testar?
+## Como testar?
 
-<!-- Explique o passo a passo para testar a feature -->
+<!-- Descreva o passo a passo de como revisar e testar este PR. -->
 
-1. Acesse o painel como admin e verifique a tela de Indicações.
-2. Acesse o painel como master e verifique o Dashboard de Indicações.
+1. Suba a aplicação localmente.
+2. Acesse com uma conta nova que não finalizou o onboarding.
+3. Verifique as dicas do dashboard para o PDV.
 
-## 📸 Screenshots (se aplicável)
+## Screenshots / Vídeos (se aplicável)
 
-<!-- Adicione imagens ou GIFs mostrando a feature -->
+<!-- Adicione evidências visuais aqui, se as mudanças forem de UI/UX. -->
 
-## ✅ Checklist QA
+## Checklist QA
 
 - [ ] Testado localmente
-- [ ] Nenhum erro no console
-- [ ] Responsividade OK
-- [ ] Linter rodou sem erros
+- [ ] Nenhuma feature existente foi quebrada
+- [ ] O onboarding ocorre nos limites definidos na regra de negócio
+- [ ] Cobertura de testes adequadas (se aplicável)
