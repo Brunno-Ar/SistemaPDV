@@ -259,3 +259,212 @@ img {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ============================
+   ESTILOS DE RECIBO TÉRMICO
+   Suporte: 58mm e 80mm
+   ============================ */
+
+.receipt-print-area {
+  display: none;
+}
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    color: #000 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  html, body {
+    width: 80mm;
+    margin: 0;
+    padding: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .receipt-print-area,
+  .receipt-print-area * {
+    visibility: visible;
+  }
+
+  .receipt-print-area {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 80mm;
+    max-width: 80mm;
+    padding: 2mm 3mm;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+  }
+
+  .receipt-header {
+    text-align: center;
+    margin-bottom: 2mm;
+  }
+
+  .receipt-header h1 {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 1mm 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .receipt-subtitle {
+    font-size: 10px;
+    margin: 0;
+    color: #333 !important;
+  }
+
+  .receipt-divider {
+    border-top: 1px dashed #000;
+    margin: 2mm 0;
+  }
+
+  .receipt-divider-double {
+    border-top: 2px solid #000;
+    margin: 2mm 0;
+  }
+
+  .receipt-meta {
+    margin-bottom: 1mm;
+  }
+
+  .receipt-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    margin-bottom: 0.5mm;
+  }
+
+  .receipt-items {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .receipt-th-left,
+  .receipt-td-left {
+    text-align: left;
+    padding: 1mm 0;
+    width: 55%;
+  }
+
+  .receipt-th-center,
+  .receipt-td-center {
+    text-align: center;
+    padding: 1mm 0;
+    width: 15%;
+  }
+
+  .receipt-th-right,
+  .receipt-td-right {
+    text-align: right;
+    padding: 1mm 0;
+    width: 30%;
+  }
+
+  .receipt-items thead tr {
+    border-bottom: 1px solid #000;
+  }
+
+  .receipt-items tbody tr {
+    border-bottom: 1px dotted #ccc;
+  }
+
+  .receipt-product-name {
+    font-weight: bold;
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 38mm;
+  }
+
+  .receipt-product-detail {
+    font-size: 8px;
+    color: #555 !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 38mm;
+  }
+
+  .receipt-totals {
+    margin: 1mm 0;
+  }
+
+  .receipt-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 0.5mm;
+  }
+
+  .receipt-total-main {
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 1mm;
+  }
+
+  .receipt-payments {
+    margin: 1mm 0;
+  }
+
+  .receipt-section-title {
+    font-size: 10px;
+    font-weight: bold;
+    margin: 0 0 1mm 0;
+    text-transform: uppercase;
+  }
+
+  .receipt-payment-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    margin-bottom: 0.5mm;
+  }
+
+  .receipt-troco {
+    font-weight: bold;
+    font-size: 12px;
+    margin-top: 1mm;
+  }
+
+  .receipt-footer {
+    text-align: center;
+    margin-top: 3mm;
+    padding-top: 2mm;
+  }
+
+  .receipt-footer p {
+    margin: 0;
+    font-size: 10px;
+  }
+
+  .receipt-footer-note {
+    font-size: 8px;
+    color: #666 !important;
+    margin-top: 1mm;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}
+

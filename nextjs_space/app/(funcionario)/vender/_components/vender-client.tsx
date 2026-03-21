@@ -106,6 +106,7 @@ export default function VenderClient() {
     trocoTotal,
     total,
     lastPayments,
+    lastCartItems,
   } = usePOS();
 
   useBarcodeScanner({
@@ -146,6 +147,9 @@ export default function VenderClient() {
         valorRecebido={lastValorRecebido}
         troco={lastTroco}
         payments={lastPayments}
+        cartItems={lastCartItems}
+        empresaNome={session?.user?.empresaNome || ""}
+        operadorNome={session?.user?.name || ""}
       />
     );
   }

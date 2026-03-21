@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Package, CreditCard, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CheckCircle2, Package, CreditCard, Sparkles, Printer } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import ReceiptPrint from "./ReceiptPrint";
 
 interface ConfettiProps {
   isActive?: boolean;
@@ -110,7 +111,7 @@ const _ShiningText = ({ text }: { text: string }) => {
   );
 };
 
-import { PaymentItem } from "@/hooks/use-pos";
+import { PaymentItem, CartItem } from "@/hooks/use-pos";
 
 interface SaleCompletedScreenProps {
   total: number;
@@ -119,6 +120,9 @@ interface SaleCompletedScreenProps {
   valorRecebido?: number | null;
   troco?: number | null;
   payments?: PaymentItem[];
+  cartItems?: CartItem[];
+  empresaNome?: string;
+  operadorNome?: string;
 }
 
 // Labels para métodos de pagamento
@@ -137,9 +141,17 @@ const SaleCompletedScreen = ({
   valorRecebido,
   troco,
   payments = [],
+  cartItems = [],
+  empresaNome = "",
+  operadorNome = "",
 }: SaleCompletedScreenProps) => {
   const [orderId] = useState(() => Math.floor(Math.random() * 10000));
   const [showConfetti, setShowConfetti] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
@@ -349,9 +361,18 @@ const SaleCompletedScreen = ({
                 transition={{ delay: 0.9 }}
                 className="flex gap-3"
               >
+                {cartItems.length > 0 && (
+                  <button
+                    onClick={handlePrint}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 font-semibold py-3 px-4 rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all duration-300 border border-gray-200 dark:border-zinc-700 text-sm sm:text-base"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Recibo
+                  </button>
+                )}
                 <button
                   onClick={onNewSale}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base"
+                  className="flex-[2] bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm sm:text-base"
                 >
                   Nova Venda (ESC)
                 </button>
@@ -360,6 +381,20 @@ const SaleCompletedScreen = ({
           )}
         </div>
       </motion.div>
+
+      {cartItems.length > 0 && (
+        <ReceiptPrint
+          ref={receiptRef}
+          empresaNome={empresaNome}
+          operadorNome={operadorNome}
+          items={cartItems}
+          total={total}
+          payments={payments}
+          valorRecebido={valorRecebido}
+          troco={troco}
+          orderId={orderId}
+        />
+      )}
     </div>
   );
 };

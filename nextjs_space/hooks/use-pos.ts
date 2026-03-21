@@ -75,6 +75,7 @@ export function usePOS() {
   );
   const [lastTroco, setLastTroco] = useState<number | null>(null);
   const [lastPayments, setLastPayments] = useState<PaymentItem[]>([]);
+  const [lastCartItems, setLastCartItems] = useState<CartItem[]>([]);
   const { isOnline } = useNetwork();
   // Legacy local state for display, sync with provider
   const [isOffline, setIsOffline] = useState(!isOnline);
@@ -659,6 +660,7 @@ export function usePOS() {
 
     // Success (either online or offline saved)
     setLastSaleTotal(total);
+    setLastCartItems([...cart]);
 
     // Determinar método de exibição
     if (payments.length > 1) {
@@ -725,6 +727,7 @@ export function usePOS() {
     valorRestante,
     trocoTotal,
     lastPayments,
+    lastCartItems,
     total,
   };
 }
