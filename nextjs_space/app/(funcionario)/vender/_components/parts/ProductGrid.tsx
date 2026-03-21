@@ -58,7 +58,7 @@ export function ProductGrid({
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5 z-10 pointer-events-none" />
         <Input
           ref={searchInputRef}
-          placeholder="Buscar produtos... (F2)"
+          placeholder="Buscar por nome ou escanear código de barras... (F2)"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="h-14 pl-12 rounded-xl shadow-sm bg-white dark:bg-[#182635] border-2 border-gray-200 dark:border-gray-700 text-base focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:border-transparent transition-all"

@@ -1,25 +1,24 @@
-## O que mudou?
+## Descrição
 
-<!-- Descreva brevemente o que foi feito neste PR. -->
+<!-- Descreva brevemente o que foi alterado -->
 
-- Criação e estruturação da feature onboarding-tour
-- Interface focada na ativação do primeiro cadastro e primeira venda de teste
+## O que mudou
 
-## Como testar?
+<!-- Liste as mudanças principais -->
 
-<!-- Descreva o passo a passo de como revisar e testar este PR. -->
+## Como testar
 
-1. Suba a aplicação localmente.
-2. Acesse com uma conta nova que não finalizou o onboarding.
-3. Verifique as dicas do dashboard para o PDV.
+<!-- Passos para testar as mudanças -->
 
-## Screenshots / Vídeos (se aplicável)
+## Screenshots / Vídeos
 
-<!-- Adicione evidências visuais aqui, se as mudanças forem de UI/UX. -->
+<!-- Se aplicável -->
 
 ## Checklist QA
 
-- [ ] Testado localmente
-- [ ] Nenhuma feature existente foi quebrada
-- [ ] O onboarding ocorre nos limites definidos na regra de negócio
-- [ ] Cobertura de testes adequadas (se aplicável)
+- [ ] Funciona no modo claro e escuro
+- [ ] Funciona em mobile e desktop
+- [ ] Funciona offline
+- [ ] Testes E2E passando
+- [ ] Não quebra funcionalidades existentes
+- [ ] Sem erros no console do navegador

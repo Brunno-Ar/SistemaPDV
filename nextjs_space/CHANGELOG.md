@@ -9,5 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+- [Scanner de Código de Barras] Integração com leitores USB no PDV. Busca automática por SKU e adição ao carrinho ao escanear.
 - [Onboarding Tour] Novo onboarding e tour de boas-vindas focado em ativação com o primeiro cadastro e venda teste (Draft PR).
 - [Precificação Dinâmica de Planos] Painel na conta Master para reajuste do valor da assinatura com sincronização no Asaas.

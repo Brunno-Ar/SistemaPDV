@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ShoppingCart } from "lucide-react";
 
 import { useSession } from "next-auth/react";
+import { useBarcodeScanner } from "@/hooks/use-barcode-scanner";
 
 export default function VenderClient() {
   const router = useRouter();
@@ -106,6 +107,11 @@ export default function VenderClient() {
     total,
     lastPayments,
   } = usePOS();
+
+  useBarcodeScanner({
+    onProductFound: addToCart,
+    enabled: !showSuccessScreen && !caixaFechado && !finalizing,
+  });
 
   // Atalhos de Teclado (Mantidos aqui pois dependem de refs e window events)
   useEffect(() => {
