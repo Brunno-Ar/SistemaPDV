@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,6 @@ import { toast } from "@/hooks/use-toast";
 import { parseCurrency } from "@/lib/utils";
 import { calculateMargin } from "@/lib/product-calc";
 import Image from "next/image";
-import { useBarcodeFormScanner } from "@/hooks/use-barcode-form-scanner";
 
 interface Category {
   id: string;
@@ -78,28 +77,8 @@ export function ProductFormDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
-
-  const handleBarcodeScanned = useCallback(
-    (barcode: string, data?: { nome?: string; marca?: string; imagemUrl?: string }) => {
-      setFormData((prev) => {
-        const updates: Partial<typeof prev> = { sku: barcode };
-        if (data?.nome && !prev.nome) {
-          let nome = data.nome;
-          if (data.marca && !nome.toLowerCase().includes(data.marca.toLowerCase())) {
-            nome = `${data.marca} ${nome}`;
-          }
-          updates.nome = nome;
-        }
-        return { ...prev, ...updates };
-      });
-    },
-    [],
-  );
-
-  const { isLooking } = useBarcodeFormScanner({
-    onBarcodeScanned: handleBarcodeScanned,
-    enabled: open && !productToEdit,
-  });
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const skuInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -143,7 +122,72 @@ export function ProductFormDialog({
     }
   }, [open, productToEdit]);
 
-  // Handlers para input de estoque inicial
+  useEffect(() => {
+    if (open && !productToEdit) {
+      setTimeout(() => skuInputRef.current?.focus(), 100);
+    }
+  }, [open, productToEdit]);
+
+  const lookupBarcode = useCallback(async (code: string) => {
+    if (code.length < 3 || isLookingUp) return;
+    setIsLookingUp(true);
+
+    try {
+      const response = await fetch(
+        `/api/barcode/lookup?code=${encodeURIComponent(code)}`,
+      );
+      const result = await response.json();
+
+      if (result.found && result.data) {
+        setFormData((prev) => {
+          const updates: Partial<typeof prev> = {};
+          if (result.data.nome && !prev.nome) {
+            let nome = result.data.nome;
+            if (
+              result.data.marca &&
+              !nome.toLowerCase().includes(result.data.marca.toLowerCase())
+            ) {
+              nome = `${result.data.marca} ${nome}`;
+            }
+            updates.nome = nome;
+          }
+          return { ...prev, ...updates };
+        });
+
+        toast({
+          title: "✅ Produto encontrado!",
+          description: `${result.data.nome || "Sem nome"} (${result.source})`,
+        });
+      } else {
+        toast({
+          title: "📦 Código registrado",
+          description: "Produto não encontrado nas bases. Preencha manualmente.",
+        });
+      }
+    } catch {
+      toast({
+        title: "⚠️ Erro na consulta",
+        description: "Não foi possível consultar as bases. Preencha manualmente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLookingUp(false);
+    }
+  }, [isLookingUp]);
+
+  const handleSkuKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const value = (e.target as HTMLInputElement).value.trim();
+        if (value.length >= 3 && !productToEdit) {
+          lookupBarcode(value);
+        }
+      }
+    },
+    [lookupBarcode, productToEdit],
+  );
+
   const handleLoteInicialChange = (value: string) => {
     const qtd = parseFloat(value);
     const unitPrice = parseFloat(formData.precoCompra);
@@ -349,21 +393,23 @@ export function ProductFormDialog({
                 SKU
                 {!productToEdit && (
                   <span className="inline-flex items-center gap-1 text-xs font-normal text-blue-600 dark:text-blue-400">
-                    {isLooking ? (
+                    {isLookingUp ? (
                       <><Loader2 className="h-3 w-3 animate-spin" /> Buscando...</>
                     ) : (
-                      <><ScanBarcode className="h-3 w-3" /> Scanner ativo</>
+                      <><ScanBarcode className="h-3 w-3" /> Enter para buscar</>
                     )}
                   </span>
                 )}
               </Label>
               <Input
                 id="sku"
+                ref={skuInputRef}
                 value={formData.sku}
                 onChange={(e) =>
                   setFormData({ ...formData, sku: e.target.value })
                 }
-                placeholder="Gerado automaticamente se vazio"
+                onKeyDown={handleSkuKeyDown}
+                placeholder="Escaneie ou digite o código + Enter"
                 className="bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
               />
             </div>
@@ -675,7 +721,7 @@ export function ProductFormDialog({
                 width={80}
                 height={80}
                 className="object-cover rounded border border-gray-200 dark:border-zinc-700 mt-2"
-                unoptimized // Using unoptimized to handle external URLs or local previews without full config
+                unoptimized
               />
             )}
           </div>

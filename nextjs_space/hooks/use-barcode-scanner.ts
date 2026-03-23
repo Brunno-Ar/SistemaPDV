@@ -78,11 +78,6 @@ export function useBarcodeScanner({ onProductFound, enabled = true }: UseBarcode
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      const activeElement = document.activeElement;
-      const isInputFocused = activeElement instanceof HTMLInputElement
-        || activeElement instanceof HTMLTextAreaElement
-        || activeElement instanceof HTMLSelectElement;
-
       const now = Date.now();
       const timeSinceLastKey = now - lastKeyTimeRef.current;
 
@@ -111,11 +106,6 @@ export function useBarcodeScanner({ onProductFound, enabled = true }: UseBarcode
         bufferRef.current += e.key;
         lastKeyTimeRef.current = now;
 
-        if (isInputFocused && bufferRef.current.length > 1 && timeSinceLastKey <= MAX_KEY_INTERVAL) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
@@ -125,10 +115,10 @@ export function useBarcodeScanner({ onProductFound, enabled = true }: UseBarcode
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown, { capture: true });
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown, { capture: true });
+      document.removeEventListener("keydown", handleKeyDown);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
