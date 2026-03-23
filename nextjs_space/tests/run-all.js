@@ -34,9 +34,17 @@ function runTest(testFile) {
   console.log(`${'═'.repeat(60)}\n`);
 
   try {
-    execSync(`cd "${SKILL_DIR}" && node run.js "${fullPath}"`, {
+    const isWindows = process.platform === 'win32';
+    const cmd = `node "${path.join(TESTS_DIR, 'run-test.js')}" "${testFile}"`;
+    
+    execSync(cmd, {
       stdio: 'inherit',
       timeout: 120000,
+      cwd: path.resolve(TESTS_DIR, '..'),
+      env: {
+        ...process.env,
+        NODE_PATH: path.join(SKILL_DIR, 'node_modules')
+      }
     });
   } catch (error) {
     console.log(`\n⚠️  Teste ${testFile} finalizou com erros\n`);
