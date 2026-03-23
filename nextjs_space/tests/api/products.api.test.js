@@ -42,6 +42,7 @@ const { uniqueSku } = require('../utils/test-data');
       sku,
       precoVenda: 29.90,
       precoCompra: 15.00,
+      estoqueAtual: 0,
       estoqueMinimo: 3,
     };
 

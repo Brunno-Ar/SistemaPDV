@@ -39,10 +39,10 @@ const { createApiClient, createUnauthenticatedClient } = require('../utils/api-c
     }
   });
 
-  await runner.test('PATCH /api/notes/[id] edita nota', async () => {
+  await runner.test('PUT /api/notes/[id] edita nota', async () => {
     if (!createdNoteId) { assertTruthy(true, 'Skip'); return; }
 
-    const res = await api.patch(`/api/notes/${createdNoteId}`, {
+    const res = await api.put(`/api/notes/${createdNoteId}`, {
       title: 'Nota Editada API Test',
       content: 'Conteúdo editado',
     });
@@ -77,7 +77,7 @@ const { createApiClient, createUnauthenticatedClient } = require('../utils/api-c
 
   // ──── BILLING ────
   await runner.test('GET /api/billing/pending retorna status de pagamento', async () => {
-    const res = await api.get('/api/billing/pending');
+    const res = await api.get('/api/billing/pending?email=admin@pdv.com');
     assert(res.status === 200 || res.status === 404, `Billing pending. Status: ${res.status}`);
   });
 

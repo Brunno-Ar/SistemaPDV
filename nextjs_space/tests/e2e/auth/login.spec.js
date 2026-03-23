@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
-const { TestRunner, assert, assertEqual, assertContains, assertTruthy } = require('../utils/test-runner');
-const { BASE_URL, CREDENTIALS } = require('../utils/auth-helper');
+const { TestRunner, assert, assertEqual, assertContains, assertTruthy } = require(require('path').resolve(__dirname, '../../utils/') + '/test-runner');
+const { BASE_URL, CREDENTIALS } = require(require('path').resolve(__dirname, '../../utils/') + '/auth-helper');
 
 const SKILL_DIR = 'd:/IMPORTANTE/Google Antigravity/Site 4/pdv_system/.agent/skills/skills/playwright-skill';
 

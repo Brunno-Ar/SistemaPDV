@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
-const { TestRunner, assert, assertContains, assertTruthy, assertGreaterThan } = require('../utils/test-runner');
-const { BASE_URL, createAuthenticatedPage } = require('../utils/auth-helper');
+const { TestRunner, assert, assertContains, assertTruthy, assertGreaterThan } = require(require('path').resolve(__dirname, '../../utils/') + '/test-runner');
+const { BASE_URL, createAuthenticatedPage } = require(require('path').resolve(__dirname, '../../utils/') + '/auth-helper');
 
 (async () => {
   const runner = new TestRunner('🛒 PDV - Fluxo de Venda');

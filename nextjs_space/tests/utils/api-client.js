@@ -37,6 +37,16 @@ class ApiClient {
     return this._parseResponse(res);
   }
 
+  async put(path, body = {}, options = {}) {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method: 'PUT',
+      headers: this._headers(options.headers),
+      body: JSON.stringify(body),
+      redirect: 'manual',
+    });
+    return this._parseResponse(res);
+  }
+
   async patch(path, body = {}, options = {}) {
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: 'PATCH',

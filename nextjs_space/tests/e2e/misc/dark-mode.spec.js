@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
-const { TestRunner, assert, assertTruthy } = require('../utils/test-runner');
-const { BASE_URL, createAuthenticatedPage } = require('../utils/auth-helper');
+const { TestRunner, assert, assertTruthy } = require(require('path').resolve(__dirname, '../../utils/') + '/test-runner');
+const { BASE_URL, createAuthenticatedPage } = require(require('path').resolve(__dirname, '../../utils/') + '/auth-helper');
 
 (async () => {
   const runner = new TestRunner('🌓 Dark Mode - Light/Dark em Todas as Telas');
