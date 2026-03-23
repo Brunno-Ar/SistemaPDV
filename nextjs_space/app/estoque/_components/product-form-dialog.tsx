@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,12 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, ScanBarcode, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { parseCurrency } from "@/lib/utils";
 import { calculateMargin } from "@/lib/product-calc";
 import Image from "next/image";
+import { useBarcodeFormScanner } from "@/hooks/use-barcode-form-scanner";
 
 interface Category {
   id: string;
@@ -77,6 +78,28 @@ export function ProductFormDialog({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState<string>("");
+
+  const handleBarcodeScanned = useCallback(
+    (barcode: string, data?: { nome?: string; marca?: string; imagemUrl?: string }) => {
+      setFormData((prev) => {
+        const updates: Partial<typeof prev> = { sku: barcode };
+        if (data?.nome && !prev.nome) {
+          let nome = data.nome;
+          if (data.marca && !nome.toLowerCase().includes(data.marca.toLowerCase())) {
+            nome = `${data.marca} ${nome}`;
+          }
+          updates.nome = nome;
+        }
+        return { ...prev, ...updates };
+      });
+    },
+    [],
+  );
+
+  const { isLooking } = useBarcodeFormScanner({
+    onBarcodeScanned: handleBarcodeScanned,
+    enabled: open && !productToEdit,
+  });
 
   useEffect(() => {
     if (open) {
@@ -322,8 +345,17 @@ export function ProductFormDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sku" className="text-gray-700 dark:text-gray-300">
+              <Label htmlFor="sku" className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 SKU
+                {!productToEdit && (
+                  <span className="inline-flex items-center gap-1 text-xs font-normal text-blue-600 dark:text-blue-400">
+                    {isLooking ? (
+                      <><Loader2 className="h-3 w-3 animate-spin" /> Buscando...</>
+                    ) : (
+                      <><ScanBarcode className="h-3 w-3" /> Scanner ativo</>
+                    )}
+                  </span>
+                )}
               </Label>
               <Input
                 id="sku"
