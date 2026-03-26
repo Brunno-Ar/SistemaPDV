@@ -61,6 +61,22 @@ export function ProductGrid({
           placeholder="Buscar por nome ou escanear código de barras... (F2)"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && searchTerm) {
+              const term = searchTerm.trim().toLowerCase();
+              const exactMatch = products.find(
+                (p) => p.sku?.toString().toLowerCase() === term
+              );
+              const productToAdd = exactMatch || (products.length === 1 ? products[0] : null);
+
+              if (productToAdd) {
+                e.preventDefault();
+                e.stopPropagation();
+                onAddToCart(productToAdd);
+                onSearchChange("");
+              }
+            }
+          }}
           className="h-14 pl-12 rounded-xl shadow-sm bg-white dark:bg-[#182635] border-2 border-gray-200 dark:border-gray-700 text-base focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:border-transparent transition-all"
         />
       </div>

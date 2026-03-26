@@ -69,3 +69,6 @@ public/fallback-*.js
 # Relatórios de teste/auditoria
 report-*.json
 lint-log.txt
+
+# Opensquad
+opensquad/

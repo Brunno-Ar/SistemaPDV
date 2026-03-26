@@ -14,7 +14,7 @@ export function useBarcodeScanner({ onProductFound, enabled = true }: UseBarcode
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isProcessingRef = useRef(false);
 
-  const MAX_KEY_INTERVAL = 50;
+  const MAX_KEY_INTERVAL = 100;
   const MIN_BARCODE_LENGTH = 3;
 
   const processBarcode = useCallback(async (barcode: string) => {

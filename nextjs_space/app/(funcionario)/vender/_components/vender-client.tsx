@@ -110,7 +110,10 @@ export default function VenderClient() {
   } = usePOS();
 
   useBarcodeScanner({
-    onProductFound: addToCart,
+    onProductFound: (product) => {
+      addToCart(product);
+      setSearchTerm("");
+    },
     enabled: !showSuccessScreen && !caixaFechado && !finalizing,
   });
 
