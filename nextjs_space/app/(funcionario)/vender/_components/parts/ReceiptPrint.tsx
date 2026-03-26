@@ -88,7 +88,7 @@ const ReceiptPrint = forwardRef<HTMLDivElement, ReceiptPrintProps>(
                 <td className="receipt-td-left">
                   <div className="receipt-product-name">{item.product.nome}</div>
                   <div className="receipt-product-detail">
-                    SKU: {item.product.sku} | {formatCurrency(item.precoUnitarioNoMomento)} un.
+                    {formatCurrency(item.precoUnitarioNoMomento)} un.
                     {item.descontoAplicado > 0 && (
                       <span>
                         {" "}| Desc: -{formatCurrency(item.descontoAplicado)}

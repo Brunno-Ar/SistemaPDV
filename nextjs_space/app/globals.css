@@ -281,10 +281,12 @@ img {
     print-color-adjust: exact;
   }
 
-  html, body {
+  html,
+  body {
     width: 100%;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
   }
 
   body * {
@@ -303,13 +305,15 @@ img {
     left: 0;
     width: 100%;
     max-width: 100%;
-    padding: 2mm 3mm;
+    padding: 4mm 5mm; /* Margem segura esquerda/direita para não cortar o texto */
+    box-sizing: border-box;
     font-family: "Courier New", Courier, monospace;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.4;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
     color: #000 !important;
     background: #fff !important;
+    text-align: left;
   }
 
   .receipt-header {
@@ -390,7 +394,7 @@ img {
   }
 
   .receipt-product-name {
-    font-weight: 800;
+    font-weight: bold;
     font-size: 11px;
     color: #000 !important;
     word-wrap: break-word;
@@ -399,7 +403,7 @@ img {
 
   .receipt-product-detail {
     font-size: 10px;
-    font-weight: 600;
+    font-weight: normal;
     color: #000 !important;
     word-wrap: break-word;
     white-space: normal;
@@ -468,4 +472,3 @@ img {
     margin: 0;
   }
 }
-
