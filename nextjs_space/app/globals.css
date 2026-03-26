@@ -282,7 +282,7 @@ img {
   }
 
   html, body {
-    width: 80mm;
+    width: 100%;
     margin: 0;
     padding: 0;
   }
@@ -298,17 +298,18 @@ img {
 
   .receipt-print-area {
     display: block !important;
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
-    width: 80mm;
-    max-width: 80mm;
+    width: 100%;
+    max-width: 100%;
     padding: 2mm 3mm;
     font-family: "Courier New", Courier, monospace;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 600;
     line-height: 1.4;
-    color: #000;
-    background: #fff;
+    color: #000 !important;
+    background: #fff !important;
   }
 
   .receipt-header {
@@ -317,17 +318,19 @@ img {
   }
 
   .receipt-header h1 {
-    font-size: 16px;
-    font-weight: bold;
+    font-size: 18px;
+    font-weight: 900;
     margin: 0 0 1mm 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    color: #000 !important;
   }
 
   .receipt-subtitle {
-    font-size: 10px;
+    font-size: 11px;
+    font-weight: bold;
     margin: 0;
-    color: #333 !important;
+    color: #000 !important;
   }
 
   .receipt-divider {
@@ -354,7 +357,7 @@ img {
   .receipt-items {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .receipt-th-left,
@@ -387,21 +390,19 @@ img {
   }
 
   .receipt-product-name {
-    font-weight: bold;
-    font-size: 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 38mm;
+    font-weight: 800;
+    font-size: 11px;
+    color: #000 !important;
+    word-wrap: break-word;
+    white-space: normal;
   }
 
   .receipt-product-detail {
-    font-size: 8px;
-    color: #555 !important;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 38mm;
+    font-size: 10px;
+    font-weight: 600;
+    color: #000 !important;
+    word-wrap: break-word;
+    white-space: normal;
   }
 
   .receipt-totals {
@@ -440,8 +441,8 @@ img {
   }
 
   .receipt-troco {
-    font-weight: bold;
-    font-size: 12px;
+    font-weight: 900;
+    font-size: 13px;
     margin-top: 1mm;
   }
 
@@ -457,13 +458,13 @@ img {
   }
 
   .receipt-footer-note {
-    font-size: 8px;
-    color: #666 !important;
+    font-size: 10px;
+    font-weight: bold;
+    color: #000 !important;
     margin-top: 1mm;
   }
 
   @page {
-    size: 80mm auto;
     margin: 0;
   }
 }
