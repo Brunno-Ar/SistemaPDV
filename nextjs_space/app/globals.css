@@ -287,6 +287,7 @@ img {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-font-smoothing: none; /* Disable anti-aliasing to fix blurry thermal prints */
   }
 
   body * {
@@ -305,12 +306,14 @@ img {
     left: 0;
     width: 100%;
     max-width: 100%;
-    padding: 4mm 5mm; /* Margem segura esquerda/direita para não cortar o texto */
+    /* Padding adicionado para criar as margens no layout da impressão onde o driver não possui margem nativa */
+    padding: 2mm 3mm;
     box-sizing: border-box;
-    font-family: "Courier New", Courier, monospace;
-    font-size: 11px;
-    font-weight: 500;
-    line-height: 1.2;
+    font-family: Arial, Helvetica, sans-serif;
+    /* Tamanho base reduzido */
+    font-size: 9px;
+    font-weight: bold; /* Sempre negrito para maior contraste do toner/queima térmica */
+    line-height: 1.25;
     color: #000 !important;
     background: #fff !important;
     text-align: left;
@@ -322,7 +325,7 @@ img {
   }
 
   .receipt-header h1 {
-    font-size: 18px;
+    font-size: 12px;
     font-weight: 900;
     margin: 0 0 1mm 0;
     text-transform: uppercase;
@@ -331,7 +334,7 @@ img {
   }
 
   .receipt-subtitle {
-    font-size: 11px;
+    font-size: 8px;
     font-weight: bold;
     margin: 0;
     color: #000 !important;
@@ -354,59 +357,82 @@ img {
   .receipt-meta-row {
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
+    font-size: 8px;
+    font-weight: bold;
     margin-bottom: 0.5mm;
   }
 
   .receipt-items {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
+    font-size: 9px;
+    font-weight: bold;
   }
 
   .receipt-th-left,
   .receipt-td-left {
     text-align: left;
     padding: 1mm 0;
-    width: 55%;
   }
 
   .receipt-th-center,
   .receipt-td-center {
     text-align: center;
     padding: 1mm 0;
-    width: 15%;
   }
 
   .receipt-th-right,
   .receipt-td-right {
     text-align: right;
     padding: 1mm 0;
+  }
+
+  /* Tamanhos dinâmicos flexíveis ao invés de fixos em porcentagem para evitar quebra em 58mm */
+  .receipt-th-left,
+  .receipt-td-left {
+    width: 60%;
+  }
+
+  .receipt-th-center,
+  .receipt-td-center {
+    width: 10%;
+  }
+
+  .receipt-th-right,
+  .receipt-td-right {
     width: 30%;
   }
 
   .receipt-items thead tr {
-    border-bottom: 1px solid #000;
+    border-bottom: 1px dashed #000;
   }
 
   .receipt-items tbody tr {
-    border-bottom: 1px dotted #ccc;
+    border-bottom: 1px dashed #000;
   }
 
   .receipt-product-name {
+    font-weight: 900;
+    font-size: 9px;
+    color: #000 !important;
+    word-wrap: break-word;
+    white-space: normal;
+    text-transform: uppercase;
+  }
+
+  .receipt-product-detail {
+    font-size: 8px;
     font-weight: bold;
-    font-size: 11px;
     color: #000 !important;
     word-wrap: break-word;
     white-space: normal;
   }
 
-  .receipt-product-detail {
-    font-size: 10px;
-    font-weight: normal;
+  .receipt-discount {
+    display: block;
+    font-size: 8px;
+    margin-top: 1px;
     color: #000 !important;
-    word-wrap: break-word;
-    white-space: normal;
   }
 
   .receipt-totals {
@@ -416,14 +442,16 @@ img {
   .receipt-total-row {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
-    margin-bottom: 0.5mm;
+    font-size: 9px;
+    font-weight: bold;
+    margin-bottom: 1mm;
   }
 
   .receipt-total-main {
-    font-size: 14px;
-    font-weight: bold;
+    font-size: 11px;
+    font-weight: 900;
     margin-top: 1mm;
+    text-transform: uppercase;
   }
 
   .receipt-payments {
@@ -431,8 +459,8 @@ img {
   }
 
   .receipt-section-title {
-    font-size: 10px;
-    font-weight: bold;
+    font-size: 9px;
+    font-weight: 900;
     margin: 0 0 1mm 0;
     text-transform: uppercase;
   }
@@ -440,30 +468,32 @@ img {
   .receipt-payment-row {
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
+    font-size: 8px;
+    font-weight: bold;
     margin-bottom: 0.5mm;
   }
 
   .receipt-troco {
     font-weight: 900;
-    font-size: 13px;
+    font-size: 10px;
     margin-top: 1mm;
   }
 
   .receipt-footer {
     text-align: center;
     margin-top: 3mm;
-    padding-top: 2mm;
+    padding-top: 1.5mm;
   }
 
   .receipt-footer p {
     margin: 0;
-    font-size: 10px;
+    font-size: 8px;
+    font-weight: bold;
   }
 
   .receipt-footer-note {
-    font-size: 10px;
-    font-weight: bold;
+    font-size: 8px;
+    font-weight: 900;
     color: #000 !important;
     margin-top: 1mm;
   }
