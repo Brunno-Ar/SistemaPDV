@@ -304,16 +304,14 @@ img {
     position: absolute;
     top: 0;
     left: 0;
-    width: 92%;
-    margin: 0 auto;
-    max-width: 100%;
-    /* Deletando padding engessado em mm para assumir margins automáticas (8% de respiro lateral dinâmico) */
-    padding: 0;
+    width: 100%;
+    /* Margem de segurança de 6mm garante que mesmo em rolos de 58mm (area 48mm), o texto não cole na serrilha */
+    padding: 4mm 6mm; 
     box-sizing: border-box;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 9px;
     font-weight: bold;
-    line-height: 1.4; /* AUMENTADO de 1.25 para 1.4 para mais respiro vertical */
+    line-height: 1.4;
     color: #000 !important;
     background: #fff !important;
     text-align: left;
@@ -359,7 +357,14 @@ img {
     justify-content: space-between;
     font-size: 8px;
     font-weight: bold;
-    margin-bottom: 1mm; /* AUMENTADO de 0.5mm para 1mm */
+    margin-bottom: 1mm;
+    width: 100%;
+  }
+
+  /* Garante que os valores fiquem alinhados à direita */
+  .receipt-meta-row span:last-child {
+    text-align: right;
+    flex-grow: 1;
   }
 
   .receipt-items {
@@ -444,14 +449,17 @@ img {
     justify-content: space-between;
     font-size: 9px;
     font-weight: bold;
-    margin-bottom: 1.5mm; /* AUMENTADO de 1mm para 1.5mm */
+    margin-bottom: 1.5mm;
+    width: 100%;
   }
 
   .receipt-total-main {
     font-size: 11px;
     font-weight: 900;
-    margin-top: 1.5mm; /* AUMENTADO de 1mm para 1.5mm */
+    margin-top: 1.5mm;
     text-transform: uppercase;
+    border-top: 1px dashed #000;
+    padding-top: 1mm;
   }
 
   .receipt-payments {
