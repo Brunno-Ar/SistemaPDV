@@ -304,16 +304,16 @@ img {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 92%;
+    margin: 0 auto;
     max-width: 100%;
-    /* Padding adicionado para criar as margens no layout da impressão onde o driver não possui margem nativa */
-    padding: 2mm 3mm;
+    /* Deletando padding engessado em mm para assumir margins automáticas (8% de respiro lateral dinâmico) */
+    padding: 0;
     box-sizing: border-box;
     font-family: Arial, Helvetica, sans-serif;
-    /* Tamanho base reduzido */
     font-size: 9px;
-    font-weight: bold; /* Sempre negrito para maior contraste do toner/queima térmica */
-    line-height: 1.25;
+    font-weight: bold;
+    line-height: 1.4; /* AUMENTADO de 1.25 para 1.4 para mais respiro vertical */
     color: #000 !important;
     background: #fff !important;
     text-align: left;
@@ -321,13 +321,13 @@ img {
 
   .receipt-header {
     text-align: center;
-    margin-bottom: 2mm;
+    margin-bottom: 3.5mm; /* AUMENTADO de 2mm para 3.5mm */
   }
 
   .receipt-header h1 {
     font-size: 12px;
     font-weight: 900;
-    margin: 0 0 1mm 0;
+    margin: 0 0 1.5mm 0; /* AUMENTADO de 1mm para 1.5mm */
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: #000 !important;
@@ -336,22 +336,22 @@ img {
   .receipt-subtitle {
     font-size: 8px;
     font-weight: bold;
-    margin: 0;
+    margin: 0 0 0.5mm 0; /* Adicionado um mini respiro inferior */
     color: #000 !important;
   }
 
   .receipt-divider {
     border-top: 1px dashed #000;
-    margin: 2mm 0;
+    margin: 3mm 0; /* AUMENTADO de 2mm para 3mm */
   }
 
   .receipt-divider-double {
     border-top: 2px solid #000;
-    margin: 2mm 0;
+    margin: 3mm 0; /* AUMENTADO de 2mm para 3mm */
   }
 
   .receipt-meta {
-    margin-bottom: 1mm;
+    margin-bottom: 2mm; /* AUMENTADO de 1mm para 2mm */
   }
 
   .receipt-meta-row {
@@ -359,7 +359,7 @@ img {
     justify-content: space-between;
     font-size: 8px;
     font-weight: bold;
-    margin-bottom: 0.5mm;
+    margin-bottom: 1mm; /* AUMENTADO de 0.5mm para 1mm */
   }
 
   .receipt-items {
@@ -372,22 +372,21 @@ img {
   .receipt-th-left,
   .receipt-td-left {
     text-align: left;
-    padding: 1mm 0;
+    padding: 1.5mm 0; /* AUMENTADO de 1mm para 1.5mm */
   }
 
   .receipt-th-center,
   .receipt-td-center {
     text-align: center;
-    padding: 1mm 0;
+    padding: 1.5mm 0; /* AUMENTADO */
   }
 
   .receipt-th-right,
   .receipt-td-right {
     text-align: right;
-    padding: 1mm 0;
+    padding: 1.5mm 0; /* AUMENTADO */
   }
 
-  /* Tamanhos dinâmicos flexíveis ao invés de fixos em porcentagem para evitar quebra em 58mm */
   .receipt-th-left,
   .receipt-td-left {
     width: 60%;
@@ -418,6 +417,7 @@ img {
     word-wrap: break-word;
     white-space: normal;
     text-transform: uppercase;
+    margin-bottom: 0.5mm; /* Respiro abaixo do nome e acima do detail */
   }
 
   .receipt-product-detail {
@@ -431,12 +431,12 @@ img {
   .receipt-discount {
     display: block;
     font-size: 8px;
-    margin-top: 1px;
+    margin-top: 1.5mm; /* AUMENTADO de 1px para 1.5mm */
     color: #000 !important;
   }
 
   .receipt-totals {
-    margin: 1mm 0;
+    margin: 2.5mm 0; /* AUMENTADO de 1mm para 2.5mm */
   }
 
   .receipt-total-row {
@@ -444,24 +444,24 @@ img {
     justify-content: space-between;
     font-size: 9px;
     font-weight: bold;
-    margin-bottom: 1mm;
+    margin-bottom: 1.5mm; /* AUMENTADO de 1mm para 1.5mm */
   }
 
   .receipt-total-main {
     font-size: 11px;
     font-weight: 900;
-    margin-top: 1mm;
+    margin-top: 1.5mm; /* AUMENTADO de 1mm para 1.5mm */
     text-transform: uppercase;
   }
 
   .receipt-payments {
-    margin: 1mm 0;
+    margin: 2.5mm 0; /* AUMENTADO de 1mm para 2.5mm */
   }
 
   .receipt-section-title {
     font-size: 9px;
     font-weight: 900;
-    margin: 0 0 1mm 0;
+    margin: 0 0 1.5mm 0; /* AUMENTADO de 1mm para 1.5mm */
     text-transform: uppercase;
   }
 
@@ -470,23 +470,23 @@ img {
     justify-content: space-between;
     font-size: 8px;
     font-weight: bold;
-    margin-bottom: 0.5mm;
+    margin-bottom: 1mm; /* AUMENTADO de 0.5mm para 1mm */
   }
 
   .receipt-troco {
     font-weight: 900;
     font-size: 10px;
-    margin-top: 1mm;
+    margin-top: 1.5mm; /* AUMENTADO de 1mm para 1.5mm */
   }
 
   .receipt-footer {
     text-align: center;
-    margin-top: 3mm;
-    padding-top: 1.5mm;
+    margin-top: 5mm; /* AUMENTADO de 3mm para 5mm */
+    padding-top: 2mm; /* AUMENTADO de 1.5mm para 2mm */
   }
 
   .receipt-footer p {
-    margin: 0;
+    margin: 0 0 0.5mm 0; /* Adicionado mini respiro */
     font-size: 8px;
     font-weight: bold;
   }
@@ -495,7 +495,7 @@ img {
     font-size: 8px;
     font-weight: 900;
     color: #000 !important;
-    margin-top: 1mm;
+    margin-top: 1.5mm; /* AUMENTADO de 1mm para 1.5mm */
   }
 
   @page {
