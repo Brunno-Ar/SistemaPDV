@@ -111,72 +111,58 @@ export async function POST(req: NextRequest) {
           },
         });
 
+        // Só aplica recompensa se for TRIAL e ainda não tiver sido gerado (1º pagamento)
         if (
           conversaoPendente &&
           conversaoPendente.status === "TRIAL" &&
           !conversaoPendente.mesGratisGerado
         ) {
           const empresaIndicadora = conversaoPendente.link.empresa;
+          const { asaas } = await import("@/lib/asaas");
 
-          // 1. Atualizar status da conversão para PAGO
+          let recompensaAplicada = false;
+          let asaasErrorMsg = null;
+
+          if (empresaIndicadora.asaasSubscriptionId) {
+            try {
+              // Buscar a próxima cobrança pendente
+              const pendingPaymentId = await asaas.getPendingPaymentId(
+                empresaIndicadora.asaasSubscriptionId,
+              );
+
+              if (pendingPaymentId) {
+                // Aplicar 100% de desconto
+                await asaas.apply100PercentDiscount(pendingPaymentId);
+                recompensaAplicada = true;
+                console.log(
+                  `🎁 [MGM] Recompensa aplicada! Empresa "${empresaIndicadora.nome}" ganhou 100% de desconto na cobrança ${pendingPaymentId} pela indicação da empresa "${empresa.nome}"`,
+                );
+              } else {
+                asaasErrorMsg =
+                  "Nenhuma cobrança pendente encontrada para aplicar o desconto.";
+                console.warn(`⚠️ [MGM] ${asaasErrorMsg}`);
+              }
+            } catch (asaasErr: any) {
+              asaasErrorMsg = asaasErr.message || "Erro desconhecido na API do Asaas";
+              console.error(
+                "⚠️ [MGM] Falha ao aplicar desconto de 100% no Asaas:",
+                asaasErrorMsg,
+              );
+            }
+          } else {
+            asaasErrorMsg = "Empresa indicadora não possui assinatura Asaas.";
+          }
+
+          // Atualizar o status da conversão.
+          // Se falhou, salva o erro para tentativa futura
           await prisma.memberConversion.update({
             where: { id: conversaoPendente.id },
             data: {
               status: "PAGO",
-              mesGratisGerado: true,
+              mesGratisGerado: recompensaAplicada,
+              errorLog: asaasErrorMsg,
             },
           });
-
-          // 2. Estender vencimento da empresa INDICADORA em +1 mês
-          const hoje = new Date();
-          let novoVencimentoIndicador: Date;
-
-          if (
-            empresaIndicadora.vencimentoPlano &&
-            empresaIndicadora.vencimentoPlano > hoje
-          ) {
-            novoVencimentoIndicador = new Date(
-              empresaIndicadora.vencimentoPlano,
-            );
-          } else {
-            novoVencimentoIndicador = new Date();
-          }
-
-          const diaAtual = novoVencimentoIndicador.getDate();
-          novoVencimentoIndicador.setMonth(
-            novoVencimentoIndicador.getMonth() + 1,
-          );
-          if (novoVencimentoIndicador.getDate() !== diaAtual) {
-            novoVencimentoIndicador.setDate(0);
-          }
-
-          await prisma.empresa.update({
-            where: { id: empresaIndicadora.id },
-            data: {
-              vencimentoPlano: novoVencimentoIndicador,
-              status: "ATIVO",
-            },
-          });
-
-          // 3. Sincronizar novo vencimento com o Asaas (se a indicadora tiver assinatura)
-          if (empresaIndicadora.asaasSubscriptionId) {
-            try {
-              const { asaas } = await import("@/lib/asaas");
-              await asaas.updateSubscriptionDueDate(
-                empresaIndicadora.asaasSubscriptionId,
-                novoVencimentoIndicador,
-              );
-            } catch (asaasErr) {
-              console.warn(
-                "⚠️ [MGM] Falha ao atualizar vencimento no Asaas para indicador:",
-                asaasErr,
-              );
-            }
-          }
-
-          console.log(
-            `🎁 [MGM] Recompensa aplicada! Empresa "${empresaIndicadora.nome}" ganhou +1 mês (novo venc: ${novoVencimentoIndicador.toISOString()}) pela indicação da empresa "${empresa.nome}"`,
-          );
         }
       } catch (mgmError) {
         console.error(

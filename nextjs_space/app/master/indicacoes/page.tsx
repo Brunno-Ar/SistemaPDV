@@ -26,17 +26,17 @@ export default async function MasterIndicacoes() {
     orderBy: { criadoEm: "desc" },
   });
 
-  const totalCliques = allLinks.reduce((acc, l) => acc + l.cliques, 0);
+  const totalCliques = allLinks.reduce((acc: any, l: any) => acc + l.cliques, 0);
   const totalConversoes = allLinks.reduce(
-    (acc, l) => acc + l.conversoes.length,
+    (acc: any, l: any) => acc + l.conversoes.length,
     0,
   );
   const totalPagos = allLinks.reduce(
-    (acc, l) => acc + l.conversoes.filter((c) => c.status === "PAGO").length,
+    (acc: any, l: any) => acc + l.conversoes.filter((c: any) => c.status === "PAGO").length,
     0,
   );
   const totalMesesGratis = allLinks.reduce(
-    (acc, l) => acc + l.conversoes.filter((c) => c.mesGratisGerado).length,
+    (acc: any, l: any) => acc + l.conversoes.filter((c: any) => c.mesGratisGerado).length,
     0,
   );
 
@@ -82,16 +82,20 @@ export default async function MasterIndicacoes() {
                   <th className="py-3 px-4 font-medium text-center">Cliques</th>
                   <th className="py-3 px-4 font-medium text-center">Trials</th>
                   <th className="py-3 px-4 font-medium text-center">Pagos</th>
+                  <th className="py-3 px-4 font-medium text-center">Erros de Recompensa</th>
                   <th className="py-3 px-4 font-medium">Criado em</th>
                 </tr>
               </thead>
               <tbody>
-                {allLinks.map((link) => {
+                {allLinks.map((link: any) => {
                   const trials = link.conversoes.filter(
-                    (c) => c.status === "TRIAL",
+                    (c: any) => c.status === "TRIAL",
                   ).length;
                   const pagos = link.conversoes.filter(
-                    (c) => c.status === "PAGO",
+                    (c: any) => c.status === "PAGO",
+                  ).length;
+                  const erros = link.conversoes.filter(
+                    (c: any) => c.status === "PAGO" && !c.mesGratisGerado && c.errorLog,
                   ).length;
                   return (
                     <tr
@@ -114,6 +118,9 @@ export default async function MasterIndicacoes() {
                       </td>
                       <td className="py-3 px-4 text-center font-semibold text-green-600 dark:text-green-400">
                         {pagos}
+                      </td>
+                      <td className="py-3 px-4 text-center font-semibold text-red-600 dark:text-red-400">
+                        {erros > 0 ? erros : "-"}
                       </td>
                       <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
                         {format(new Date(link.criadoEm), "dd/MM/yyyy", {

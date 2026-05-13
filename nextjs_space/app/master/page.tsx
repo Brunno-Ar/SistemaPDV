@@ -73,13 +73,13 @@ export default async function MasterDashboard() {
   });
 
   const empresasRecentes: EmpresaRecente[] = empresasRecentesRaw.map(
-    (empresa) => ({
+    (empresa: any) => ({
       id: empresa.id,
       nome: empresa.nome,
       status: empresa.status as any, // Cast para o tipo da interface
       vencimentoPlano: empresa.vencimentoPlano,
       faturamentoMensal: empresa.sales.reduce(
-        (acc, curr) => acc + Number(curr.valorTotal),
+        (acc: any, curr: any) => acc + Number(curr.valorTotal),
         0,
       ),
       totalProdutos: empresa._count.products,
@@ -109,13 +109,13 @@ export default async function MasterDashboard() {
   });
 
   const empresasInadimplentes: EmpresaRecente[] = empresasInadimplentesRaw.map(
-    (empresa) => ({
+    (empresa: any) => ({
       id: empresa.id,
       nome: empresa.nome,
       status: empresa.status as any,
       vencimentoPlano: empresa.vencimentoPlano,
       faturamentoMensal: empresa.sales.reduce(
-        (acc, curr) => acc + Number(curr.valorTotal),
+        (acc: any, curr: any) => acc + Number(curr.valorTotal),
         0,
       ),
       totalProdutos: empresa._count.products,

@@ -34,7 +34,7 @@ export async function GET() {
       select: { valorTotal: true },
     });
     const volumeTransacionado = todasVendas.reduce(
-      (acc, sale) => acc + Number(sale.valorTotal),
+      (acc: any, sale: any) => acc + Number(sale.valorTotal),
       0,
     );
 

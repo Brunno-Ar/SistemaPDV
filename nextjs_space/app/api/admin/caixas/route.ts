@@ -67,7 +67,7 @@ export async function GET() {
 
     // Buscar vendas de cada caixa para calcular totais
     const caixasComVendas = await Promise.all(
-      caixasAbertos.map(async (caixa) => {
+      caixasAbertos.map(async (caixa: any) => {
         // Vendas do período para identificar pagamentos e troco
         const vendasCaixa = await prisma.sale.findMany({
           where: {
@@ -137,37 +137,37 @@ export async function GET() {
         // Calcular movimentações SEPARADAS por método de pagamento
         const sangriasDinheiro = caixa.movimentacoes
           .filter(
-            (m) =>
+            (m: any) =>
               m.tipo === "SANGRIA" &&
               (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
           )
-          .reduce((acc, m) => acc + Number(m.valor), 0);
+          .reduce((acc: any, m: any) => acc + Number(m.valor), 0);
 
         const sangriasMaquininha = caixa.movimentacoes
           .filter(
-            (m) =>
+            (m: any) =>
               m.tipo === "SANGRIA" &&
               m.metodoPagamento &&
               m.metodoPagamento !== "dinheiro",
           )
-          .reduce((acc, m) => acc + Number(m.valor), 0);
+          .reduce((acc: any, m: any) => acc + Number(m.valor), 0);
 
         const suprimentosDinheiro = caixa.movimentacoes
           .filter(
-            (m) =>
+            (m: any) =>
               m.tipo === "SUPRIMENTO" &&
               (!m.metodoPagamento || m.metodoPagamento === "dinheiro"),
           )
-          .reduce((acc, m) => acc + Number(m.valor), 0);
+          .reduce((acc: any, m: any) => acc + Number(m.valor), 0);
 
         const suprimentosMaquininha = caixa.movimentacoes
           .filter(
-            (m) =>
+            (m: any) =>
               m.tipo === "SUPRIMENTO" &&
               m.metodoPagamento &&
               m.metodoPagamento !== "dinheiro",
           )
-          .reduce((acc, m) => acc + Number(m.valor), 0);
+          .reduce((acc: any, m: any) => acc + Number(m.valor), 0);
 
         const sangrias = sangriasDinheiro + sangriasMaquininha;
         const suprimentos = suprimentosDinheiro + suprimentosMaquininha;
@@ -200,7 +200,7 @@ export async function GET() {
           suprimentos,
           // Movimentações formatadas para exibição
           movimentacoes: [
-            ...caixa.movimentacoes.map((m) => ({
+            ...caixa.movimentacoes.map((m: any) => ({
               id: m.id,
               tipo: m.tipo as string,
               valor: Number(m.valor),
@@ -208,7 +208,7 @@ export async function GET() {
               metodoPagamento: m.metodoPagamento,
               dataHora: m.dataHora,
             })),
-            ...vendasCaixa.map((v) => ({
+            ...vendasCaixa.map((v: any) => ({
               id: v.id,
               tipo: "VENDA",
               valor: Number(v.valorTotal),
@@ -230,16 +230,16 @@ export async function GET() {
     const resumo = {
       totalCaixasAbertos: caixasAbertos.length,
       totalVendasDia: caixasComVendas.reduce(
-        (acc, c) => acc + c.vendas.total,
+        (acc: any, c: any) => acc + c.vendas.total,
         0,
       ),
-      totalSangrias: caixasComVendas.reduce((acc, c) => acc + c.sangrias, 0),
+      totalSangrias: caixasComVendas.reduce((acc: any, c: any) => acc + c.sangrias, 0),
       totalSuprimentos: caixasComVendas.reduce(
-        (acc, c) => acc + c.suprimentos,
+        (acc: any, c: any) => acc + c.suprimentos,
         0,
       ),
       totalDinheiroCaixas: caixasComVendas.reduce(
-        (acc, c) => acc + c.dinheiroCaixa,
+        (acc: any, c: any) => acc + c.dinheiroCaixa,
         0,
       ),
     };

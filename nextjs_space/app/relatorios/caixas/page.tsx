@@ -60,7 +60,7 @@ export default async function RelatoriosCaixasPage() {
   });
 
   // Serialize Decimal to number for Client Component
-  const formattedCaixas = caixas.map((c) => ({
+  const formattedCaixas = caixas.map((c: any) => ({
     ...c,
     saldoInicial: Number(c.saldoInicial),
     saldoFinal: c.saldoFinal ? Number(c.saldoFinal) : null,

@@ -44,13 +44,13 @@ export async function GET() {
     const currentYear = now.getFullYear();
 
     // Calcular faturamento total, mensal e formatar resposta
-    const empresasFormatadas = empresas.map((empresa) => {
+    const empresasFormatadas = empresas.map((empresa: any) => {
       const faturamentoTotal = empresa.sales.reduce(
-        (acc, sale) => acc + Number(sale.valorTotal),
+        (acc: any, sale: any) => acc + Number(sale.valorTotal),
         0,
       );
 
-      const faturamentoMensal = empresa.sales.reduce((acc, sale) => {
+      const faturamentoMensal = empresa.sales.reduce((acc: any, sale: any) => {
         const saleDate = new Date(sale.createdAt);
         if (
           saleDate.getMonth() === currentMonth &&

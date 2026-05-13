@@ -580,4 +580,64 @@ export const asaas = {
     // Alias for getSubscriptionBillingInfo for API consistency
     return this.getSubscriptionBillingInfo(subscriptionId);
   },
+
+  /**
+   * Applies a 100% discount on the next pending charge for a given subscription.
+   */
+  async apply100PercentDiscount(paymentId: string): Promise<boolean> {
+    console.log("🎁 [Asaas.apply100PercentDiscount]", paymentId);
+
+    const { ok, data } = await asaasRequest<any>(
+      `/payments/${paymentId}`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          discount: {
+            value: 100,
+            dueDateLimitDays: 0,
+            type: "PERCENTAGE",
+          },
+        }),
+      },
+    );
+
+    if (!ok) {
+      const errorMsg =
+        data.errors?.[0]?.description || "Erro ao aplicar desconto de 100%";
+      logError("apply100PercentDiscount", errorMsg, { paymentId });
+      throw new Error(errorMsg);
+    }
+
+    console.log("✅ [Asaas.apply100PercentDiscount] Discount applied to payment", paymentId);
+    return true;
+  },
+
+  /**
+   * Fetches the ID of the first pending payment for a given subscription.
+   */
+  async getPendingPaymentId(subscriptionId: string): Promise<string | null> {
+    console.log("🔍 [Asaas.getPendingPaymentId]", subscriptionId);
+
+    try {
+      const { ok, data } = await asaasRequest<{ data: any[] }>(
+        `/payments?subscription=${subscriptionId}&status=PENDING&limit=1`,
+      );
+
+      if (!ok) {
+        logError("getPendingPaymentId", "Failed to fetch pending payment", {
+          subscriptionId,
+        });
+        return null;
+      }
+
+      if (data.data && data.data.length > 0) {
+        return data.data[0].id;
+      }
+
+      return null;
+    } catch (error) {
+      logError("getPendingPaymentId", error, { subscriptionId });
+      return null;
+    }
+  },
 };

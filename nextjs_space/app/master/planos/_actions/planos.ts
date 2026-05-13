@@ -32,7 +32,7 @@ export async function getEmpresasComAssinatura() {
       },
     });
 
-    return empresas.map((empresa) => ({
+    return empresas.map((empresa: any) => ({
       ...empresa,
       asaasSubscriptionId: empresa.asaasSubscriptionId as string,
       indicadosPagos: empresa._count.indicados,

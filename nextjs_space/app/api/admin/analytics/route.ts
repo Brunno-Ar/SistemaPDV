@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       let faturamento = 0;
       let custoTotal = 0;
 
-      items.forEach((item) => {
+      items.forEach((item: any) => {
         faturamento += Number(item.subtotal || 0);
         custoTotal += Number(item.custoUnitario || 0) * item.quantidade;
       });
@@ -214,7 +214,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Preencher com dados reais
-    salesTimeline.forEach((sale) => {
+    salesTimeline.forEach((sale: any) => {
       const dateBRL = toBrasiliaDate(sale.dataHora);
       const day = String(dateBRL.getUTCDate()).padStart(2, "0");
       const month = String(dateBRL.getUTCMonth() + 1).padStart(2, "0");
@@ -229,7 +229,7 @@ export async function GET(request: NextRequest) {
       let saleFaturamento = 0;
       let saleCusto = 0;
 
-      sale.saleItems.forEach((item) => {
+      sale.saleItems.forEach((item: any) => {
         saleFaturamento += Number(item.subtotal || 0);
         saleCusto += Number(item.custoUnitario || 0) * item.quantidade;
       });
@@ -256,8 +256,8 @@ export async function GET(request: NextRequest) {
     >();
     const productIds = new Set<string>();
 
-    salesTimeline.forEach((sale) => {
-      sale.saleItems.forEach((item) => {
+    salesTimeline.forEach((sale: any) => {
+      sale.saleItems.forEach((item: any) => {
         productIds.add(item.productId);
       });
     });
@@ -268,11 +268,11 @@ export async function GET(request: NextRequest) {
       select: { id: true, nome: true },
     });
 
-    const productNameMap = new Map(products.map((p) => [p.id, p.nome]));
+    const productNameMap = new Map(products.map((p: any) => [p.id, p.nome]));
 
-    salesTimeline.forEach((sale) => {
-      sale.saleItems.forEach((item) => {
-        const current = produtosMap.get(item.productId) || {
+    salesTimeline.forEach((sale: any) => {
+      sale.saleItems.forEach((item: any) => {
+        const current: any = produtosMap.get(item.productId) || {
           nome: productNameMap.get(item.productId) || "Desconhecido",
           qtd: 0,
           total: 0,
@@ -286,7 +286,7 @@ export async function GET(request: NextRequest) {
     const produtosMaisVendidosFormatted = Array.from(produtosMap.values())
       .sort((a, b) => b.qtd - a.qtd)
       .slice(0, 10)
-      .map((p) => ({
+      .map((p: any) => ({
         nome: p.nome,
         totalVendido: p.qtd,
         valorTotal: p.total,
@@ -294,7 +294,7 @@ export async function GET(request: NextRequest) {
 
     // Métodos de Pagamento
     const metodoMap = new Map<string, { count: number; total: number }>();
-    salesTimeline.forEach((sale) => {
+    salesTimeline.forEach((sale: any) => {
       const metodo = sale.metodoPagamento;
       const current = metodoMap.get(metodo) || { count: 0, total: 0 };
       current.count += 1;

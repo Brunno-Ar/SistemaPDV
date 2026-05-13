@@ -50,15 +50,16 @@ export default async function AdminIndicacoes() {
     });
   }
 
-  const trialCount = link.conversoes.filter((c) => c.status === "TRIAL").length;
-  const pagoCount = link.conversoes.filter((c) => c.status === "PAGO").length;
-  const mesesGratis = link.conversoes.filter((c) => c.mesGratisGerado).length;
+  const trialCount = link.conversoes.filter((c: any) => c.status === "TRIAL").length;
+  const pagoCount = link.conversoes.filter((c: any) => c.status === "PAGO").length;
+  const mesesGratis = link.conversoes.filter((c: any) => c.mesGratisGerado).length;
 
-  const conversoesSerializadas = link.conversoes.map((c) => ({
+  const conversoesSerializadas = link.conversoes.map((c: any) => ({
     id: c.id,
     novaEmpresaId: c.novaEmpresaId,
     status: c.status,
     mesGratisGerado: c.mesGratisGerado,
+    errorLog: c.errorLog,
     criadoEm: c.criadoEm.toISOString(),
     novaEmpresa: c.novaEmpresa,
   }));

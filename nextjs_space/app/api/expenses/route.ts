@@ -79,11 +79,11 @@ export async function GET(request: NextRequest) {
     });
 
     // Calcular totais
-    const total = expenses.reduce((acc, exp) => acc + Number(exp.amount), 0);
+    const total = expenses.reduce((acc: any, exp: any) => acc + Number(exp.amount), 0);
 
     // Agrupar por categoria
     const byCategory: Record<string, number> = {};
-    expenses.forEach((exp) => {
+    expenses.forEach((exp: any) => {
       const cat = exp.category || "OUTROS";
       byCategory[cat] = (byCategory[cat] || 0) + Number(exp.amount);
     });

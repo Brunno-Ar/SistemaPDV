@@ -467,6 +467,7 @@ model MemberConversion {
   
   // Rastreamento de recompensa
   mesGratisGerado Boolean  @default(false) @map("mes_gratis_gerado")
+  errorLog        String?  @db.Text @map("error_log") // Log de falha ao aplicar recompensa
   criadoEm        DateTime @default(now()) @map("criado_em")
   atualizadoEm    DateTime @updatedAt @map("atualizado_em")
 
