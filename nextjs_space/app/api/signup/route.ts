@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
           } else {
             // Conta normal: Trial de X dias
             const trialDays = parseInt(
-              process.env.NEXT_PUBLIC_TRIAL_DAYS || "14",
+              process.env.NEXT_PUBLIC_TRIAL_DAYS || "30",
               10,
             );
             vencimento = new Date();
@@ -364,7 +364,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: isFreeAccount
           ? "🎉 Conta criada com sucesso! Aproveite o sistema gratuitamente!"
-          : "Cadastro realizado com sucesso! Seu período de teste de 14 dias começou.",
+          : "Cadastro realizado com sucesso! Seu período de teste de 30 dias começou.",
         empresa: {
           id: result.empresa.id,
           nome: result.empresa.nome,
