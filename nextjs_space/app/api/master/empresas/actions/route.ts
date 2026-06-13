@@ -415,7 +415,7 @@ export async function POST(request: NextRequest) {
             where: { empresaId },
             select: { id: true },
           });
-          const vendaIds = vendas.map((v) => v.id);
+          const vendaIds = vendas.map((v: any) => v.id);
 
           if (vendaIds.length > 0) {
             await tx.saleItem.deleteMany({

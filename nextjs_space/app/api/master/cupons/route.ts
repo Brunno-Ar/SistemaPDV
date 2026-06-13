@@ -37,7 +37,7 @@ export async function GET() {
     });
 
     // Adicionar info se está expirado ou esgotado e as empresas que usaram
-    const cuponsFormatados = cupons.map((cupom) => {
+    const cuponsFormatados = cupons.map((cupom: any) => {
       const agora = new Date();
       const expirado = cupom.validoAte ? cupom.validoAte < agora : false;
       const esgotado =
@@ -45,8 +45,8 @@ export async function GET() {
 
       // Filtrar empresas que usaram ESTE cupom específico
       const empresasQueUsaram = empresasComCupom
-        .filter((emp) => emp.cupomAplicado === cupom.codigo)
-        .map((emp) => ({
+        .filter((emp: any) => emp.cupomAplicado === cupom.codigo)
+        .map((emp: any) => ({
           id: emp.id,
           nome: emp.nome,
           data: emp.dataCriacao,

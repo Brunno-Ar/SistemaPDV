@@ -8,6 +8,7 @@ interface Conversao {
   novaEmpresaId: string;
   status: "TRIAL" | "PAGO";
   mesGratisGerado: boolean;
+  errorLog?: string | null;
   criadoEm: string;
   novaEmpresa: {
     nome: string;
@@ -66,8 +67,12 @@ export function MemberConversionsTable({
               </td>
               <td className="py-3 px-4">
                 {c.mesGratisGerado ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-                    🎁 +1 Mês Grátis
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" title="Desconto de 100% na próxima fatura">
+                    🎁 100% OFF (Próxima Fatura)
+                  </span>
+                ) : c.status === "PAGO" && c.errorLog ? (
+                  <span className="text-xs text-red-500" title={c.errorLog}>
+                    Falha ao aplicar
                   </span>
                 ) : c.status === "PAGO" ? (
                   <span className="text-xs text-gray-400">Processando...</span>

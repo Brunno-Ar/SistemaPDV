@@ -53,7 +53,7 @@ export async function POST() {
       // Sim, matemática simples.
 
       const realStock = product.lotes.reduce(
-        (sum, lote) => sum + lote.quantidade,
+        (sum: any, lote: any) => sum + lote.quantidade,
         0,
       );
 

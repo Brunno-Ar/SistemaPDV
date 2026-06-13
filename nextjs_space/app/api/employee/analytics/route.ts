@@ -139,7 +139,7 @@ export async function GET() {
     }
 
     // Preencher com dados reais
-    weeklySalesRaw.forEach((sale) => {
+    weeklySalesRaw.forEach((sale: any) => {
       // Ajustar data da venda para BR (-3h) via util
       const saleDateBR = toBrasiliaDate(sale.createdAt);
 
@@ -192,7 +192,7 @@ export async function GET() {
       salesToday: Number(salesTodayAgg._sum.valorTotal || 0),
       salesMonth: Number(salesMonthAgg._sum.valorTotal || 0),
       totalItemsSold: Number(salesMonthItems._sum.quantidade || 0),
-      lastSales: lastSales.map((s) => ({
+      lastSales: lastSales.map((s: any) => ({
         ...s,
         valorTotal: Number(s.valorTotal),
       })),

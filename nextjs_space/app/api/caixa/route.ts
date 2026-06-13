@@ -97,7 +97,7 @@ export async function calcularValoresEsperados(
   let suprimentosDinheiro = 0;
   let suprimentosMaquininha = 0; // PIX + Cartão
 
-  todasMovimentacoes.forEach((mov) => {
+  todasMovimentacoes.forEach((mov: any) => {
     const valor = Number(mov.valor || 0);
     const metodo = mov.metodoPagamento;
 
@@ -201,7 +201,7 @@ export async function GET() {
 
       // Unificar movimentações e vendas - AGORA COM metodoPagamento
       const movimentosUnificados = [
-        ...caixaAberto.movimentacoes.map((m) => ({
+        ...caixaAberto.movimentacoes.map((m: any) => ({
           id: m.id,
           tipo: m.tipo,
           valor: Number(m.valor),
@@ -209,7 +209,7 @@ export async function GET() {
           dataHora: m.dataHora,
           metodoPagamento: m.metodoPagamento || null,
         })),
-        ...vendas.map((v) => {
+        ...vendas.map((v: any) => {
           // Determinar método de pagamento para exibição
           let metodoDisplay: string | null;
           if (v.payments && v.payments.length > 1) {
@@ -225,7 +225,7 @@ export async function GET() {
           let descricao = "Venda";
           if (v.payments && v.payments.length > 1) {
             const detalhes = v.payments
-              .map((p) => `${p.method}: R$ ${Number(p.amount).toFixed(2)}`)
+              .map((p: any) => `${p.method}: R$ ${Number(p.amount).toFixed(2)}`)
               .join(" + ");
             descricao = `Venda (${detalhes})`;
           } else if (v.troco) {
@@ -239,7 +239,7 @@ export async function GET() {
             descricao,
             dataHora: v.dataHora,
             metodoPagamento: metodoDisplay,
-            payments: v.payments?.map((p) => ({
+            payments: v.payments?.map((p: any) => ({
               method: p.method,
               amount: Number(p.amount),
             })),

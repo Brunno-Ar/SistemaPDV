@@ -74,7 +74,7 @@ export async function GET() {
     });
 
     const topLowStock = allProductsWithMinStock.filter(
-      (p) => p.estoqueAtual < p.estoqueMinimo,
+      (p: any) => p.estoqueAtual < p.estoqueMinimo,
     );
 
     // Lotes com vencimento próximo (30 dias)
@@ -108,7 +108,7 @@ export async function GET() {
     // Ordenar por criticidade (percentual de estoque restante) e formatar
     // Menor % = Mais crítico
     const topLowStockSorted = topLowStock
-      .map((p) => ({
+      .map((p: any) => ({
         id: p.id,
         nome: p.nome,
         sku: p.sku,
@@ -119,7 +119,7 @@ export async function GET() {
         imagem_url: p.imagemUrl,
         criticidade: p.estoqueAtual / p.estoqueMinimo, // Usado apenas para ordenação interna
       }))
-      .sort((a, b) => a.criticidade - b.criticidade);
+      .sort((a: any, b: any) => a.criticidade - b.criticidade);
     // .slice(0, 5); // Removido limite para mostrar todos
 
     // Agregação otimizada para Hoje
@@ -164,7 +164,7 @@ export async function GET() {
       },
     });
 
-    const lucroHoje = itemsHoje.reduce((acc, item) => {
+    const lucroHoje = itemsHoje.reduce((acc: any, item: any) => {
       const receitaItem = Number(item.subtotal);
       const custoItem = Number(item.custoUnitario) * item.quantidade;
       return acc + (receitaItem - custoItem);
@@ -184,7 +184,7 @@ export async function GET() {
       },
     });
 
-    const lucroSemana = itemsSemana.reduce((acc, item) => {
+    const lucroSemana = itemsSemana.reduce((acc: any, item: any) => {
       const receitaItem = Number(item.subtotal);
       const custoItem = Number(item.custoUnitario) * item.quantidade;
       return acc + (receitaItem - custoItem);
