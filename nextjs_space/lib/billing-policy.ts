@@ -5,13 +5,13 @@
  * (primeira cobranca). Ter um arquivo so evita a divergencia historica entre o
  * vencimento gravado no banco e a data da 1a cobranca no Asaas.
  *
- * Valores confirmados pelo usuario:
- *  - TRIAL_DAYS = 14           (trial oficial)
+ * TRIAL_DAYS vem de NEXT_PUBLIC_TRIAL_DAYS (env), com fallback 14.
  *  - TRIAL_TOLERANCE_DAYS = 1  (acesso segue ativo ate 1 dia apos o fim do trial)
  *  - OVERDUE_GRACE_DAYS = 10   (cobranca regular bloqueia 10 dias apos o vencimento)
  */
 
-export const TRIAL_DAYS = 14;
+export const TRIAL_DAYS =
+  Number(process.env.NEXT_PUBLIC_TRIAL_DAYS) || 14;
 export const TRIAL_TOLERANCE_DAYS = 1;
 export const OVERDUE_GRACE_DAYS = 10;
 

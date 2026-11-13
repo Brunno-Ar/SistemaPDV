@@ -1,10 +1,10 @@
 /**
  * @jest-environment jsdom
  *
- * Testa o copy do trial de 14 dias nos componentes do landing:
- *  - Hero.tsx anuncia 14 dias (não 30)
- *  - FooterCTA.tsx anuncia 14 dias (não 30)
- * Garante regressão se alguém restaurar o copy antigo de 30 dias.
+ * Testa o copy do trial nos componentes do landing:
+ *  - Hero.tsx e FooterCTA leem TRIAL_DAYS de NEXT_PUBLIC_TRIAL_DAYS (env)
+ *    com fallback 14 (fonte unica: lib/billing-policy);
+ *  - Garante regressao se o copy voltar a hardcodear "30 dias".
  */
 
 global.IntersectionObserver = jest.fn(() => ({
@@ -28,7 +28,11 @@ jest.mock("next/link", () => {
   return Link;
 });
 
-describe("Landing trial copy (14 dias)", () => {
+describe("Landing trial copy (14 dias, fallback de NEXT_PUBLIC_TRIAL_DAYS)", () => {
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_TRIAL_DAYS;
+  });
+
   it("Hero anuncia teste por 14 dias grátis (não 30)", () => {
     render(<Hero />);
     const cta = screen.getByText("Teste por 14 dias grátis");
