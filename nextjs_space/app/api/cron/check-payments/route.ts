@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { autorizarCron } from "@/lib/cron-auth";
 import {
+  TRIAL_DIAS_PADRAO,
   TOLERANCIA_PAGAMENTO_DIAS,
   TOLERANCIA_TRIAL_DIAS,
 } from "@/lib/access";
@@ -36,9 +37,28 @@ export async function GET(request: NextRequest) {
       inicioDiaUtc - TOLERANCIA_TRIAL_DIAS * DIA_MS,
     );
 
+    // Cutoff de vencimento derivado de createdAt (trial + graça/tolerância) para
+    // contas sem vencimentoPlano (legadas NULL): não prescreve acesso infinito.
+    const overdueFromCriacaoCutoff = new Date(
+      inicioDiaUtc -
+        (TRIAL_DIAS_PADRAO + TOLERANCIA_PAGAMENTO_DIAS) * DIA_MS,
+    );
+    const expiredTrialFromCriacaoCutoff = new Date(
+      inicioDiaUtc - (TRIAL_DIAS_PADRAO + TOLERANCIA_TRIAL_DIAS) * DIA_MS,
+    );
+
     // 3. Empresas ATIVAS com mensalidade vencida além da tolerância
     const overdueCompanies = await prisma.empresa.findMany({
-      where: { status: "ATIVO", vencimentoPlano: { lt: pagamentoCutoff } },
+      where: {
+        status: "ATIVO",
+        OR: [
+          { vencimentoPlano: { lt: pagamentoCutoff } },
+          {
+            vencimentoPlano: null,
+            createdAt: { lt: overdueFromCriacaoCutoff },
+          },
+        ],
+      },
       select: {
         id: true,
         nome: true,
@@ -53,7 +73,16 @@ export async function GET(request: NextRequest) {
 
     // 4. Trials EM_TESTE expirados além da tolerância
     const expiredTrials = await prisma.empresa.findMany({
-      where: { status: "EM_TESTE", vencimentoPlano: { lt: trialCutoff } },
+      where: {
+        status: "EM_TESTE",
+        OR: [
+          { vencimentoPlano: { lt: trialCutoff } },
+          {
+            vencimentoPlano: null,
+            createdAt: { lt: expiredTrialFromCriacaoCutoff },
+          },
+        ],
+      },
       select: {
         id: true,
         nome: true,

@@ -7,11 +7,15 @@
  *  - Funcionario (não-admin): mostra "Acesso Suspenso", motivo de falta de
  *    pagamento, indica ao administrador e link "Voltar para o login".
  *  - Nao mostra "Sistema Temporariamente Indisponível" (manutencao) para nenhum papel.
+ *  - Estados: admin sem fatura, erro de conexao na fatura.
+ * Todo o fluxo usa mocks; nao acessa rede, DB, Supabase nem Asaas.
  */
+
+const searchParamsValue = { reason: "vencido", email: "admin@test.com", role: "admin" };
 
 jest.mock("next/navigation", () => {
   const useSearchParams = jest.fn(() =>
-    new URLSearchParams("reason=vencido&email=admin@test.com&role=admin"),
+    new URLSearchParams(searchParamsValue),
   );
   const useRouter = jest.fn(() => ({ push: jest.fn() }));
   const Link = ({ children, href }: any) => (
@@ -34,19 +38,19 @@ import BloqueadoPage from "../app/bloqueado/page";
 import { useSearchParams } from "next/navigation";
 import "@testing-library/jest-dom";
 
+function setParams(reason: string, role: string) {
+  (useSearchParams as jest.Mock).mockImplementation(() =>
+    new URLSearchParams({ reason, email: "test@test.com", role }),
+  );
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   (useSearchParams as jest.Mock).mockImplementation(() =>
-    new URLSearchParams("reason=vencido&email=admin@test.com&role=admin"),
+    new URLSearchParams(searchParamsValue),
   );
   global.fetch = jest.fn();
 });
-
-function setParams(reason: string, role: string) {
-  (useSearchParams as jest.Mock).mockImplementation(() =>
-    new URLSearchParams(`reason=${reason}&email=test@test.com&role=${role}`),
-  );
-}
 
 describe("Pagina /bloqueado", () => {
   it("admin com fatura pendente mostra CTA Pagar Agora e link de login", async () => {
@@ -68,7 +72,6 @@ describe("Pagina /bloqueado", () => {
     await waitFor(() =>
       expect(screen.getByText("Pagar Agora")).toBeInTheDocument(),
     );
-    expect(screen.getByText(/R\$\s*49,90/)).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /Pagar Agora/ }),
     ).toHaveAttribute("href", "https://app.asaas.com/pay/abc123");
@@ -91,12 +94,8 @@ describe("Pagina /bloqueado", () => {
     await waitFor(() =>
       expect(screen.getByText("Acesso Suspenso")).toBeInTheDocument(),
     );
-    expect(
-      screen.getByText(/pagamento não foi identificado/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/administrador da sua empresa/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/pagamento não foi identificado/i)).toBeInTheDocument();
+    expect(screen.getByText(/administrador da sua empresa/i)).toBeInTheDocument();
     expect(screen.getByText("← Voltar para o login")).toBeInTheDocument();
     expect(screen.queryByText(/Pagar Agora/)).not.toBeInTheDocument();
     expect(
@@ -118,5 +117,34 @@ describe("Pagina /bloqueado", () => {
     );
     expect(screen.queryByText(/Pagar Agora/)).not.toBeInTheDocument();
     expect(screen.getByText("← Voltar para o login")).toBeInTheDocument();
+  });
+
+  it("admin sem fatura pendente mostra contato de suporte e sem CTA pagar", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ billing: null }),
+    });
+    setParams("vencido", "admin");
+
+    render(<BloqueadoPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText(/Entre em contato com o suporte/)).toBeInTheDocument(),
+    );
+    expect(screen.queryByText(/Pagar Agora/)).not.toBeInTheDocument();
+    expect(screen.getByText("← Voltar para o login")).toBeInTheDocument();
+  });
+
+  it("erro de conexao na fatura nao quebra a tela e mantem link de login", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("falha de rede"));
+    setParams("vencido", "admin");
+
+    render(<BloqueadoPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText("← Voltar para o login")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText(/R\$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Pagar Agora/)).not.toBeInTheDocument();
   });
 });

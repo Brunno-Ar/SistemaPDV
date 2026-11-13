@@ -9,6 +9,10 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   coverageProvider: "v8",
   testEnvironment: "jsdom",
+  // Guard fail-closed: sobrescreve DATABASE_URL/DIRECT_URL com URL dummy LOCAL
+  // ANTES de qualquer import do Prisma/@/lib/db, impedindo herda URL de
+  // produção do .env. Não abre conexão.
+  setupFiles: ["<rootDir>/lib/prisma-guard.ts"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",

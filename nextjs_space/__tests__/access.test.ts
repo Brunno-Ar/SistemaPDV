@@ -104,22 +104,122 @@ describe("avaliarAcesso", () => {
     expect(r.motivo).toBe("plano-vencido");
   });
 
-  it("mantém conta gratuita (sem assinatura e sem vencimento)", () => {
+  it("legado sem vencimento, dentro do trial (criação + 14d + tolerância) é liberado como trial", () => {
+    const criado = diasAtras(5); // há 5 dias
     const r = avaliarAcesso(
-      { role: "admin", status: "ATIVO", vencimentoPlano: null, temAssinatura: false },
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: null,
+        temAssinatura: false,
+        empresaCriacao: criado,
+      },
       AGORA,
     );
     expect(r.permitido).toBe(true);
-    expect(r.motivo).toBe("conta-gratuita");
+    expect(r.motivo).toBe("trial-vigente");
+    expect(r.limite!.getTime()).toBe(
+      criado.getTime() + (TRIAL_DIAS_PADRAO + TOLERANCIA_TRIAL_DIAS) * DIA,
+    );
   });
 
-  it("bloqueia ATIVO sem vencimento quando existe assinatura (sem cobertura)", () => {
+  it("legado sem vencimento, fora do trial (criação + 14d + 1d) é bloqueado como trial-vencido", () => {
+    const criado = diasAtras(20); // há 20 dias
+    const r = avaliarAcesso(
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: null,
+        temAssinatura: false,
+        empresaCriacao: criado,
+      },
+      AGORA,
+    );
+    expect(r.permitido).toBe(false);
+    expect(r.motivo).toBe("trial-vencido");
+  });
+
+  it("sem empresaCriacao não concede acesso infinito (base = agora, trial começa agora)", () => {
+    const r = avaliarAcesso(
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: null,
+        temAssinatura: false,
+      },
+      AGORA,
+    );
+    // Sem base de criação, o fim do trial é agora + tolerância: já venceu.
+    expect(r.permitido).toBe(false);
+    expect(r.motivo).toBe("trial-vencido");
+  });
+
+  it("novo cadastro (criação = agora) libera trial de 14 dias", () => {
+    const r = avaliarAcesso(
+      {
+        role: "admin",
+        status: "EM_TESTE",
+        vencimentoPlano: null,
+        temAssinatura: false,
+        empresaCriacao: AGORA,
+      },
+      AGORA,
+    );
+    expect(r.permitido).toBe(true);
+    expect(r.motivo).toBe("trial-vigente");
+    expect(r.diasRestantes).toBe(TRIAL_DIAS_PADRAO + TOLERANCIA_TRIAL_DIAS);
+  });
+
+  it("PAYMENT_RECEIVED (vencimentoPlano no futuro) libera plano vigente", () => {
+    const venc = diasFrente(30);
+    const r = avaliarAcesso(
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: venc,
+        temAssinatura: true,
+      },
+      AGORA,
+    );
+    expect(r.permitido).toBe(true);
+    expect(r.motivo).toBe("plano-vigente");
+  });
+
+  it("grace: cobrança vencida dentro dos 10 dias ainda libera; após 10 dias bloqueia", () => {
+    // 9 dias de atraso: ainda no grace (tolerância 10d).
+    const noGrace = avaliarAcesso(
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: diasAtras(9),
+        temAssinatura: true,
+      },
+      AGORA,
+    );
+    expect(noGrace.permitido).toBe(true);
+    expect(noGrace.motivo).toBe("plano-vigente");
+
+    // 11 dias de atraso: ultrapassou o grace.
+    const foraGrace = avaliarAcesso(
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: diasAtras(11),
+        temAssinatura: true,
+      },
+      AGORA,
+    );
+    expect(foraGrace.permitido).toBe(false);
+    expect(foraGrace.motivo).toBe("plano-vencido");
+  });
+
+  it("ATIVO sem vencimento e sem base de criação é bloqueado (fail-closed)", () => {
     const r = avaliarAcesso(
       { role: "admin", status: "ATIVO", vencimentoPlano: null, temAssinatura: true },
       AGORA,
     );
     expect(r.permitido).toBe(false);
-    expect(r.motivo).toBe("sem-vencimento");
+    expect(r.motivo).toBe("trial-vencido");
   });
 
   it("libera por desbloqueio temporário válido e bloqueia após expirar", () => {
@@ -354,7 +454,6 @@ describe("motivoParaBloqueio", () => {
     expect(motivoParaBloqueio("pausado")).toBe("pausado");
     expect(motivoParaBloqueio("plano-vencido")).toBe("vencido");
     expect(motivoParaBloqueio("trial-vencido")).toBe("vencido");
-    expect(motivoParaBloqueio("sem-vencimento")).toBe("vencido");
     expect(motivoParaBloqueio("empresa-ausente")).toBe("vencido");
   });
 });

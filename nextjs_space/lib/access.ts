@@ -28,7 +28,6 @@ export type MotivoAcesso =
   | "liberacao-temporaria"
   | "trial-vigente"
   | "plano-vigente"
-  | "conta-gratuita"
   | "pendente"
   | "cancelado"
   | "pausado"
@@ -44,6 +43,8 @@ export interface DadosAcesso {
   liberacaoTemporariaAte?: string | Date | null;
   /** Empresa possui assinatura no Asaas (distingue conta gratuita de inconsistência). */
   temAssinatura?: boolean | null;
+  /** Data de criação da empresa (base do trial quando vencimentoPlano está ausente). */
+  empresaCriacao?: string | Date | null;
 }
 
 export interface ResultadoAcesso {
@@ -99,12 +100,37 @@ export function avaliarAcesso(
   const vencimento = paraData(dados.vencimentoPlano);
 
   if (!vencimento) {
-    // Conta 100% gratuita não passa pelo Asaas e não tem vencimento por design.
-    if (!dados.temAssinatura) {
-      return { permitido: true, motivo: "conta-gratuita" };
+    // Sem vencimento registrado: deriva o fim do trial de empresaCriacao
+    // (createdAt) + tolerância de 1 dia. Nunca concede acesso infinito: não há
+    // "conta-gratuita" permanente nem cupom sem prazo. Contas legadas sem
+    // vencimento ficam sujeitas ao mesmo trial de 14 dias.
+    const base = paraData(dados.empresaCriacao);
+    if (!base) {
+      // Sem data de criação confiável: não há base para o trial. Fail-closed:
+      // não concede acesso (nem infinito nem por prazo arbitrário).
+      return { permitido: false, motivo: "trial-vencido", limite: agora, diasRestantes: 0 };
     }
-    // Assinatura existe mas não há cobertura registrada: não pode ficar ilimitado.
-    return { permitido: false, motivo: "sem-vencimento" };
+    const fimTrial = new Date(
+      base.getTime() + TRIAL_DAYS * DIA_MS + TOLERANCIA_TRIAL_DIAS * DIA_MS,
+    );
+
+    if (agora <= fimTrial) {
+      return {
+        permitido: true,
+        motivo: "trial-vigente",
+        limite: fimTrial,
+        diasRestantes: Math.ceil(
+          (fimTrial.getTime() - agora.getTime()) / DIA_MS,
+        ),
+      };
+    }
+
+    return {
+      permitido: false,
+      motivo: "trial-vencido",
+      limite: fimTrial,
+      diasRestantes: 0,
+    };
   }
 
   const emTeste = dados.status === "EM_TESTE";

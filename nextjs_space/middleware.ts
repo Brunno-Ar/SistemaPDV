@@ -34,6 +34,8 @@ export default withAuth(
           (token.liberacaoTemporariaAte as string | null) ?? null,
         temAssinatura:
           (token.empresaTemAssinatura as boolean | null) ?? null,
+        empresaCriacao:
+          (token.empresaCriacao as string | null) ?? null,
       });
 
       if (!acesso.permitido) {

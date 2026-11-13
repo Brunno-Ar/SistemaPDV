@@ -78,6 +78,7 @@ export const authOptions: AuthOptions = {
             user.empresa as any
           )?.liberacaoTemporariaAte?.toISOString(),
           empresaTemAssinatura: Boolean(user.empresa?.asaasSubscriptionId),
+          empresaCriacao: user.empresa?.createdAt?.toISOString() ?? null,
           tourCompleted: user.tourCompleted,
         };
       },
@@ -101,6 +102,7 @@ export const authOptions: AuthOptions = {
         token.vencimentoPlano = user.vencimentoPlano;
         token.liberacaoTemporariaAte = user.liberacaoTemporariaAte;
         token.empresaTemAssinatura = (user as any).empresaTemAssinatura ?? null;
+        token.empresaCriacao = (user as any).empresaCriacao ?? null;
         token.tourCompleted = user.tourCompleted;
         token.lastActivity = Date.now();
         token.dadosAtualizadosEm = Date.now();
@@ -141,6 +143,7 @@ export const authOptions: AuthOptions = {
             status: true,
             vencimentoPlano: true,
             liberacaoTemporariaAte: true,
+            createdAt: true,
             asaasSubscriptionId: true,
           },
         });
@@ -151,6 +154,7 @@ export const authOptions: AuthOptions = {
           token.liberacaoTemporariaAte =
             empresa.liberacaoTemporariaAte?.toISOString() ?? null;
           token.empresaTemAssinatura = Boolean(empresa.asaasSubscriptionId);
+          token.empresaCriacao = empresa.createdAt?.toISOString() ?? null;
         }
         token.dadosAtualizadosEm = Date.now();
       }
@@ -171,6 +175,8 @@ export const authOptions: AuthOptions = {
         session.user.tourCompleted = token.tourCompleted as boolean;
         session.user.empresaTemAssinatura =
           (token.empresaTemAssinatura as boolean | null) ?? null;
+        session.user.empresaCriacao =
+          (token.empresaCriacao as string | null) ?? null;
         session.lastActivity = token.lastActivity as number;
       }
       return session;
