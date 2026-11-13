@@ -67,7 +67,7 @@ export default async function AdminIndicacoes() {
     <div className="space-y-8">
       <PageHeader
         title="Indique e Ganhe"
-        description="Compartilhe seu link e ganhe 1 mês grátis para cada indicação que assinar!"
+        description="Ao completar 3 assinaturas pagas, ganhe 1 mês grátis. Ao completar 5, ganhe 50% de desconto permanente."
       />
 
       {/* 1. Link de Indicação */}

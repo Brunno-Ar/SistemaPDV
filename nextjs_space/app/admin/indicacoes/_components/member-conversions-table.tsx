@@ -19,12 +19,19 @@ export function MemberConversionsTable({
 }: {
   conversoes: Conversao[];
 }) {
+  const pagoTotal = conversoes.filter((c) => c.status === "PAGO").length;
+  const marco5 = pagoTotal >= 5;
+  const marco3 = pagoTotal >= 3;
+  const progressoMarco = marco5 ? 5 : marco3 ? pagoTotal - 3 : pagoTotal;
+  const totalMarco = marco5 ? 5 : 3;
+  const pct = marco5 ? 100 : Math.round((progressoMarco / totalMarco) * 100);
+
   if (conversoes.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400 dark:text-gray-500">
         <p className="text-lg font-medium">Nenhuma indicação ainda</p>
         <p className="text-sm mt-1">
-          Compartilhe seu link para começar a ganhar meses grátis!
+          Compartilhe seu link para começar a ganhar recompensas!
         </p>
       </div>
     );
@@ -70,7 +77,18 @@ export function MemberConversionsTable({
                     🎁 +1 Mês Grátis
                   </span>
                 ) : c.status === "PAGO" ? (
-                  <span className="text-xs text-gray-400">Processando...</span>
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500">Conversão contabilizada</span>
+                    <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">
+                      Marco {marco5 ? "5/5" : "3/5"} — {pct}%
+                    </span>
+                    <div className="h-1 w-full bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-1 bg-green-500 dark:bg-green-500"
+                        style={{ width: `${Math.min(pct, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
                 ) : (
                   <span className="text-xs text-gray-400">
                     Aguardando assinatura

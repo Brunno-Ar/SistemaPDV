@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
+import { decidirStatusSincronizado } from "@/lib/access";
+import { conferirPagamentoConfirmado, avancarVencimentoSeMaior, coberturaComprovada } from "@/lib/pagamento";
+import { sincronizarBeneficiosEmpresa } from "@/lib/mgm-sync";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Permitir execuções mais longas (Vercel/Next.js)
@@ -24,7 +27,9 @@ export async function POST() {
         id: true,
         nome: true,
         asaasSubscriptionId: true,
+        asaasCustomerId: true,
         status: true,
+        vencimentoPlano: true,
       },
     });
 
@@ -34,12 +39,14 @@ export async function POST() {
 
     let updatedCount = 0;
     let errorCount = 0;
+    let pendentesCount = 0;
     const details: {
       empresa: string;
       status: string;
       oldStatus?: string;
       newStatus?: string;
       error?: string;
+      pendencia?: string;
     }[] = [];
 
     // 2. Iterar e atualizar (serialmente para evitar rate limit agressivo)
@@ -49,65 +56,84 @@ export async function POST() {
       try {
         const sub = await asaas.getSubscription(empresa.asaasSubscriptionId);
 
-        // Mapear status do Asaas para o sistema local
-        let novoStatus = empresa.status;
-        const novoVencimento = sub.nextDueDate
-          ? new Date(sub.nextDueDate)
-          : null;
+        // Cobertura NUNCA vem de `sub.nextDueDate`: o campo existe mesmo para
+        // cobranca NAO paga. A unica prova aceita e historico RECEIVED
+        // vinculado ao cliente/assinatura. `null` = Asaas indisponivel.
+        const historico = await asaas.listPaymentHistory(
+          empresa.asaasSubscriptionId,
+        );
 
-        // Decisão de Status baseada no retorno do Asaas
-        // Status do Asaas: ACTIVE, EXPIRED, OVERDUE, CANCELED, RECEIVED, CONFIRMED...
+        // Prova server-side de PAYMENT_RECEIVED: estado local gravado pelo
+        // webhook ou historico do Asaas (RECEIVED vinculado e cobrindo o ciclo
+        // atual). CONFIRMED nao conta. Falha FECHADA: sem prova, o status NAO
+        // sobe para ATIVO e o vencimento local NAO avanca.
+        const conferencia = await conferirPagamentoConfirmado(
+          {
+            asaasCustomerId: empresa.asaasCustomerId,
+            asaasSubscriptionId: empresa.asaasSubscriptionId,
+            vencimentoPlano: empresa.vencimentoPlano,
+          },
+          async () => historico,
+        );
 
-        if (sub.status === "RECEIVED" || sub.status === "CONFIRMED") {
-          // Pagamento confirmado: Cliente Ativo real oficial
-          novoStatus = "ATIVO";
-        } else if (sub.status === "OVERDUE") {
-          // Vencido
-          novoStatus = "PAUSADO";
-        } else if (sub.status === "INACTIVE" || sub.status === "CANCELLED") {
-          novoStatus = "CANCELADO";
-        } else if (sub.status === "ACTIVE") {
-          // Assinatura vigente.
-          // SE a empresa já era EM_TESTE, ela deve continuar EM_TESTE até pagar,
-          // a menos que o trial tenha acabado (verificação de data abaixo).
-          // Se ela já era ATIVO ou PAUSADO, volta/fica ATIVO.
-          if (empresa.status === "EM_TESTE") {
-            novoStatus = "EM_TESTE";
-          } else {
-            novoStatus = "ATIVO";
-          }
-        }
+        // Cobertura comprovada por RECEIVED (dueDate + 1 ciclo). Entrada
+        // incompleta e ignorada; sem prova, nada avanca.
+        const cobertura = coberturaComprovada(historico, {
+          customerId: empresa.asaasCustomerId,
+          subscriptionId: empresa.asaasSubscriptionId,
+        });
 
-        // Validação adicional de expiração para EM_TESTE
-        if (novoStatus === "EM_TESTE") {
-          // Se a data de vencimento que veio do Asaas (próxima cobrança) já passou ou é hoje...
-          // Na prática, se está em teste, a próxima cobrança é o fim do teste.
-          if (novoVencimento && new Date() > novoVencimento) {
-            // Se passou da data e não está pago (senão teria caído no RECEIVED acima)
-            // Então pausamos.
-            novoStatus = "PAUSADO";
-          }
-        }
+        // Decisao de status pela policy UNICA (tolerancia trial +1d / plano
+        // +10d). NAO pausa no vencimento cru do Asaas, NAO ativa em CONFIRMED e
+        // so promove para ATIVO com pagamento RECEIVED comprovado.
+        const novoStatus = decidirStatusSincronizado(
+          empresa.status,
+          sub.status,
+          cobertura ?? empresa.vencimentoPlano,
+          new Date(),
+          conferencia.confirmado,
+        );
 
-        // Atualizar no banco
+        // Vencimento local SO avanca com pagamento RECEIVED comprovado — e
+        // apenas para frente: nunca encolhe o mes gratis ja concedido (MGM).
+        const vencAvancado = avancarVencimentoSeMaior(
+          empresa.vencimentoPlano,
+          cobertura,
+        );
+
         await prisma.empresa.update({
           where: { id: empresa.id },
           data: {
             status: novoStatus,
-            vencimentoPlano: novoVencimento,
+            ...(vencAvancado ? { vencimentoPlano: vencAvancado } : {}),
             plano: "PRO", // Garantir que tenha um plano setado
             asaasCustomerId: sub.customerId, // Atualizar customer ID se necessário
           },
         });
 
-        updatedCount++;
+        // Recuperacao de beneficios MGM pendentes no Asaas (idempotente).
+        const falhasMgm = await sincronizarBeneficiosEmpresa(empresa.id);
+        if (falhasMgm.length > 0) {
+          console.warn(
+            `[sync-all] Beneficios MGM pendentes em ${empresa.nome}:`,
+            falhasMgm,
+          );
+        }
+
+        // Entrada incompleta (historico indisponivel) e PENDENCIA, nao erro:
+        // registra e segue o lote sem promover nem estender.
+        if (conferencia.pendente) pendentesCount++;
+        else updatedCount++;
+
         details.push({
           empresa: empresa.nome,
-          status: "success",
+          status: conferencia.pendente ? "pending" : "success",
           oldStatus: empresa.status,
           newStatus: novoStatus,
+          ...(conferencia.pendente
+            ? { pendencia: "Historico do Asaas indisponivel" }
+            : {}),
         });
-
         // Pequeno delay para ser gentil com a API
         await new Promise((resolve) => setTimeout(resolve, 200));
       } catch (err) {
@@ -122,13 +148,14 @@ export async function POST() {
     }
 
     console.log(
-      `✅ Sincronização concluída. Sucesso: ${updatedCount}, Erros: ${errorCount}`,
+      `✅ Sincronização concluída. Sucesso: ${updatedCount}, Pendentes: ${pendentesCount}, Erros: ${errorCount}`,
     );
 
     return NextResponse.json({
       success: true,
       total: empresas.length,
       updated: updatedCount,
+      pendentes: pendentesCount,
       errors: errorCount,
       details,
     });

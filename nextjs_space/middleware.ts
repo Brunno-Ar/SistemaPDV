@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { avaliarAcesso, motivoParaBloqueio } from "@/lib/access";
 
 export default withAuth(
   function middleware(req) {
@@ -16,7 +17,7 @@ export default withAuth(
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    // Bloqueio SaaS: redirecionar empresas inadimplentes (exceto master e página bloqueado)
+    // Bloqueio SaaS: calculado por data (não pelo status congelado no token)
     if (
       token &&
       token.role !== "master" &&
@@ -25,25 +26,36 @@ export default withAuth(
       !path.startsWith("/api/public") &&
       !path.startsWith("/api/auth")
     ) {
-      const empresaStatus = token.empresaStatus as string;
+      const acesso = avaliarAcesso({
+        role: token.role as string,
+        status: (token.empresaStatus as string | null) ?? null,
+        vencimentoPlano: (token.vencimentoPlano as string | null) ?? null,
+        liberacaoTemporariaAte:
+          (token.liberacaoTemporariaAte as string | null) ?? null,
+        temAssinatura:
+          (token.empresaTemAssinatura as boolean | null) ?? null,
+      });
 
-      if (empresaStatus === "PAUSADO" || empresaStatus === "CANCELADO") {
-        const liberacaoAte = token.liberacaoTemporariaAte as string | undefined;
-        const hasValidRelease =
-          liberacaoAte && new Date(liberacaoAte) > new Date();
-
-        if (!hasValidRelease) {
-          const role = token.role === "admin" ? "admin" : "employee";
-          const reason =
-            empresaStatus === "CANCELADO" ? "cancelado" : "pausado";
-          const email = token.email || "";
-          return NextResponse.redirect(
-            new URL(
-              `/bloqueado?reason=${reason}&email=${encodeURIComponent(email)}&role=${role}`,
-              req.url,
-            ),
+      if (!acesso.permitido) {
+        if (path.startsWith("/api/")) {
+          return NextResponse.json(
+            {
+              error: "Acesso bloqueado",
+              motivo: acesso.motivo,
+              motivoBloqueio: motivoParaBloqueio(acesso.motivo),
+            },
+            { status: 403 },
           );
         }
+
+        const role = token.role === "admin" ? "admin" : "employee";
+        const email = token.email || "";
+        return NextResponse.redirect(
+          new URL(
+            `/bloqueado?reason=${motivoParaBloqueio(acesso.motivo)}&email=${encodeURIComponent(email)}&role=${role}`,
+            req.url,
+          ),
+        );
       }
     }
 
@@ -130,6 +142,7 @@ export default withAuth(
         if (
           req.nextUrl.pathname === "/" ||
           req.nextUrl.pathname.startsWith("/api/auth") ||
+          req.nextUrl.pathname.startsWith("/api/cron") ||
           req.nextUrl.pathname.startsWith("/login") ||
           req.nextUrl.pathname.startsWith("/signup") ||
           req.nextUrl.pathname.startsWith("/api/signup") ||
@@ -150,6 +163,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/((?!api/auth|api/profile|api/webhooks|login|signup|_next/static|_next/image|favicon.ico|favicon.svg|favicon.png|logo.png|icon.png|apple-icon.png|sw.js|manifest.json|workbox-.*).*)",
+    "/((?!api/auth|api/cron|api/profile|api/webhooks|login|signup|_next/static|_next/image|favicon.ico|favicon.svg|favicon.png|logo.png|icon.png|apple-icon.png|sw.js|manifest.json|workbox-.*).*)",
   ],
 };

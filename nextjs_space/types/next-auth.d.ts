@@ -13,6 +13,7 @@ declare module "next-auth" {
       status?: string | null;
       vencimentoPlano?: string | null;
       liberacaoTemporariaAte?: string | null;
+      empresaTemAssinatura?: boolean | null;
       tourCompleted?: boolean;
     };
     lastActivity?: number;
@@ -26,6 +27,7 @@ declare module "next-auth" {
     status?: string | null;
     vencimentoPlano?: string | null;
     liberacaoTemporariaAte?: string | null;
+    empresaTemAssinatura?: boolean | null;
     tourCompleted?: boolean;
   }
 }
@@ -39,7 +41,10 @@ declare module "next-auth/jwt" {
     status?: string | null;
     vencimentoPlano?: string | null;
     liberacaoTemporariaAte?: string | null;
+    empresaTemAssinatura?: boolean | null;
     lastActivity?: number;
     tourCompleted?: boolean;
+    /** Epoch ms da ultima revalidacao do token contra o banco. */
+    dadosAtualizadosEm?: number;
   }
 }
