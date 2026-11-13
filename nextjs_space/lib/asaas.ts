@@ -3,11 +3,10 @@ import {
   PRECO_PLANO_PADRAO,
 } from "@/lib/billing-policy";
 
-// Define environment variables with fallbacks for type safety
-const ASAAS_API_URL = process.env.ASAAS_API_URL || "https://api.asaas.com/v3"; // Produção por padrão
-
-// API Key DEVE vir do ambiente - sem fallback por segurança
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
+// Define environment variables. Sem fallback: ausência falha fechado em
+// asaasRequest antes de qualquer fetch (nunca expõe live por omissão).
+const ASAAS_API_URL = process.env.ASAAS_API_URL;
+const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
 
 // Multa e Juros configuráveis
 const FINE_PERCENT = parseFloat(process.env.ASAAS_FINE_PERCENT || "2"); // 2%
@@ -91,6 +90,7 @@ function logError(
  *   qualquer fetch.
  */
 export function assertAsaasNotLiveOutsideProduction(): void {
+  if (!ASAAS_API_URL) return;
   const isProduction = process.env.VERCEL_ENV === "production";
   const isLiveUrl =
     ASAAS_API_URL.includes("api.asaas.com") &&
@@ -114,6 +114,11 @@ async function asaasRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<{ ok: boolean; data: T; status: number }> {
+  if (!ASAAS_API_URL || !ASAAS_API_KEY) {
+    throw new Error(
+      "ASAAS_API_URL e ASAAS_API_KEY são obrigatórias; falha fechada (sem fallback live).",
+    );
+  }
   assertAsaasNotLiveOutsideProduction();
   const url = `${ASAAS_API_URL}${endpoint}`;
 
@@ -448,6 +453,27 @@ export const asaas = {
       return ok && data?.id ? data : null;
     } catch (error) {
       logError("getPayment", error, { paymentId });
+      return null;
+    }
+  },
+
+  /** Lista pagamentos de um customer (usa cliente Asaas compartilhado). */
+  async listPaymentsByCustomer(customerId: string): Promise<{
+    data: PaymentHistoryItem[];
+    totalCount: number;
+  } | null> {
+    try {
+      const { ok, data } = await asaasRequest<{
+        data?: PaymentHistoryItem[];
+        totalCount?: number;
+      }>(`/payments?customer=${customerId}&limit=50`);
+      if (!ok) return null;
+      return {
+        data: data.data ?? [],
+        totalCount: data.totalCount ?? data.data?.length ?? 0,
+      };
+    } catch (error) {
+      logError("listPaymentsByCustomer", error, { customerId });
       return null;
     }
   },
