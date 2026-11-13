@@ -5,7 +5,12 @@ import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
 import { StatusEmpresa } from "@prisma/client";
 import { podeReativarManualmente } from "@/lib/access";
-import { conferirPagamentoConfirmado } from "@/lib/pagamento";
+import {
+  conferirPagamentoConfirmado,
+  coberturaComprovada,
+  avancarVencimentoSeMaior,
+} from "@/lib/pagamento";
+import type { PagamentoHistorico } from "@/lib/pagamento";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -539,14 +544,60 @@ export async function POST(request: NextRequest) {
           // nao conta. Falha FECHADA: sem prova, mantem o status e nao avanca
           // o vencimento (o webhook RECEIVED continua sendo a unica fonte de
           // liberacao/renovacao).
+          const buscaHistorico = async (
+            id: string,
+          ): Promise<PagamentoHistorico[] | null> => {
+            try {
+              return await asaas.listPaymentHistory(id);
+            } catch {
+              return null;
+            }
+          };
+
+          const historico = await buscaHistorico(
+            empresaParaSync.asaasSubscriptionId,
+          );
+
           const conferencia = await conferirPagamentoConfirmado(
             {
               asaasCustomerId: empresaParaSync.asaasCustomerId,
               asaasSubscriptionId: empresaParaSync.asaasSubscriptionId,
               vencimentoPlano: empresaParaSync.vencimentoPlano,
             },
-            (id) => asaas.listPaymentHistory(id),
+            buscaHistorico,
           );
+
+          // Falha/pendência do Asaas ou histórico indisponível: 503,
+          // sem escrita e com o status mantido.
+          if (conferencia.pendente || historico === null) {
+            return NextResponse.json(
+              {
+                success: false,
+                error:
+                  "Sincronização pendente: não foi possível confirmar pagamento no Asaas",
+                status: "pendente",
+              },
+              { status: 503 },
+            );
+          }
+
+          // Cobertura provada apenas pelo histórico RECEIVED (nunca por
+          // subscription.nextDueDate, que existe mesmo sem pagamento).
+          const cobertura = coberturaComprovada(historico, {
+            customerId: empresaParaSync.asaasCustomerId ?? null,
+            subscriptionId: empresaParaSync.asaasSubscriptionId,
+          });
+
+          if (!cobertura) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: "Sem cobertura de pagamento comprovada",
+                status: "sem_cobertura",
+              },
+              { status: 503 },
+            );
+          }
 
           // Mapear status do Asaas para status do sistema
           // IMPORTANTE: Preservar EM_TESTE se a conta ainda está em período de trial
@@ -565,23 +616,30 @@ export async function POST(request: NextRequest) {
             novoStatus = "ATIVO";
           }
 
-          // Atualizar vencimento e status
+          // Vencimento local avança apenas com cobertura comprovada e nunca
+          // diminui (avancarVencimentoSeMaior é no-op quando alvo <= atual).
+          const proximoVencimento = avancarVencimentoSeMaior(
+            empresaParaSync.vencimentoPlano ?? null,
+            cobertura,
+          );
+
+          const dataUpdate: Record<string, unknown> = { status: novoStatus };
+          if (proximoVencimento) {
+            dataUpdate.vencimentoPlano = proximoVencimento;
+          }
+
           const empresaSincronizada = await prisma.empresa.update({
             where: { id: empresaId },
-            data: {
-              // Vencimento local SO avanca com pagamento RECEIVED comprovado
-              // pelo historico do Asaas (fonte === "asaas"). Nunca estende com
-              // prova local — isso foi removido (prova circular).
-              ...(conferencia.fonte === "asaas" && subscription.nextDueDate
-                ? { vencimentoPlano: new Date(subscription.nextDueDate) }
-                : {}),
-              status: novoStatus,
-            },
+            data: dataUpdate,
           });
 
           return NextResponse.json({
             success: true,
-            message: `Sincronizado! Vencimento: ${subscription.nextDueDate}, Status Asaas: ${subscription.status}`,
+            message: `Sincronizado! Vencimento: ${proximoVencimento
+              ? proximoVencimento.toISOString()
+              : empresaParaSync.vencimentoPlano
+                ? empresaParaSync.vencimentoPlano.toISOString()
+                : "mantido"}, Status Asaas: ${subscription.status}`,
             empresa: empresaSincronizada,
           });
         } catch (syncError) {
