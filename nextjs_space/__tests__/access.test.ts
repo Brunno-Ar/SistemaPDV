@@ -104,14 +104,14 @@ describe("avaliarAcesso", () => {
     expect(r.motivo).toBe("plano-vencido");
   });
 
-  it("legado sem vencimento, dentro do trial (criação + 14d + tolerância) é liberado como trial", () => {
+  it("legado com assinatura e vencimento nulo, dentro do trial (criação + 14d + tolerância) é liberado como trial", () => {
     const criado = diasAtras(5); // há 5 dias
     const r = avaliarAcesso(
       {
         role: "admin",
         status: "ATIVO",
         vencimentoPlano: null,
-        temAssinatura: false,
+        temAssinatura: true,
         empresaCriacao: criado,
       },
       AGORA,
@@ -123,14 +123,14 @@ describe("avaliarAcesso", () => {
     );
   });
 
-  it("legado sem vencimento, fora do trial (criação + 14d + 1d) é bloqueado como trial-vencido", () => {
+  it("legado com assinatura e vencimento nulo, fora do trial (criação + 14d + 1d) é bloqueado como trial-vencido", () => {
     const criado = diasAtras(20); // há 20 dias
     const r = avaliarAcesso(
       {
         role: "admin",
         status: "ATIVO",
         vencimentoPlano: null,
-        temAssinatura: false,
+        temAssinatura: true,
         empresaCriacao: criado,
       },
       AGORA,
@@ -139,7 +139,7 @@ describe("avaliarAcesso", () => {
     expect(r.motivo).toBe("trial-vencido");
   });
 
-  it("sem empresaCriacao não concede acesso infinito (base = agora, trial começa agora)", () => {
+  it("ATIVO sem assinatura e sem vencimento falha fechado com sem-vencimento", () => {
     const r = avaliarAcesso(
       {
         role: "admin",
@@ -149,18 +149,32 @@ describe("avaliarAcesso", () => {
       },
       AGORA,
     );
-    // Sem base de criação, o fim do trial é agora + tolerância: já venceu.
+    // Nenhuma base de criação + sem assinatura: fail-closed sem-vencimento.
     expect(r.permitido).toBe(false);
-    expect(r.motivo).toBe("trial-vencido");
+    expect(r.motivo).toBe("sem-vencimento");
   });
 
-  it("novo cadastro (criação = agora) libera trial de 14 dias", () => {
+  it("ATIVO com assinatura mas sem empresaCriacao falha fechado com sem-vencimento", () => {
+    const r = avaliarAcesso(
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: null,
+        temAssinatura: true,
+      },
+      AGORA,
+    );
+    expect(r.permitido).toBe(false);
+    expect(r.motivo).toBe("sem-vencimento");
+  });
+
+  it("novo cadastro com assinatura e vencimento nulo deriva trial de 14 dias da criação", () => {
     const r = avaliarAcesso(
       {
         role: "admin",
         status: "EM_TESTE",
         vencimentoPlano: null,
-        temAssinatura: false,
+        temAssinatura: true,
         empresaCriacao: AGORA,
       },
       AGORA,
@@ -213,13 +227,13 @@ describe("avaliarAcesso", () => {
     expect(foraGrace.motivo).toBe("plano-vencido");
   });
 
-  it("ATIVO sem vencimento e sem base de criação é bloqueado (fail-closed)", () => {
+  it("ATIVO com assinatura, sem vencimento e sem empresaCriacao falha fechado com sem-vencimento", () => {
     const r = avaliarAcesso(
       { role: "admin", status: "ATIVO", vencimentoPlano: null, temAssinatura: true },
       AGORA,
     );
     expect(r.permitido).toBe(false);
-    expect(r.motivo).toBe("trial-vencido");
+    expect(r.motivo).toBe("sem-vencimento");
   });
 
   it("libera por desbloqueio temporário válido e bloqueia após expirar", () => {

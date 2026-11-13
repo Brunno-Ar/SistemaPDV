@@ -100,35 +100,45 @@ export function avaliarAcesso(
   const vencimento = paraData(dados.vencimentoPlano);
 
   if (!vencimento) {
-    // Sem vencimento registrado: deriva o fim do trial de empresaCriacao
-    // (createdAt) + tolerância de 1 dia. Nunca concede acesso infinito: não há
-    // "conta-gratuita" permanente nem cupom sem prazo. Contas legadas sem
-    // vencimento ficam sujeitas ao mesmo trial de 14 dias.
-    const base = paraData(dados.empresaCriacao);
-    if (!base) {
-      // Sem data de criação confiável: não há base para o trial. Fail-closed:
-      // não concede acesso (nem infinito nem por prazo arbitrário).
-      return { permitido: false, motivo: "trial-vencido", limite: agora, diasRestantes: 0 };
-    }
-    const fimTrial = new Date(
-      base.getTime() + TRIAL_DAYS * DIA_MS + TOLERANCIA_TRIAL_DIAS * DIA_MS,
-    );
+    // Sem vencimento registrado. Apenas contas legadas com assinatura Asaas
+    // (temAssinatura === true) derivam o fim do trial de empresaCriacao
+    // (createdAt) + tolerância de 1 dia — mecanismo piloto já aprovado.
+    // Qualquer outra conta ATIVO sem assinatura e sem vencimento falha
+    // fechada: sem-vencimento, nunca "conta-gratuita" permanente nem cupom
+    // sem prazo.
+    if (dados.temAssinatura === true) {
+      const base = paraData(dados.empresaCriacao);
+      if (!base) {
+        // Sem data de criação confiável: não há base para o trial.
+        return { permitido: false, motivo: "sem-vencimento", limite: agora, diasRestantes: 0 };
+      }
+      const fimTrial = new Date(
+        base.getTime() + TRIAL_DAYS * DIA_MS + TOLERANCIA_TRIAL_DIAS * DIA_MS,
+      );
 
-    if (agora <= fimTrial) {
+      if (agora <= fimTrial) {
+        return {
+          permitido: true,
+          motivo: "trial-vigente",
+          limite: fimTrial,
+          diasRestantes: Math.ceil(
+            (fimTrial.getTime() - agora.getTime()) / DIA_MS,
+          ),
+        };
+      }
+
       return {
-        permitido: true,
-        motivo: "trial-vigente",
+        permitido: false,
+        motivo: "trial-vencido",
         limite: fimTrial,
-        diasRestantes: Math.ceil(
-          (fimTrial.getTime() - agora.getTime()) / DIA_MS,
-        ),
+        diasRestantes: 0,
       };
     }
 
     return {
       permitido: false,
-      motivo: "trial-vencido",
-      limite: fimTrial,
+      motivo: "sem-vencimento",
+      limite: agora,
       diasRestantes: 0,
     };
   }

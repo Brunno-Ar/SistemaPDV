@@ -273,9 +273,11 @@ export async function POST(request: NextRequest) {
           let status: "ATIVO" | "EM_TESTE" = "EM_TESTE";
 
           if (isFreeAccount) {
-            // Conta gratuita: ATIVO permanentemente, sem vencimento
-            status = "ATIVO";
-            vencimento = null;
+            // Cupom 100% (preço zero): NÃO cria ATIVO sem vencimento. Segue o
+            // mesmo trial de 14 dias de qualquer novo cadastro, depois
+            // pagamento obrigatório. Nunca concede acesso permanente.
+            status = "EM_TESTE";
+            vencimento = calcularVencimentoTrial();
           } else {
             // Conta normal: Trial de TRIAL_DAYS (lib/billing-policy), mesma
             // duração usada pela 1a cobrança no Asaas.
