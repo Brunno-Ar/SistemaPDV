@@ -99,9 +99,27 @@ function BloqueadoContent() {
     }
   };
 
+  // Motivo legível para o funcionário, sem expor dados internos.
+  function mensagemSuspensao(reason: string): string {
+    switch (reason) {
+      case "pendente":
+        return "Sua empresa está aguardando aprovação do administrador.";
+      case "cancelado":
+        return "Esta empresa foi cancelada. Entre em contato com o suporte.";
+      case "pausado":
+        return "Seu acesso está suspenso. O pagamento não foi identificado.";
+      default:
+        return "O pagamento da sua mensalidade não foi identificado. Regularize para voltar a acessar o FlowPDV.";
+    }
+  }
+
   // =============================================
-  // TELA DO FUNCIONÁRIO (caixa/gerente) - NEUTRA
+  // TELA DO FUNCIONÁRIO (caixa/gerente) - SUSPENSO POR PAGAMENTO
   // =============================================
+  // Não há fatura/invoiceUrl disponível para o funcionário (o fluxo de
+  // cobrança real é admin via /api/billing/pending e retorna invoiceUrl do
+  // Asaas). Não inventa URL de checkout: apenas informa a suspensão e direciona
+  // ao administrador e ao login.
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-6">
@@ -130,51 +148,33 @@ function BloqueadoContent() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-5 bg-slate-100 dark:bg-zinc-800 border-2 border-slate-200 dark:border-zinc-700"
+                className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-5 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-100 dark:border-orange-800/30"
               >
-                <ServerCrash className="w-10 h-10 text-slate-500 dark:text-slate-400" />
+                <AlertTriangle className="w-10 h-10 text-orange-600 dark:text-orange-400" />
               </motion.div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                Sistema Temporariamente Indisponível
+                Acesso Suspenso
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                O sistema está passando por uma manutenção programada. Pedimos
-                desculpas pelo inconveniente.
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
+                {mensagemSuspensao(reason)}
               </p>
-            </div>
 
-            <div className="p-6 space-y-5">
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/30">
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                      O que fazer?
-                    </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                      Entre em contato com o administrador da sua empresa para
-                      verificar o painel de configurações.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 dark:border-zinc-700 pt-5">
-                <p className="text-xs text-center text-gray-400 dark:text-gray-500">
-                  Se o problema persistir, entre em contato com o suporte
-                  técnico.
+              {reason !== "pendente" && reason !== "cancelado" && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                  Entre em contato com o administrador da sua empresa para
+                  regularizar o pagamento.
                 </p>
-              </div>
+              )}
             </div>
-          </div>
 
-          <div className="mt-6 text-center">
-            <Link
-              href="/login"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              ← Voltar para o login
-            </Link>
+            <div className="mt-6 text-center">
+              <Link
+                href="/login"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                ← Voltar para o login
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
