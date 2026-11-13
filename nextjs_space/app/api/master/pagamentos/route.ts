@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { assertAsaasNotLiveOutsideProduction } from "@/lib/asaas";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,8 @@ export async function GET(request: NextRequest) {
         { status: 500 },
       );
     }
+
+    assertAsaasNotLiveOutsideProduction();
 
     const response = await fetch(
       `${ASAAS_API_URL}/payments?customer=${empresa.asaasCustomerId}&limit=50`,

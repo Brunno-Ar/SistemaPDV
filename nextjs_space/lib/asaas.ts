@@ -82,12 +82,39 @@ function logError(
 }
 
 /**
+ * Guard fail-closed: impede chamadas Asaas LIVE (producao) fora de ambiente
+ * de producao (preview/development), sem override opt-in.
+ * - Producao (VERCEL_ENV=production): libera.
+ * - Sandbox (URL nao eh api.asaas.com): libera em qualquer ambiente.
+ * - Testes de unidade (NODE_ENV=test sem VERCEL_ENV): libera (ambiente
+ *   controlado); preview/development reais com URL live: bloqueia ANTES de
+ *   qualquer fetch.
+ */
+export function assertAsaasNotLiveOutsideProduction(): void {
+  const isProduction = process.env.VERCEL_ENV === "production";
+  const isLiveUrl =
+    ASAAS_API_URL.includes("api.asaas.com") &&
+    !ASAAS_API_URL.includes("sandbox");
+
+  if (!isProduction && isLiveUrl) {
+    if (process.env.NODE_ENV === "test" && !process.env.VERCEL_ENV) {
+      return;
+    }
+    throw new Error(
+      "Chamadas Asaas ao ambiente live bloqueadas fora de producao " +
+        "(preview/development). Use sandbox ou defina VERCEL_ENV=production.",
+    );
+  }
+}
+
+/**
  * Helper function for API requests
  */
 async function asaasRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<{ ok: boolean; data: T; status: number }> {
+  assertAsaasNotLiveOutsideProduction();
   const url = `${ASAAS_API_URL}${endpoint}`;
 
   const response = await fetch(url, {
