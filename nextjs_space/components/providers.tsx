@@ -23,7 +23,7 @@ export function Providers({ children }: ProvidersProps) {
   }
 
   return (
-    <SessionProvider>
+    <SessionProvider refetchInterval={60} refetchOnWindowFocus={true}>
       <ThemeProvider
         attribute="class"
         defaultTheme="light"

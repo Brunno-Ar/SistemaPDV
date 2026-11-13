@@ -62,7 +62,9 @@ export async function GET(_req: NextRequest) {
         id: empresa.asaasSubscriptionId,
       },
       billing: billingInfo,
-      history,
+      // `null` = falha do Asaas: a tela mostra lista vazia, mas o sync nao
+      // confunde isso com "sem pagamento".
+      history: history ?? [],
     });
   } catch (error) {
     console.error("Erro ao buscar dados da assinatura:", error);

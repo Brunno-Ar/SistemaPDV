@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
 import { StatusEmpresa } from "@prisma/client";
+import { podeReativarManualmente } from "@/lib/access";
+import { conferirPagamentoConfirmado } from "@/lib/pagamento";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +40,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Gate server-side: acoes que reativam/renovam exigem pagamento confirmado.
+    // Nao confia em flag do cliente; confere cobertura local (gravada pelo
+    // webhook em PAYMENT_RECEIVED) ou o historico do Asaas. `PAYMENT_CONFIRMED`
+    // NAO conta: so RECEIVED liquida e libera.
+    const bloquearSeSemPagamento = async (empresa: {
+      status: string | null;
+      asaasCustomerId: string | null;
+      asaasSubscriptionId: string | null;
+      vencimentoPlano: Date | null;
+    }): Promise<NextResponse | null> => {
+      const conferencia = await conferirPagamentoConfirmado(empresa, (id) =>
+        asaas.listPaymentHistory(id),
+      );
+
+      const policy = podeReativarManualmente(
+        empresa.status,
+        conferencia.confirmado,
+      );
+      if (!policy.permitido) {
+        return NextResponse.json({ error: policy.motivo }, { status: 400 });
+      }
+
+      return null;
+    };
+
     switch (action) {
       case "aprovar":
         // Aprovar empresa (status = ATIVO, vencimento +30 dias)
@@ -51,6 +78,18 @@ export async function POST(request: NextRequest) {
         const empresaParaAprovar = await prisma.empresa.findUnique({
           where: { id: empresaId },
         });
+
+        if (!empresaParaAprovar) {
+          return NextResponse.json(
+            { error: "Empresa não encontrada" },
+            { status: 404 },
+          );
+        }
+
+        const bloqueioAprovar = await bloquearSeSemPagamento(
+          empresaParaAprovar,
+        );
+        if (bloqueioAprovar) return bloqueioAprovar;
 
         const vencimento = new Date();
         vencimento.setDate(vencimento.getDate() + 30);
@@ -105,6 +144,9 @@ export async function POST(request: NextRequest) {
           );
         }
 
+        const bloqueioRenovar = await bloquearSeSemPagamento(empresa);
+        if (bloqueioRenovar) return bloqueioRenovar;
+
         // Nova data de vencimento = data atual do vencimento + 30 dias
         const novoVencimentoCalculado = empresa.vencimentoPlano
           ? new Date(
@@ -151,6 +193,18 @@ export async function POST(request: NextRequest) {
         const empresaParaAtualizar = await prisma.empresa.findUnique({
           where: { id: empresaId },
         });
+
+        if (!empresaParaAtualizar) {
+          return NextResponse.json(
+            { error: "Empresa não encontrada" },
+            { status: 404 },
+          );
+        }
+
+        const bloqueioVencimento = await bloquearSeSemPagamento(
+          empresaParaAtualizar,
+        );
+        if (bloqueioVencimento) return bloqueioVencimento;
 
         const novaDataVencimento = new Date(novoVencimento);
 
@@ -268,6 +322,11 @@ export async function POST(request: NextRequest) {
             { status: 404 },
           );
         }
+
+        const bloqueioReativar = await bloquearSeSemPagamento(
+          empresaParaReativar,
+        );
+        if (bloqueioReativar) return bloqueioReativar;
 
         // Reativar no Asaas também
         if (empresaParaReativar?.asaasSubscriptionId) {
@@ -475,6 +534,20 @@ export async function POST(request: NextRequest) {
             empresaParaSync.asaasSubscriptionId,
           );
 
+          // Prova server-side de PAYMENT_RECEIVED (estado local do webhook ou
+          // historico do Asaas). So isso ativa/estende a cobertura; CONFIRMED
+          // nao conta. Falha FECHADA: sem prova, mantem o status e nao avanca
+          // o vencimento (o webhook RECEIVED continua sendo a unica fonte de
+          // liberacao/renovacao).
+          const conferencia = await conferirPagamentoConfirmado(
+            {
+              asaasCustomerId: empresaParaSync.asaasCustomerId,
+              asaasSubscriptionId: empresaParaSync.asaasSubscriptionId,
+              vencimentoPlano: empresaParaSync.vencimentoPlano,
+            },
+            (id) => asaas.listPaymentHistory(id),
+          );
+
           // Mapear status do Asaas para status do sistema
           // IMPORTANTE: Preservar EM_TESTE se a conta ainda está em período de trial
           let novoStatus = empresaParaSync.status;
@@ -483,19 +556,25 @@ export async function POST(request: NextRequest) {
           if (empresaParaSync.status === "EM_TESTE") {
             // Manter EM_TESTE - a sincronização não deve alterar contas em trial
             novoStatus = "EM_TESTE";
-          } else if (subscription.status === "ACTIVE") {
-            novoStatus = "ATIVO";
           } else if (subscription.status === "INACTIVE") {
             novoStatus = "PAUSADO";
+          } else if (
+            conferencia.confirmado &&
+            subscription.status === "ACTIVE"
+          ) {
+            novoStatus = "ATIVO";
           }
 
           // Atualizar vencimento e status
           const empresaSincronizada = await prisma.empresa.update({
             where: { id: empresaId },
             data: {
-              vencimentoPlano: subscription.nextDueDate
-                ? new Date(subscription.nextDueDate)
-                : empresaParaSync.vencimentoPlano,
+              // Vencimento local SO avanca com pagamento RECEIVED comprovado
+              // pelo historico do Asaas (fonte === "asaas"). Nunca estende com
+              // prova local — isso foi removido (prova circular).
+              ...(conferencia.fonte === "asaas" && subscription.nextDueDate
+                ? { vencimentoPlano: new Date(subscription.nextDueDate) }
+                : {}),
               status: novoStatus,
             },
           });

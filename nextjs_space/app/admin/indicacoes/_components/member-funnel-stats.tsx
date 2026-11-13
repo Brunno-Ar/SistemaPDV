@@ -55,7 +55,16 @@ export function MemberFunnelStats({
       color: "text-purple-600 dark:text-purple-400",
       bgColor: "bg-purple-50 dark:bg-purple-950/30",
       borderColor: "border-purple-200 dark:border-purple-900/40",
-      sub: null,
+      sub: pagoCount >= 5 ? "Marco 5 ativo: 50% permanente acumulado" : null,
+    },
+    {
+      label: "Marco 5 — Desconto Permanente",
+      value: pagoCount >= 5 ? "Ativo" : `${5 - pagoCount} restante`,
+      icon: CreditCard,
+      color: pagoCount >= 5 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400",
+      bgColor: pagoCount >= 5 ? "bg-green-50 dark:bg-green-950/30" : "bg-amber-50 dark:bg-amber-950/30",
+      borderColor: pagoCount >= 5 ? "border-green-200 dark:border-green-900/40" : "border-amber-200 dark:border-amber-900/40",
+      sub: pagoCount >= 5 ? "50% de desconto permanente acumulado" : `${5 - pagoCount} assinatura(s) paga(s) para ativar`,
     },
   ];
 

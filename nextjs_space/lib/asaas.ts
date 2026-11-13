@@ -1,11 +1,13 @@
+import {
+  calcularVencimentoTrial,
+  PRECO_PLANO_PADRAO,
+} from "@/lib/billing-policy";
+
 // Define environment variables with fallbacks for type safety
 const ASAAS_API_URL = process.env.ASAAS_API_URL || "https://api.asaas.com/v3"; // Produção por padrão
 
 // API Key DEVE vir do ambiente - sem fallback por segurança
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || "";
-
-const PLAN_PRICE = parseFloat(process.env.NEXT_PUBLIC_PLAN_PRICE || "49.90");
-const TRIAL_DAYS = parseInt(process.env.NEXT_PUBLIC_TRIAL_DAYS || "14", 10);
 
 // Multa e Juros configuráveis
 const FINE_PERCENT = parseFloat(process.env.ASAAS_FINE_PERCENT || "2"); // 2%
@@ -55,6 +57,9 @@ interface PaymentHistoryItem {
   dueDate: string;
   invoiceUrl: string;
   bankSlipUrl?: string;
+  /** Vinculo do pagamento: prova de que e do cliente/assinatura da empresa. */
+  customer?: string | null;
+  subscription?: string | null;
 }
 
 interface AsaasError {
@@ -273,11 +278,10 @@ export const asaas = {
     customerId: string,
     customValue?: number,
   ): Promise<AsaasSubscription> {
-    const nextDueDate = new Date();
-    nextDueDate.setDate(nextDueDate.getDate() + TRIAL_DAYS);
+    const nextDueDate = calcularVencimentoTrial();
     const nextDueDateStr = nextDueDate.toISOString().split("T")[0];
 
-    const value = customValue !== undefined ? customValue : PLAN_PRICE;
+    const value = customValue !== undefined ? customValue : PRECO_PLANO_PADRAO;
 
     console.log("🔄 [Asaas.createSubscription] Creating subscription:", {
       customerId,
@@ -368,23 +372,56 @@ export const asaas = {
 
   /**
    * Fetches payment history for the subscription.
+   *
+   * `null` = falha do Asaas; `[]` = lista vazia de verdade. Quem PROVA pagamento
+   * precisa falhar fechado com `null` — tratar erro como lista vazia escondia
+   * pendencia. Pagina de 100 em 100 (limite da API) para nao perder um RECEIVED
+   * antigo que ainda cobre o ciclo.
    */
   async listPaymentHistory(
     subscriptionId: string,
-  ): Promise<PaymentHistoryItem[]> {
-    try {
-      const { ok, data } = await asaasRequest<{ data: PaymentHistoryItem[] }>(
-        `/payments?subscription=${subscriptionId}&limit=10`,
-      );
+  ): Promise<PaymentHistoryItem[] | null> {
+    const LIMITE = 100;
+    const MAX_PAGINAS = 5;
+    const historico: PaymentHistoryItem[] = [];
 
-      if (!ok) {
-        throw new Error("Failed to fetch history");
+    try {
+      for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
+        const { ok, data } = await asaasRequest<{
+          data?: PaymentHistoryItem[];
+          hasMore?: boolean;
+        }>(
+          `/payments?subscription=${subscriptionId}&limit=${LIMITE}&offset=${pagina * LIMITE}`,
+        );
+
+        if (!ok) throw new Error("Failed to fetch history");
+
+        const lote = data.data ?? [];
+        historico.push(...lote);
+        if (data.hasMore === false || lote.length < LIMITE) break;
       }
 
-      return data.data || [];
+      return historico;
     } catch (error) {
       logError("listPaymentHistory", error, { subscriptionId });
-      return [];
+      return null;
+    }
+  },
+
+  /**
+   * Consulta pontual de UMA cobranca (GET /payments/{id}). Serve para o webhook
+   * que chega sem `dueDate`: uma chamada para provar o ciclo antes de escolher
+   * entre recusar de vez e pedir reentrega. `null` = erro ou resposta inutil.
+   */
+  async getPayment(paymentId: string): Promise<PaymentHistoryItem | null> {
+    try {
+      const { ok, data } = await asaasRequest<PaymentHistoryItem>(
+        `/payments/${paymentId}`,
+      );
+      return ok && data?.id ? data : null;
+    } catch (error) {
+      logError("getPayment", error, { paymentId });
+      return null;
     }
   },
 

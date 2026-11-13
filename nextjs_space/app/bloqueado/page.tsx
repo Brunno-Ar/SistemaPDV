@@ -58,7 +58,7 @@ function BloqueadoContent() {
 
   useEffect(() => {
     if (email && isAdmin) {
-      fetch(`/api/billing/pending?email=${encodeURIComponent(email)}`)
+      fetch(`/api/billing/pending`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data?.billing) {
