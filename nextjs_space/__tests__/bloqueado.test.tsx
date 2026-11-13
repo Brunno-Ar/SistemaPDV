@@ -119,6 +119,31 @@ describe("Pagina /bloqueado", () => {
     expect(screen.getByText("← Voltar para o login")).toBeInTheDocument();
   });
 
+  it("admin nao mostra botao nem modal de liberacao temporaria (bypass removido)", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        billing: {
+          value: 49.9,
+          invoiceUrl: "https://app.asaas.com/pay/abc123",
+          status: "PENDING",
+          vencimento: "15/11/2026",
+        },
+      }),
+    });
+    setParams("vencido", "admin");
+
+    render(<BloqueadoPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Pagar Agora")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText(/Já paguei, liberar acesso temporário/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Liberação Temporária/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/24 horas/)).not.toBeInTheDocument();
+    expect(screen.getByText("← Voltar para o login")).toBeInTheDocument();
+  });
+
   it("admin sem fatura pendente mostra contato de suporte e sem CTA pagar", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
