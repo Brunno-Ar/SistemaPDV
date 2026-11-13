@@ -53,7 +53,7 @@ export const FooterCTA = () => {
           </div>
 
           <p className="mt-8 text-sm text-zinc-500">
-            Sem cartão de crédito necessário • 30 dias de teste grátis
+            Sem cartão de crédito necessário • 14 dias de teste grátis
           </p>
         </motion.div>
       </div>
