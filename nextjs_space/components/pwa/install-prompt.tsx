@@ -63,7 +63,7 @@ export function InstallPrompt({ variant = "floating" }: InstallPromptProps) {
     }
 
     deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    await deferredPrompt.userChoice;
     // console.log(`User response to the install prompt: ${outcome}`);
     globalDeferredPrompt = null;
     setDeferredPrompt(null);
