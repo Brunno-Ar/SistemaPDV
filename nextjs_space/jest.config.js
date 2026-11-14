@@ -9,6 +9,11 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   coverageProvider: "v8",
   testEnvironment: "jsdom",
+  // Jest roda APENAS os testes unitários em __tests__/**.
+  // tests/e2e/** e tests/api/** são suites Playwright (requerem o pacote
+  // `playwright`, NAO instalado neste repositorio) e nunca sao coletadas pelo
+  // `npm test`/`npx jest`, evitando falhas de parse/require de modulo ausente.
+  testMatch: ["<rootDir>/__tests__/**/*.test.ts", "<rootDir>/__tests__/**/*.test.tsx"],
   // Guard fail-closed: sobrescreve DATABASE_URL/DIRECT_URL com URL dummy LOCAL
   // ANTES de qualquer import do Prisma/@/lib/db, impedindo herda URL de
   // produção do .env. Não abre conexão.
