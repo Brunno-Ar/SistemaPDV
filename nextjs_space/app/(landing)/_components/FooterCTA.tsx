@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TRIAL_DAYS } from "@/lib/billing-policy";
 
 export const FooterCTA = () => {
   return (
@@ -53,7 +54,7 @@ export const FooterCTA = () => {
           </div>
 
           <p className="mt-8 text-sm text-zinc-500">
-            Sem cartão de crédito necessário • 30 dias de teste grátis
+            Sem cartão de crédito necessário • {TRIAL_DAYS} dias de teste grátis
           </p>
         </motion.div>
       </div>

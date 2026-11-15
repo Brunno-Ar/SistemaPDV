@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   CreditCard,
@@ -9,10 +9,8 @@ import {
   Mail,
   ExternalLink,
   Loader2,
-  Lock,
   ShieldAlert,
   Clock,
-  CheckCircle2,
   XCircle,
   ServerCrash,
 } from "lucide-react";
@@ -20,17 +18,6 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
 interface BillingInfo {
   value: number;
   invoiceUrl: string;
@@ -50,15 +37,9 @@ function BloqueadoContent() {
   const [billing, setBilling] = useState<BillingInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
-  const [unlockPassword, setUnlockPassword] = useState("");
-  const [unlocking, setUnlocking] = useState(false);
-  const [unlockError, setUnlockError] = useState("");
-  const [unlockSuccess, setUnlockSuccess] = useState(false);
-
   useEffect(() => {
     if (email && isAdmin) {
-      fetch(`/api/billing/pending?email=${encodeURIComponent(email)}`)
+      fetch(`/api/billing/pending`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data?.billing) {
@@ -72,36 +53,28 @@ function BloqueadoContent() {
     }
   }, [email, isAdmin]);
 
-  const handleUnlock = async () => {
-    setUnlocking(true);
-    setUnlockError("");
-    try {
-      const res = await fetch("/api/public/unlock-account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: unlockPassword }),
-      });
-      const data = await res.json();
 
-      if (res.ok) {
-        setUnlockSuccess(true);
-        setTimeout(() => {
-          setShowUnlockModal(false);
-          router.push("/login?message=desbloqueado");
-        }, 2000);
-      } else {
-        setUnlockError(data.error || "Erro ao desbloquear");
-      }
-    } catch {
-      setUnlockError("Erro de conexão ao tentar desbloquear");
-    } finally {
-      setUnlocking(false);
+  // Motivo legível para o funcionário, sem expor dados internos.
+  function mensagemSuspensao(reason: string): string {
+    switch (reason) {
+      case "pendente":
+        return "Sua empresa está aguardando aprovação do administrador.";
+      case "cancelado":
+        return "Esta empresa foi cancelada. Entre em contato com o suporte.";
+      case "pausado":
+        return "Seu acesso está suspenso. O pagamento não foi identificado.";
+      default:
+        return "O pagamento da sua mensalidade não foi identificado. Regularize para voltar a acessar o FlowPDV.";
     }
-  };
+  }
 
   // =============================================
-  // TELA DO FUNCIONÁRIO (caixa/gerente) - NEUTRA
+  // TELA DO FUNCIONÁRIO (caixa/gerente) - SUSPENSO POR PAGAMENTO
   // =============================================
+  // Não há fatura/invoiceUrl disponível para o funcionário (o fluxo de
+  // cobrança real é admin via /api/billing/pending e retorna invoiceUrl do
+  // Asaas). Não inventa URL de checkout: apenas informa a suspensão e direciona
+  // ao administrador e ao login.
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950 flex flex-col items-center justify-center p-6">
@@ -130,51 +103,33 @@ function BloqueadoContent() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-5 bg-slate-100 dark:bg-zinc-800 border-2 border-slate-200 dark:border-zinc-700"
+                className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-5 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-100 dark:border-orange-800/30"
               >
-                <ServerCrash className="w-10 h-10 text-slate-500 dark:text-slate-400" />
+                <AlertTriangle className="w-10 h-10 text-orange-600 dark:text-orange-400" />
               </motion.div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-                Sistema Temporariamente Indisponível
+                Acesso Suspenso
               </h1>
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                O sistema está passando por uma manutenção programada. Pedimos
-                desculpas pelo inconveniente.
+              <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
+                {mensagemSuspensao(reason)}
               </p>
-            </div>
 
-            <div className="p-6 space-y-5">
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/30">
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                      O que fazer?
-                    </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                      Entre em contato com o administrador da sua empresa para
-                      verificar o painel de configurações.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200 dark:border-zinc-700 pt-5">
-                <p className="text-xs text-center text-gray-400 dark:text-gray-500">
-                  Se o problema persistir, entre em contato com o suporte
-                  técnico.
+              {reason !== "pendente" && reason !== "cancelado" && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                  Entre em contato com o administrador da sua empresa para
+                  regularizar o pagamento.
                 </p>
-              </div>
+              )}
             </div>
-          </div>
 
-          <div className="mt-6 text-center">
-            <Link
-              href="/login"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              ← Voltar para o login
-            </Link>
+            <div className="mt-6 text-center">
+              <Link
+                href="/login"
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                ← Voltar para o login
+              </Link>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -223,7 +178,7 @@ function BloqueadoContent() {
           bgLight: "bg-red-50 dark:bg-red-900/20",
           borderLight: "border-red-100 dark:border-red-800/30",
           showBilling: true,
-          showUnlock: true,
+          showUnlock: false,
         };
       default:
         return {
@@ -236,7 +191,7 @@ function BloqueadoContent() {
           bgLight: "bg-orange-50 dark:bg-orange-900/20",
           borderLight: "border-orange-100 dark:border-orange-800/30",
           showBilling: true,
-          showUnlock: true,
+          showUnlock: false,
         };
     }
   };
@@ -371,16 +326,7 @@ function BloqueadoContent() {
                   </div>
                 )}
 
-                {content.showUnlock && (
-                  <Button
-                    variant="outline"
-                    className="w-full h-12 text-base font-medium border-dashed"
-                    onClick={() => setShowUnlockModal(true)}
-                  >
-                    <Lock className="mr-2 h-4 w-4" />
-                    Já paguei, liberar acesso temporário
-                  </Button>
-                )}
+
               </>
             )}
 
@@ -422,76 +368,6 @@ function BloqueadoContent() {
         </div>
       </motion.div>
 
-      {/* Modal de Desbloqueio Temporário */}
-      <Dialog open={showUnlockModal} onOpenChange={setShowUnlockModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-blue-600" />
-              Liberação Temporária
-            </DialogTitle>
-            <DialogDescription>
-              Se você já realizou o pagamento, podemos liberar seu acesso por{" "}
-              <strong>24 horas</strong> enquanto a compensação é processada.
-              <br />
-              <br />
-              Confirme sua senha para continuar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="unlock-password">Senha</Label>
-              <Input
-                id="unlock-password"
-                type="password"
-                placeholder="Sua senha de acesso"
-                value={unlockPassword}
-                onChange={(e) => setUnlockPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && unlockPassword && !unlocking) {
-                    handleUnlock();
-                  }
-                }}
-              />
-            </div>
-            <AnimatePresence mode="wait">
-              {unlockError && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-200 dark:border-red-800/30 flex items-center gap-2"
-                >
-                  <XCircle className="h-4 w-4 flex-shrink-0" />
-                  {unlockError}
-                </motion.div>
-              )}
-              {unlockSuccess && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  className="p-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 text-sm rounded-lg border border-green-200 dark:border-green-800/30 flex items-center gap-2"
-                >
-                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                  Acesso liberado! Redirecionando...
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowUnlockModal(false)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleUnlock}
-              disabled={unlocking || !unlockPassword || unlockSuccess}
-            >
-              {unlocking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar Liberação
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

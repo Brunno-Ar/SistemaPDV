@@ -5,6 +5,11 @@ import { generateVerificationToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
 import { Prisma } from "@prisma/client";
 import { asaas } from "@/lib/asaas";
+import {
+  TRIAL_DAYS,
+  calcularVencimentoTrial,
+  PRECO_PLANO_PADRAO,
+} from "@/lib/billing-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -101,9 +106,7 @@ export async function POST(request: NextRequest) {
       usosAtuais: number;
       limiteUsos: number | null;
     } | null = null;
-    let subscriptionPrice = parseFloat(
-      process.env.NEXT_PUBLIC_PLAN_PRICE || "49.90",
-    );
+    let subscriptionPrice = PRECO_PLANO_PADRAO;
 
     if (cupom) {
       cupomDb = await prisma.cupom.findUnique({
@@ -270,17 +273,15 @@ export async function POST(request: NextRequest) {
           let status: "ATIVO" | "EM_TESTE" = "EM_TESTE";
 
           if (isFreeAccount) {
-            // Conta gratuita: ATIVO permanentemente, sem vencimento
-            status = "ATIVO";
-            vencimento = null;
+            // Cupom 100% (preço zero): NÃO cria ATIVO sem vencimento. Segue o
+            // mesmo trial de 14 dias de qualquer novo cadastro, depois
+            // pagamento obrigatório. Nunca concede acesso permanente.
+            status = "EM_TESTE";
+            vencimento = calcularVencimentoTrial();
           } else {
-            // Conta normal: Trial de X dias
-            const trialDays = parseInt(
-              process.env.NEXT_PUBLIC_TRIAL_DAYS || "30",
-              10,
-            );
-            vencimento = new Date();
-            vencimento.setDate(vencimento.getDate() + trialDays);
+            // Conta normal: Trial de TRIAL_DAYS (lib/billing-policy), mesma
+            // duração usada pela 1a cobrança no Asaas.
+            vencimento = calcularVencimentoTrial();
           }
 
           // 1. Criar empresa
@@ -364,7 +365,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: isFreeAccount
           ? "🎉 Conta criada com sucesso! Aproveite o sistema gratuitamente!"
-          : "Cadastro realizado com sucesso! Seu período de teste de 30 dias começou.",
+          : `Cadastro realizado com sucesso! Seu período de teste de ${TRIAL_DAYS} dias começou.`,
         empresa: {
           id: result.empresa.id,
           nome: result.empresa.nome,

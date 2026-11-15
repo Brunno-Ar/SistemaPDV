@@ -12,6 +12,14 @@ if (-not (Test-Path ".env.test")) {
     exit 1
 }
 
+# Recusa hosts remotos: nunca sobrescreve .env com banco de produção/remoto
+$envTestContent = Get-Content ".env.test" -Raw
+$dbUrlLine = ($envTestContent -split "`n" | Where-Object { $_ -match "^DATABASE_URL=" }) -join "`n"
+if ($dbUrlLine -and $dbUrlLine -notmatch "localhost|127\.0\.0\.1|::1") {
+    Write-Host "ERRO: .env.test aponta a host de banco remoto. Recusando sobrescrever .env." -ForegroundColor Red
+    exit 1
+}
+
 # Faz backup do .env atual (produção)
 if (Test-Path ".env") {
     Copy-Item ".env" ".env.production.backup" -Force

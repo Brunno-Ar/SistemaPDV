@@ -14,6 +14,8 @@ declare module "next-auth" {
       vencimentoPlano?: string | null;
       liberacaoTemporariaAte?: string | null;
       tourCompleted?: boolean;
+      empresaTemAssinatura?: boolean | null;
+      empresaCriacao?: string | null;
     };
     lastActivity?: number;
   }
@@ -27,6 +29,8 @@ declare module "next-auth" {
     vencimentoPlano?: string | null;
     liberacaoTemporariaAte?: string | null;
     tourCompleted?: boolean;
+      empresaTemAssinatura?: boolean | null;
+      empresaCriacao?: string | null;
   }
 }
 
@@ -41,5 +45,7 @@ declare module "next-auth/jwt" {
     liberacaoTemporariaAte?: string | null;
     lastActivity?: number;
     tourCompleted?: boolean;
+    empresaTemAssinatura?: boolean | null;
+    empresaCriacao?: string | null;
   }
 }

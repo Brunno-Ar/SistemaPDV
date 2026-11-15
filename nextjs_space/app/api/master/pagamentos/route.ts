@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { asaas } from "@/lib/asaas";
 
 export const dynamic = "force-dynamic";
 
@@ -47,69 +48,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Buscar pagamentos no Asaas
-    const ASAAS_API_URL =
-      process.env.ASAAS_API_URL || "https://api.asaas.com/v3";
-    const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
+    // Buscar pagamentos no Asaas via cliente compartilhado (guard de live
+    // fora de producao aplicado internamente em asaasRequest).
+    const resultado = await asaas.listPaymentsByCustomer(empresa.asaasCustomerId);
 
-    if (!ASAAS_API_KEY) {
-      return NextResponse.json(
-        { error: "ASAAS_API_KEY não configurada" },
-        { status: 500 },
-      );
-    }
-
-    const response = await fetch(
-      `${ASAAS_API_URL}/payments?customer=${empresa.asaasCustomerId}&limit=50`,
-      {
-        headers: {
-          access_token: ASAAS_API_KEY,
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      console.error("Erro Asaas:", await response.text());
+    if (!resultado) {
       return NextResponse.json(
         { error: "Erro ao buscar pagamentos no Asaas" },
         { status: 500 },
       );
     }
 
-    const data = await response.json();
-
     // Formatar dados para o frontend
-    const pagamentos = data.data.map(
-      (p: {
-        id: string;
-        value: number;
-        status: string;
-        dueDate: string;
-        paymentDate: string | null;
-        billingType: string;
-        invoiceUrl: string | null;
-        bankSlipUrl: string | null;
-        pixTransaction?: { qrCodeUrl?: string } | null;
-        description: string | null;
-      }) => ({
-        id: p.id,
-        valor: p.value,
-        status: p.status,
-        vencimento: p.dueDate,
-        dataPagamento: p.paymentDate,
-        tipo: p.billingType,
-        // URLs para visualizar/pagar
-        invoiceUrl: p.invoiceUrl, // Fatura genérica
-        boletoUrl: p.bankSlipUrl, // Link do boleto
-        pixUrl: p.pixTransaction?.qrCodeUrl || null, // QR Code PIX
-        descricao: p.description,
-      }),
-    );
+    const pagamentos = resultado.data.map((p) => ({
+      id: p.id,
+      valor: p.value,
+      status: p.status,
+      vencimento: p.dueDate,
+      dataPagamento: (p as any).paymentDate ?? null,
+      tipo: (p as any).billingType ?? null,
+      // URLs para visualizar/pagar
+      invoiceUrl: p.invoiceUrl ?? null, // Fatura genérica
+      boletoUrl: (p as any).bankSlipUrl ?? null, // Link do boleto
+      pixUrl: (p as any).pixTransaction?.qrCodeUrl ?? null, // QR Code PIX
+      descricao: (p as any).description ?? null,
+    }));
 
     return NextResponse.json({
       empresa: empresa.nome,
-      total: data.totalCount,
+      total: resultado.totalCount,
       pagamentos,
     });
   } catch (error) {

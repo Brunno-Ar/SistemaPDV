@@ -3,6 +3,10 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/db";
+import { avaliarAcesso, mensagemBloqueio } from "@/lib/access";
+
+/** Janela de revalidacao do JWT contra o banco (5 min). Limita a defasagem. */
+const JWT_REVALIDAR_MS = 5 * 60 * 1000;
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -44,49 +48,20 @@ export const authOptions: AuthOptions = {
         }
 
         // ✅ BLOQUEIOS SaaS (apenas para não-masters)
-        if (user.role !== "master" && user.empresa) {
-          const empresa: any = user.empresa;
-          const status = empresa.status as string;
-          const now = new Date();
-          const roleTag =
-            user.role === "admin" ? "[ROLE:admin]" : "[ROLE:employee]";
+        if (user.role !== "master") {
+          const acesso = avaliarAcesso({
+            role: user.role,
+            status: user.empresa?.status ?? null,
+            vencimentoPlano: user.empresa?.vencimentoPlano ?? null,
+            liberacaoTemporariaAte:
+              (user.empresa as any)?.liberacaoTemporariaAte ?? null,
+            temAssinatura: Boolean(user.empresa?.asaasSubscriptionId),
+          });
 
-          if (status === "PENDENTE") {
-            throw new Error(
-              `${roleTag}Sua empresa está aguardando aprovação do administrador. Tente novamente mais tarde.`,
-            );
-          }
-
-          if (status === "CANCELADO") {
-            throw new Error(
-              `${roleTag}Esta empresa foi cancelada. Entre em contato com o suporte.`,
-            );
-          }
-
-          if (status === "PAUSADO") {
-            const liberacaoAte = empresa.liberacaoTemporariaAte;
-            if (liberacaoAte && new Date(liberacaoAte) > now) {
-              // Acesso liberado temporariamente
-            } else {
-              throw new Error(
-                `${roleTag}Pagamento Pendente. Regularize para acessar.`,
-              );
-            }
-          }
-
-          if (
-            (status === "ATIVO" || status === "EM_TESTE") &&
-            empresa.vencimentoPlano
-          ) {
-            const toleranceDate = new Date(empresa.vencimentoPlano);
-            const toleranceDays = status === "EM_TESTE" ? 1 : 10;
-            toleranceDate.setDate(toleranceDate.getDate() + toleranceDays);
-
-            if (now > toleranceDate) {
-              throw new Error(
-                `${roleTag}Acesso bloqueado. O pagamento da sua mensalidade não foi realizado.`,
-              );
-            }
+          if (!acesso.permitido) {
+            const roleTag =
+              user.role === "admin" ? "[ROLE:admin]" : "[ROLE:employee]";
+            throw new Error(`${roleTag}${mensagemBloqueio(acesso)}`);
           }
         }
 
@@ -102,6 +77,8 @@ export const authOptions: AuthOptions = {
           liberacaoTemporariaAte: (
             user.empresa as any
           )?.liberacaoTemporariaAte?.toISOString(),
+          empresaTemAssinatura: Boolean(user.empresa?.asaasSubscriptionId),
+          empresaCriacao: user.empresa?.createdAt?.toISOString() ?? null,
           tourCompleted: user.tourCompleted,
         };
       },
@@ -124,8 +101,11 @@ export const authOptions: AuthOptions = {
         token.empresaStatus = user.empresaStatus;
         token.vencimentoPlano = user.vencimentoPlano;
         token.liberacaoTemporariaAte = user.liberacaoTemporariaAte;
+        token.empresaTemAssinatura = (user as any).empresaTemAssinatura ?? null;
+        token.empresaCriacao = (user as any).empresaCriacao ?? null;
         token.tourCompleted = user.tourCompleted;
         token.lastActivity = Date.now();
+        token.dadosAtualizadosEm = Date.now();
       }
 
       if (trigger === "update") {
@@ -136,6 +116,47 @@ export const authOptions: AuthOptions = {
         if (session?.empresaStatus !== undefined) {
           token.empresaStatus = session.empresaStatus;
         }
+        // update forca revalidacao do vencimento/status no banco abaixo.
+        token.dadosAtualizadosEm = 0;
+      }
+
+      // Revalida a empresa no banco de forma PERIODICA (nao so quando o token
+      // ja bloqueia). Cobre os DOIS sentidos:
+      //  - liberar acesso apos pagamento confirmado;
+      //  - BLOQUEAR acesso apos mudanca de status/vencimento (ex.: CANCELADO),
+      //    que antes ficava liberado ate o token expirar.
+      // Roda em toda leitura de sessao no runtime Node (getServerSession e
+      // /api/auth/session via SessionProvider). O middleware Edge nao roda este
+      // callback: sua defasagem fica limitada pelo maxAge da sessao (4h).
+      const precisaRevalidar =
+        !user &&
+        !!token.empresaId &&
+        token.role !== "master" &&
+        (trigger === "update" ||
+          !token.dadosAtualizadosEm ||
+          Date.now() - (token.dadosAtualizadosEm as number) > JWT_REVALIDAR_MS);
+
+      if (precisaRevalidar) {
+        const empresa = await prisma.empresa.findUnique({
+          where: { id: token.empresaId as string },
+          select: {
+            status: true,
+            vencimentoPlano: true,
+            liberacaoTemporariaAte: true,
+            createdAt: true,
+            asaasSubscriptionId: true,
+          },
+        });
+
+        if (empresa) {
+          token.empresaStatus = empresa.status;
+          token.vencimentoPlano = empresa.vencimentoPlano?.toISOString() ?? null;
+          token.liberacaoTemporariaAte =
+            empresa.liberacaoTemporariaAte?.toISOString() ?? null;
+          token.empresaTemAssinatura = Boolean(empresa.asaasSubscriptionId);
+          token.empresaCriacao = empresa.createdAt?.toISOString() ?? null;
+        }
+        token.dadosAtualizadosEm = Date.now();
       }
 
       return token;
@@ -152,6 +173,10 @@ export const authOptions: AuthOptions = {
           | string
           | undefined;
         session.user.tourCompleted = token.tourCompleted as boolean;
+        session.user.empresaTemAssinatura =
+          (token.empresaTemAssinatura as boolean | null) ?? null;
+        session.user.empresaCriacao =
+          (token.empresaCriacao as string | null) ?? null;
         session.lastActivity = token.lastActivity as number;
       }
       return session;
