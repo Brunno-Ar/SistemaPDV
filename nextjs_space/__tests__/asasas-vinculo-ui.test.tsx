@@ -10,7 +10,7 @@ jest.mock("next/navigation", () => {
 });
 
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { AsaasVinculoDialog } from "./asaas-vinculo-dialog";
 
@@ -41,9 +41,16 @@ const empresaVinculada = {
         valor: 49.9,
         ciclo: "MONTHLY",
         total: 1,
-        candidatos: [{ id: "sub_E1", status: "ACTIVE", valor: 49.9, ciclo: "MONTHLY", vencimento: "2026-12-10" }],
+        candidatos: [
+          { id: "sub_E1", status: "ACTIVE", valor: 49.9, ciclo: "MONTHLY", vencimento: "2026-12-10" },
+        ],
       },
-      pagamento: { recebido: true, fonte: "asaas", coberturaAte: "2026-12-10T00:00:00.000Z", pendente: false },
+      pagamento: {
+        recebido: true,
+        fonte: "asaas",
+        coberturaAte: "2026-12-10T00:00:00.000Z",
+        pendente: false,
+      },
     },
     proposta: {
       acao: "sincronizar",
@@ -80,8 +87,21 @@ const empresaProvisionamento = {
     },
     asaas: {
       customer: { id: null, situacao: "ausente" },
-      assinatura: { id: null, situacao: "ausente", status: null, valor: null, ciclo: null, total: 0, candidatos: [] },
-      pagamento: { recebido: false, fonte: "nenhuma", coberturaAte: null, pendente: false },
+      assinatura: {
+        id: null,
+        situacao: "ausente",
+        status: null,
+        valor: null,
+        ciclo: null,
+        total: 0,
+        candidatos: [],
+      },
+      pagamento: {
+        recebido: false,
+        fonte: "nenhuma",
+        coberturaAte: null,
+        pendente: false,
+      },
     },
     proposta: {
       acao: "criar_assinatura",
@@ -106,11 +126,62 @@ const empresaProvisionamento = {
   },
 };
 
-const empresaConflito = {
+const empresaTerminal = {
   empresaId: "E3",
-  empresaNome: "Empresa Conflito",
+  empresaNome: "Empresa Cancelada",
   preview: {
     empresaId: "E3",
+    modo: "vinculada",
+    versao: "v1",
+    token: "tok_terminal",
+    expiraEm: new Date(Date.now() + 600000).toISOString(),
+    empresa: {
+      nome: "Empresa Cancelada",
+      status: "ATIVO",
+      vencimentoPlano: "2026-12-10T00:00:00.000Z",
+      ciclo: "MENSAL",
+      cupomAplicado: null,
+      documentoMascarado: null,
+      emailMascarado: null,
+    },
+    asaas: {
+      customer: { id: "cus_E3", situacao: "existente" },
+      assinatura: {
+        id: "sub_E3",
+        situacao: "existente",
+        status: "CANCELED",
+        valor: null,
+        ciclo: null,
+        total: 1,
+        candidatos: [],
+      },
+      pagamento: {
+        recebido: false,
+        fonte: "asaas",
+        coberturaAte: null,
+        pendente: true,
+      },
+    },
+    proposta: {
+      acao: "sincronizar",
+      statusAtual: "ATIVO",
+      statusProposto: "ATIVO",
+      statusAsaasTerminal: true,
+      requerConfirmacaoTerminal: true,
+      requerConfirmacaoTermos: false,
+      vencimentoAtual: "2026-12-10T00:00:00.000Z",
+      vencimentoProposto: null,
+      liberaAcesso: false,
+    },
+    avisos: [],
+  },
+};
+
+const empresaConflito = {
+  empresaId: "E4",
+  empresaNome: "Empresa Conflito",
+  preview: {
+    empresaId: "E4",
     modo: "conflito",
     versao: "v1",
     token: "tok_conf",
@@ -126,8 +197,21 @@ const empresaConflito = {
     },
     asaas: {
       customer: { id: null, situacao: "ausente" },
-      assinatura: { id: null, situacao: "ausente", status: null, valor: null, ciclo: null, total: 0, candidatos: [] },
-      pagamento: { recebido: false, fonte: "nenhuma", coberturaAte: null, pendente: false },
+      assinatura: {
+        id: null,
+        situacao: "ausente",
+        status: null,
+        valor: null,
+        ciclo: null,
+        total: 0,
+        candidatos: [],
+      },
+      pagamento: {
+        recebido: false,
+        fonte: "nenhuma",
+        coberturaAte: null,
+        pendente: false,
+      },
     },
     proposta: {
       acao: "vincular_assinatura",
@@ -155,8 +239,19 @@ function mockPreview(preview: any) {
 function mockConfirm(result: any) {
   (global.fetch as jest.Mock).mockResolvedValueOnce({
     ok: true,
-    json: async () => ({ ok: true, modo: "vinculada", aplicado: true, statusFinal: "ATIVO", vencimentoPlano: "2027-01-10T00:00:00.000Z", ...result }),
+    json: async () => ({
+      ok: true,
+      modo: "vinculada",
+      aplicado: true,
+      statusFinal: "ATIVO",
+      vencimentoPlano: "2027-01-10T00:00:00.000Z",
+      ...result,
+    }),
   });
+}
+
+function renderDialog(props: React.ComponentProps<typeof AsaasVinculoDialog>) {
+  return render(<AsaasVinculoDialog {...props} />);
 }
 
 describe("AsaasVinculoDialog", () => {
@@ -165,60 +260,264 @@ describe("AsaasVinculoDialog", () => {
     global.fetch = jest.fn();
   });
 
-  it("empresa vinculada mostra preview, status antes/depois e CTA de confirmar", async () => {
+  it("abrir modal carrega preview e exibe status antes/depois (carregarPreview ao abrir)", async () => {
     mockPreview(empresaVinculada.preview);
 
-    render(<AsaasVinculoDialog empresaId="E1" empresaNome="Empresa Vinculada" open onOpenChange={jest.fn()} />);
+    renderDialog({
+      empresaId: "E1",
+      empresaNome: "Empresa Vinculada",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
 
-    await waitFor(() => expect(screen.getByText("Empresa já vinculada ao Asaas")).toBeInTheDocument());
-    expect(screen.getByText("Vinculado")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Empresa já vinculada ao Asaas")).toBeInTheDocument(),
+    );
+    // Preview foi carregado: exibe status antes e depois
     expect(screen.getByText("Sincronizar status/vencimento")).toBeInTheDocument();
     expect(screen.getByText("ATIVO")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Confirmar ação/ })).toBeInTheDocument();
+    // Chamou /preview com empresaId
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/master/asaas/preview"),
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"empresaId":"E1"'),
+      }),
+    );
+  });
+
+  it("mostra loading enquanto carrega preview", async () => {
+    // fetch resolve devagar para expor o estado de carregamento
+    (global.fetch as jest.Mock).mockImplementation(() =>
+      new Promise((resolve) => {
+        setTimeout(
+          () =>
+            resolve({
+              ok: true,
+              json: async () => ({ ok: true, preview: empresaVinculada.preview }),
+            }),
+          50,
+        );
+      }),
+    );
+
+    renderDialog({
+      empresaId: "E1",
+      empresaNome: "Empresa Vinculada",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    expect(screen.getByText(/Carregando prévia/)).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(screen.getByText("Empresa já vinculada ao Asaas")).toBeInTheDocument(),
+    );
+  });
+
+  it("mostra erro quando a prévia falha", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      json: async () => ({ ok: false, erro: "empresa_nao_encontrada" }),
+    });
+
+    renderDialog({
+      empresaId: "E9",
+      empresaNome: "Inexistente",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Erro ao carregar prévia")).toBeInTheDocument(),
+    );
   });
 
   it("empresa sem vínculo mostra 'Não vinculado' e oferece provisionar com resumo de cobrança", async () => {
     mockPreview(empresaProvisionamento.preview);
 
-    render(<AsaasVinculoDialog empresaId="E2" empresaNome="Adega FreeStyle Drinks" open onOpenChange={jest.fn()} />);
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
 
-    await waitFor(() => expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
     expect(screen.getByText("Não vinculado")).toBeInTheDocument();
     expect(screen.getByText("Criar assinatura no Asaas")).toBeInTheDocument();
     expect(screen.getByText("Isso gera uma cobrança real no Asaas")).toBeInTheDocument();
-    expect(screen.getByText("49,9")).toBeInTheDocument();
+    expect(screen.getByText("49.9")).toBeInTheDocument();
+    expect(screen.getByText("MONTHLY")).toBeInTheDocument();
+    expect(screen.getByText("UNDEFINED")).toBeInTheDocument();
     expect(screen.getByText("2026-12-15")).toBeInTheDocument();
     expect(screen.getByText("PAYMENT_RECEIVED")).toBeInTheDocument();
   });
 
-  it("empresa sem vínculo NÃO exibe CTA de confirmação sem preenchimento de termos (requerConfirmacaoTermos)", async () => {
+  it("CTA de confirmar desabilitado até aceite explícito de termos (requerConfirmacaoTermos)", async () => {
     mockPreview(empresaProvisionamento.preview);
 
-    render(<AsaasVinculoDialog empresaId="E2" empresaNome="Adega FreeStyle Drinks" open onOpenChange={jest.fn()} />);
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
 
-    await waitFor(() => expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument());
-    // O dialog exige confirmacao de termos; sem preenchimento nao deve haver CTA ativo de criacao silenciosa.
-    expect(screen.getByText("Li e concordo com os termos acima (criação de cobrança)")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+
+    // Marca o checkbox de termos
+    const checkbox = screen.getByRole("checkbox", {
+      name: /criação de cobrança/i,
+    });
+    fireEvent.click(checkbox);
+
+    await waitFor(() => expect(btnConfirmar).not.toBeDisabled());
+  });
+
+  it("confirmacao NAO envia confirmarTermos=true sem aceite de termos", async () => {
+    mockPreview(empresaProvisionamento.preview);
+    mockConfirm({});
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    fireEvent.click(btnConfirmar);
+
+    await waitFor(() =>
+      expect(screen.getByText("Confirmado")).toBeInTheDocument(),
+    );
+
+    // Sem aceite de termos: confirmarTermos não deve ser true
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/master/asaas/confirm"),
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"empresaId":"E2"'),
+      }),
+    );
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).not.toContain("confirmarTermos:true");
+  });
+
+  it("confirmacao com aceite de termos envia confirmarTermos=true", async () => {
+    mockPreview(empresaProvisionamento.preview);
+    mockConfirm({});
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const checkbox = screen.getByRole("checkbox", {
+      name: /criação de cobrança/i,
+    });
+    fireEvent.click(checkbox);
+
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    fireEvent.click(btnConfirmar);
+
+    await waitFor(() =>
+      expect(screen.getByText("Confirmado")).toBeInTheDocument(),
+    );
+
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain("confirmarTermos:true");
+  });
+
+  it("fluxo de cancelamento terminal exige aceite explicitou e só envia confirmarTerminal=true após o usuario aceitar", async () => {
+    mockPreview(empresaTerminal.preview);
+    mockConfirm({});
+
+    renderDialog({
+      empresaId: "E3",
+      empresaNome: "Empresa Cancelada",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Assinatura cancelada no Asaas")).toBeInTheDocument(),
+    );
+
+    // Antes do aceite: confirmar desabilitado
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+
+    const checkboxTerminal = screen.getByRole("checkbox", {
+      name: /cancelamento terminal/i,
+    });
+    fireEvent.click(checkboxTerminal);
+
+    await waitFor(() => expect(btnConfirmar).not.toBeDisabled());
+    fireEvent.click(btnConfirmar);
+
+    await waitFor(() =>
+      expect(screen.getByText("Confirmado")).toBeInTheDocument(),
+    );
+
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain("confirmarTerminal:true");
   });
 
   it("conflito mostra bloqueio e nao exibe CTA de confirmar", async () => {
     mockPreview(empresaConflito.preview);
 
-    render(<AsaasVinculoDialog empresaId="E3" empresaNome="Empresa Conflito" open onOpenChange={jest.fn()} />);
+    renderDialog({
+      empresaId: "E4",
+      empresaNome: "Empresa Conflito",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
 
-    await waitFor(() => expect(screen.getByText("Conflito no Asaas")).toBeInTheDocument());
-    expect(screen.getByText("Conflito — não resolver automaticamente")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Confirmar ação/ })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Conflito no Asaas")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByText("Conflito — não resolver automaticamente"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Confirmar ação/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("confirmacao chama /confirm com token e exibe sucesso", async () => {
     mockPreview(empresaVinculada.preview);
     mockConfirm({});
 
-    render(<AsaasVinculoDialog empresaId="E1" empresaNome="Empresa Vinculada" open onOpenChange={jest.fn()} />);
+    renderDialog({
+      empresaId: "E1",
+      empresaNome: "Empresa Vinculada",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
 
-    await waitFor(() => expect(screen.getByRole("button", { name: /Confirmar ação/ })).toBeInTheDocument());
-    (screen.getByRole("button", { name: /Confirmar ação/ }) as HTMLButtonElement).click();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Confirmar ação/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Confirmar ação/ }));
 
     await waitFor(() =>
       expect(screen.getByText("Confirmado")).toBeInTheDocument(),

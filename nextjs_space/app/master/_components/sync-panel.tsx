@@ -13,6 +13,15 @@ import { RefreshCw, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+interface SyncDetail {
+  empresa: string;
+  status: string;
+  oldStatus?: string;
+  newStatus?: string;
+  error?: string;
+  pendencia?: string;
+}
+
 interface SyncResult {
   total: number;
   vinculadas: number;
@@ -22,14 +31,11 @@ interface SyncResult {
   errors: number;
   timeout?: boolean;
   parcial?: boolean;
-  details: Array<{
-    empresa: string;
-    status: string;
-    oldStatus?: string;
-    newStatus?: string;
-    error?: string;
-    pendencia?: string;
-  }>;
+  details: SyncDetail[];
+}
+
+interface SyncErrorBody {
+  error?: string;
 }
 
 export function SyncPanel() {
@@ -45,26 +51,33 @@ export function SyncPanel() {
         method: "POST",
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as
+        | (SyncResult & { success?: boolean })
+        | SyncErrorBody;
 
-      if (res.ok && data.success) {
-        setResult({
-          total: data.total,
-          vinculadas: data.vinculadas ?? 0,
-          semCadastro: data.semCadastro ?? 0,
-          updated: data.updated,
-          pendentes: data.pendentes,
-          errors: data.errors,
-          timeout: data.timeout,
-          parcial: data.parcial,
-          details: data.details ?? [],
-        });
-        toast.success(
-          `Sincronização concluída: ${data.updated} atualizada(s), ${data.semCadastro} sem cadastro no Asaas, ${data.pendentes} pendente(s), ${data.errors} erro(s).`,
+      // Sucesso: backend retorna `success: true`. Qualquer outro shape ou
+      // status não-200 é tratado como falha sem fingir sucesso.
+      if (!res.ok || data.success !== true) {
+        throw new Error(
+          data.error || `Erro ao sincronizar (HTTP ${res.status})`,
         );
-      } else {
-        throw new Error(data.error || "Erro ao sincronizar");
       }
+
+      setResult({
+        total: data.total,
+        vinculadas: data.vinculadas ?? 0,
+        semCadastro: data.semCadastro ?? 0,
+        updated: data.updated,
+        pendentes: data.pendentes,
+        errors: data.errors,
+        timeout: data.timeout,
+        parcial: data.parcial,
+        details: data.details ?? [],
+      });
+
+      toast.success(
+        `Sincronização concluída: ${data.updated} atualizada(s), ${data.semCadastro} sem cadastro no Asaas, ${data.pendentes} pendente(s), ${data.errors} erro(s).`,
+      );
     } catch (error) {
       toast.error("Erro ao sincronizar", {
         description:

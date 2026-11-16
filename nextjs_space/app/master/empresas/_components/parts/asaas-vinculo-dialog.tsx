@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Alert,
   AlertDescription,
@@ -45,10 +46,15 @@ export function AsaasVinculoDialog({
     | { tipo: "erro"; mensagem: string }
     | null
   >(null);
+  // Checkboxes controlados: nunca marcam sozinhos; exigem aceite explícito.
+  const [termosAceito, setTermosAceito] = useState(false);
+  const [terminalAceito, setTerminalAceito] = useState(false);
 
   const carregarPreview = useCallback(async () => {
     setError(null);
     setResultado(null);
+    setTermosAceito(false);
+    setTerminalAceito(false);
     try {
       const p = await montarPreviewAsaas(empresaId);
       setPreview(p);
@@ -59,17 +65,38 @@ export function AsaasVinculoDialog({
     }
   }, [empresaId]);
 
+  // Carrega a prévia só quando o modal é aberto e reseta ao fechar.
+  useEffect(() => {
+    if (open) {
+      carregarPreview();
+    } else {
+      setPreview(null);
+      setError(null);
+      setResultado(null);
+      setTermosAceito(false);
+      setTerminalAceito(false);
+    }
+  }, [open, empresaId, carregarPreview]);
+
   const handleConfirmar = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!preview || !preview.token) return;
     setConfirmando(true);
     try {
-      const r = await confirmarPreviewAsaas({
-        empresaId,
-        token: preview.token,
-        confirmarTerminal: preview.proposta.requerConfirmacaoTerminal,
-        confirmarTermos: preview.proposta.requerConfirmacaoTermos,
-      });
+      const corpo: {
+        empresaId: string;
+        token: string;
+        confirmarTerminal?: boolean;
+        confirmarTermos?: boolean;
+      } = { empresaId, token: preview.token };
+      const p = preview;
+      if (p.proposta.requerConfirmacaoTerminal) {
+        corpo.confirmarTerminal = terminalAceito;
+      }
+      if (p.proposta.requerConfirmacaoTermos) {
+        corpo.confirmarTermos = termosAceito;
+      }
+      const r = await confirmarPreviewAsaas(corpo);
       if (r.ok) {
         setResultado({
           tipo: "sucesso",
@@ -148,13 +175,16 @@ export function AsaasVinculoDialog({
     criar_assinatura: "Criar assinatura no Asaas",
   }[proposta.acao];
 
+  const precisaTermos = proposta.requerConfirmacaoTermos;
+  const precisaTerminal = proposta.requerConfirmacaoTerminal;
+
   const podeConfirmar =
     !resultado &&
     !confirmando &&
+    preview !== null &&
     modo !== "conflito" &&
-    proposta.requerConfirmacaoTerminal !== true &&
-    (modo === "vinculada" ||
-      (modo === "provisionamento" && proposta.requerConfirmacaoTermos));
+    (!precisaTermos || termosAceito) &&
+    (!precisaTerminal || terminalAceito);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -227,7 +257,9 @@ export function AsaasVinculoDialog({
                 <p>
                   Status: {asaas.assinatura.status || "—"} • Ciclo:
                   {asaas.assinatura.ciclo || "—"} • Valor:
-                  {asaas.assinatura.valor != null ? String(asaas.assinatura.valor) : "—"}
+                  {asaas.assinatura.valor != null
+                    ? String(asaas.assinatura.valor)
+                    : "—"}
                 </p>
               </div>
             )}
@@ -257,16 +289,37 @@ export function AsaasVinculoDialog({
                   <span className="font-semibold">PAYMENT_RECEIVED</span>; esta
                   ação sozinha não libera acesso.
                 </p>
-                <label className="flex items-start gap-2 mt-3 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    readOnly
+                {precisaTermos && (
+                  <div className="mt-3">
+                    <Checkbox
+                      checked={termosAceito}
+                      onCheckedChange={setTermosAceito}
+                    />
+                    <label className="ml-2 text-sm cursor-pointer select-none">
+                      Li e concordo com os termos acima (criação de cobrança)
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {precisaTerminal && proposta.statusAsaasTerminal && (
+              <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800/30 p-4">
+                <AlertTitle className="text-sm font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Assinatura cancelada no Asaas
+                </AlertTitle>
+                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                  O cancelamento terminal exige confirmação explícita.
+                </p>
+                <div className="mt-3">
+                  <Checkbox
+                    checked={terminalAceito}
+                    onCheckedChange={setTerminalAceito}
                   />
-                  <span className="text-sm">
-                    Li e concordo com os termos acima (criação de cobrança)
-                  </span>
-                </label>
+                  <label className="ml-2 text-sm cursor-pointer select-none">
+                    Confirmo que desejo aplicar o cancelamento terminal
+                  </label>
+                </div>
               </div>
             )}
 
@@ -303,17 +356,6 @@ export function AsaasVinculoDialog({
                 <p className="text-xs text-red-600 dark:text-red-400 mt-2">
                   Escolha uma assinatura existente ou corrija o cadastro antes
                   de prosseguir.
-                </p>
-              </div>
-            )}
-
-            {proposta.statusAsaasTerminal && (
-              <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800/30 p-3">
-                <AlertTitle className="text-sm font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3" /> Assinatura cancelada no Asaas
-                </AlertTitle>
-                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
-                  O cancelamento terminal exige confirmação explícita.
                 </p>
               </div>
             )}
@@ -357,3 +399,5 @@ export function AsaasVinculoDialog({
     </Dialog>
   );
 }
+
+//
