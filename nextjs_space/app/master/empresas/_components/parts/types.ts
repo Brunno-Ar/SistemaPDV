@@ -1,3 +1,5 @@
+import type { AsaasAdminResumo } from "./asaas-vinculo-types";
+
 export interface Empresa {
   id: string;
   nome: string;
@@ -9,6 +11,7 @@ export interface Empresa {
   faturamentoTotal: number;
   asaasCustomerId: string | null;
   asaasSubscriptionId: string | null;
+  adminsFaturamento?: AsaasAdminResumo[];
   _count: {
     users: number;
     products: number;

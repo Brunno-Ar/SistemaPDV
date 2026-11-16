@@ -23,6 +23,7 @@ import {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Empresa } from "./types";
+import type { AsaasAdminResumo } from "./asaas-vinculo-types";
 import { AsaasVinculoDialog } from "./asaas-vinculo-dialog";
 
 interface CompaniesTableProps {
@@ -37,6 +38,7 @@ interface CompaniesTableProps {
   formatCurrency: (value: number) => string;
   isInadimplente: (empresa: Empresa) => boolean;
   onAtualizar?: () => void;
+  adminsPorEmpresa?: Record<string, AsaasAdminResumo[]>;
 }
 
 export function CompaniesTable({
@@ -51,6 +53,7 @@ export function CompaniesTable({
   formatCurrency,
   isInadimplente,
   onAtualizar,
+  adminsPorEmpresa,
 }: CompaniesTableProps) {
   const router = useRouter();
   const [asasDialogOpen, setAsasDialogOpen] = useState(false);
@@ -289,6 +292,7 @@ export function CompaniesTable({
         open={asasDialogOpen}
         onOpenChange={setAsasDialogOpen}
         onAtualizar={onAtualizar}
+        admins={adminsPorEmpresa?.[asasEmpresaSelecionada?.id ?? ""] ?? []}
       />
     </div>
   );

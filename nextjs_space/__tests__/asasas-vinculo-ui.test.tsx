@@ -9,6 +9,65 @@ jest.mock("next/navigation", () => {
   return { useRouter };
 });
 
+jest.mock("@/components/ui/select", () => {
+  const React = require("react");
+  return {
+    Select: ({ value, onValueChange, children }: any) => {
+      const [isOpen, setIsOpen] = React.useState(false);
+      return (
+        <div data-testid="mock-select" data-value={value}>
+          {React.Children.map(children, (child: any) =>
+            React.isValidElement(child)
+              ? React.cloneElement(child, {
+                  isOpen,
+                  setIsOpen,
+                  value,
+                  onValueChange,
+                } as any)
+              : child,
+          )}
+        </div>
+      );
+    },
+    SelectTrigger: ({ children, isOpen, setIsOpen, ...props }: any) => (
+      <button
+        type="button"
+        role="combobox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen && setIsOpen(!isOpen)}
+        {...props}
+      >
+        {children}
+      </button>
+    ),
+    SelectValue: ({ placeholder, value }: any) => <span>{value || placeholder}</span>,
+    SelectContent: ({ children, isOpen, onValueChange, setIsOpen }: any) => {
+      if (!isOpen) return null;
+      return (
+        <div role="listbox">
+          {React.Children.map(children, (child: any) =>
+            React.isValidElement(child)
+              ? React.cloneElement(child, { onValueChange, setIsOpen } as any)
+              : child,
+          )}
+        </div>
+      );
+    },
+    SelectItem: ({ children, value, onValueChange, setIsOpen, ...props }: any) => (
+      <div
+        role="option"
+        onClick={() => {
+          onValueChange && onValueChange(value);
+          setIsOpen && setIsOpen(false);
+        }}
+        {...props}
+      >
+        {children}
+      </div>
+    ),
+  };
+});
+
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -542,5 +601,445 @@ describe("AsaasVinculoDialog", () => {
         body: expect.stringContaining("tok_vinculada"),
       }),
     );
+  });
+
+  it("provisionamento permite editar a data da primeira cobrança e recarrega o preview com o token atualizado", async () => {
+    const previewComData = {
+      ...empresaProvisionamento.preview,
+      provisionamento: {
+        ...empresaProvisionamento.preview.provisionamento,
+        primeiroVencimento: "2026-11-30",
+      },
+    };
+    // Primeira chamada: retorna a data proposta pelo backend.
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, preview: previewComData }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+    expect(
+      screen.queryByText("2026-11-30 (editado)"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("2026-11-30")).toBeInTheDocument();
+
+    // Altera a data no input: o preview é recarregado com a nova data.
+    const input = screen.getByRole("textbox", {
+      name: /alterar data da primeira cobrança/i,
+    });
+    fireEvent.change(input, { target: { value: "2026-12-05" } });
+
+    await waitFor(() =>
+      expect(screen.getByText("2026-12-05 (editado)")).toBeInTheDocument(),
+    );
+    // O aceito de termos foi resetado ao mudar a data.
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+
+    // A segunda chamada ao preview enviou a nova data.
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain('"primeiroVencimento":"2026-12-05"');
+  });
+
+  it("nao exibe input de data na modalidade vinculada (nao e provisionamento)", async () => {
+    mockPreview(empresaVinculada.preview);
+
+    renderDialog({
+      empresaId: "E1",
+      empresaNome: "Empresa Vinculada",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Empresa já vinculada ao Asaas")).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("textbox", { name: /alterar data/ })).not.toBeInTheDocument();
+  });
+
+  it("trocar contato de faturamento recarrega preview com token atualizado e adminId no corpo", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+      { id: "A2", nome: "Admin 1", emailMascarado: "jo***@empresa.com" },
+    ];
+    const previewComAdmin = {
+      ...empresaProvisionamento.preview,
+      empresa: {
+        ...empresaProvisionamento.preview.empresa,
+        adminEmailMascarado: "ad***s@gmail.com",
+      },
+      provisionamento: {
+        ...empresaProvisionamento.preview.provisionamento,
+        primeiroVencimento: "2026-11-30",
+      },
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, preview: previewComAdmin }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const select = screen.getByRole("combobox", { name: /contato de faturamento/i });
+    fireEvent.click(select);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /Admin 2/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Admin 2/ }));
+
+    await waitFor(() =>
+      expect(screen.getByText("ad***s@gmail.com")).toBeInTheDocument(),
+    );
+
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain('"adminId":"A1"');
+  });
+
+  it("nao aceita termos automaticamente ao trocar contato de faturamento", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    const previewComAdmin = {
+      ...empresaProvisionamento.preview,
+      empresa: {
+        ...empresaProvisionamento.preview.empresa,
+        adminEmailMascarado: "ad***s@gmail.com",
+      },
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, preview: previewComAdmin }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const select = screen.getByRole("combobox", { name: /contato de faturamento/i });
+    fireEvent.click(select);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /Admin 2/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Admin 2/ }));
+
+    await waitFor(() =>
+      expect(screen.getByText("ad***s@gmail.com")).toBeInTheDocument(),
+    );
+
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+  });
+
+  it("contato de faturamento selecionado e exibido explicitamente na prévia", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    const previewComAdmin = {
+      ...empresaProvisionamento.preview,
+      empresa: {
+        ...empresaProvisionamento.preview.empresa,
+        adminEmailMascarado: "ad***s@gmail.com",
+      },
+    };
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, preview: previewComAdmin }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const select = screen.getByRole("combobox", { name: /contato de faturamento/i });
+    fireEvent.click(select);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /Admin 2/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Admin 2/ }));
+
+    await waitFor(() =>
+      expect(screen.getByText("Admin 2 — ad***s@gmail.com")).toBeInTheDocument(),
+    );
+  });
+
+  it("confirmacao bloqueada enquanto nenhum contato de faturamento for selecionado (criar_assinatura)", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, preview: empresaProvisionamento.preview }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+  });
+
+  it("confirmacao com admin selecionado e termos aceitos envia adminId e confirmarTermos=true", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    const previewComAdmin = {
+      ...empresaProvisionamento.preview,
+      empresa: {
+        ...empresaProvisionamento.preview.empresa,
+        adminEmailMascarado: "ad***s@gmail.com",
+      },
+    };
+    mockPreview(previewComAdmin);
+    mockConfirm({});
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const select = screen.getByRole("combobox", { name: /contato de faturamento/i });
+    fireEvent.click(select);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /Admin 2/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Admin 2/ }));
+
+    await waitFor(() =>
+      expect(screen.getByText("Admin 2 — ad***s@gmail.com")).toBeInTheDocument(),
+    );
+
+    const checkbox = screen.getByRole("checkbox", {
+      name: /criação de cobrança/i,
+    });
+    fireEvent.click(checkbox);
+
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    fireEvent.click(btnConfirmar);
+
+    await waitFor(() =>
+      expect(screen.getByText("Confirmado")).toBeInTheDocument(),
+    );
+
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain('"adminId":"A1"');
+    expect(ultimoBody).toContain('"confirmarTermos":true');
+  });
+
+  it("resposta realista do endpoint: Admin 2 aparece, trocar contato recarrega preview/token e limpa aceite", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 1", emailMascarado: "jo***@empresa.com" },
+      { id: "A2", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    const previewSemAdmin = {
+      ...empresaProvisionamento.preview,
+      empresa: {
+        ...empresaProvisionamento.preview.empresa,
+        adminEmailMascarado: null,
+      },
+      provisionamento: {
+        ...empresaProvisionamento.preview.provisionamento,
+        primeiroVencimento: "2026-11-30",
+      },
+    };
+    const previewComAdmin2 = {
+      ...previewSemAdmin,
+      empresa: {
+        ...previewSemAdmin.empresa,
+        adminEmailMascarado: "ad***s@gmail.com",
+      },
+      provisionamento: {
+        ...previewSemAdmin.provisionamento,
+        primeiroVencimento: "2026-11-30",
+      },
+      token: "tok_admin2_v2",
+    };
+    // Primeira chamada: preview sem admin selecionado.
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, preview: previewSemAdmin }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    // Nenhum contato selecionado: Admin 2 não aparece na prévia, confirma bloqueada.
+    expect(
+      screen.queryByText("Admin 2 — ad***s@gmail.com"),
+    ).not.toBeInTheDocument();
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+
+    // Seleciona Admin 2: preview recarrega com adminId e novo token.
+    const select = screen.getByRole("combobox", { name: /contato de faturamento/i });
+    fireEvent.click(select);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /Admin 2/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Admin 2/ }));
+
+    await waitFor(() =>
+      expect(screen.getByText("Admin 2 — ad***s@gmail.com")).toBeInTheDocument(),
+    );
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain('"adminId":"A2"');
+
+    // O aceite de termos foi limpo ao trocar contato: confirma ainda bloqueada.
+    const btnConfirmar2 = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar2).toBeDisabled();
+  });
+
+  it("preview 409 multiplos_admins: exibe lista para escolher e bloqueia confirmação", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        ok: false,
+        erro: "multiplos_admins_selecao_obrigatoria",
+      }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins: [
+        { id: "A1", nome: "Admin 1", emailMascarado: "jo***@empresa.com" },
+        { id: "A2", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+      ],
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Escolha o contato de faturamento")).toBeInTheDocument(),
+    );
+    expect(screen.getByText("Admin 2 — ad***s@gmail.com")).toBeInTheDocument();
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+  });
+
+  it("preview 400 admin_invalido: limpa seleção e exibe erro", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ ok: false, erro: "admin_invalido" }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins: [{ id: "A1", nome: "Admin 1", emailMascarado: "jo***@empresa.com" }],
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Contato de faturamento inválido")).toBeInTheDocument(),
+    );
+    expect(screen.getByText("Nenhum contato selecionado")).toBeInTheDocument();
+  });
+
+  it("confirm envia adminId e primeiroVencimento no corpo", async () => {
+    mockPreview(empresaProvisionamento.preview);
+    mockConfirm({});
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+      admins: [{ id: "A1", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" }],
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+    );
+
+    const select = screen.getByRole("combobox", { name: /contato de faturamento/i });
+    fireEvent.click(select);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /Admin 2/ })).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("option", { name: /Admin 2/ }));
+
+    await waitFor(() =>
+      expect(screen.getByText("Admin 2 — ad***s@gmail.com")).toBeInTheDocument(),
+    );
+
+    const checkbox = screen.getByRole("checkbox", {
+      name: /criação de cobrança/i,
+    });
+    fireEvent.click(checkbox);
+
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    fireEvent.click(btnConfirmar);
+
+    await waitFor(() =>
+      expect(screen.getByText("Confirmado")).toBeInTheDocument(),
+    );
+
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain('"adminId":"A1"');
+    expect(ultimoBody).toContain('"confirmarTermos":true');
+    expect(ultimoBody).toContain('"primeiroVencimento"');
   });
 });

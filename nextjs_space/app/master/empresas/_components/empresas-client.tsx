@@ -3,6 +3,7 @@
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useEffect, useState } from "react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -17,10 +18,16 @@ import {
   UpdatePlanDialog,
 } from "./parts";
 import { Empresa } from "./parts/types";
+import type { AsaasAdminResumo } from "./parts/asaas-vinculo-types";
 import { formatCurrency } from "@/lib/utils";
 
 export default function EmpresasClient() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [adminsPorEmpresa, setAdminsPorEmpresa] = useState<
+    Record<string, AsaasAdminResumo[]>
+  >({});
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [adminsError, setAdminsError] = useState<string | null>(null);
   // const [loading, setLoading] = useState(true); // Removido pois não estava sendo usado na UI
   const [dialogOpen, setDialogOpen] = useState(false);
   const [avisoDialogOpen, setAvisoDialogOpen] = useState(false);
@@ -93,23 +100,43 @@ export default function EmpresasClient() {
   };
 
   const fetchEmpresas = async () => {
+    setAdminsLoading(true);
     try {
       const response = await fetch("/api/master/empresas", {
         cache: "no-store",
       });
       if (!response.ok) throw new Error("Erro ao buscar empresas");
       const data = await response.json();
-      setEmpresas(Array.isArray(data) ? data : []);
+      const lista = Array.isArray(data) ? data : [];
+      setEmpresas(lista);
+
+      // Monta o mapa de admins de faturamento por empresa (IDs reais, nunca email mascarado como id).
+      const mapa: Record<string, AsaasAdminResumo[]> = {};
+      for (const empresa of lista) {
+        const admins = empresa.adminsFaturamento ?? [];
+        mapa[empresa.id] = admins.map((a: AsaasAdminResumo) => ({
+          id: a.id,
+          nome: a.nome,
+          emailMascarado: a.emailMascarado ?? null,
+        }));
+      }
+      setAdminsPorEmpresa(mapa);
+      setAdminsError(null);
     } catch (error) {
       console.error("Erro ao buscar empresas:", error);
       setEmpresas([]);
+      setAdminsPorEmpresa({});
+      setAdminsError(
+        error instanceof Error ? error.message : "Não foi possível carregar as empresas",
+      );
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as empresas",
+        description:
+          error instanceof Error ? error.message : "Não foi possível carregar as empresas",
         variant: "destructive",
       });
     } finally {
-      // setLoading(false);
+      setAdminsLoading(false);
     }
   };
 
@@ -420,6 +447,18 @@ export default function EmpresasClient() {
       />
 
       {/* Data Table */}
+      {adminsLoading || adminsError ? (
+        <div className="mb-4 p-4 rounded-lg border text-sm">
+          {adminsError ? (
+            <Alert variant="destructive">
+              <AlertTitle>Erro ao carregar contatos de faturamento</AlertTitle>
+              <AlertDescription>{adminsError}</AlertDescription>
+            </Alert>
+          ) : (
+            <p>Carregando contatos de faturamento...</p>
+          )}
+        </div>
+      ) : null}
       <CompaniesTable
         empresas={filteredEmpresas}
         onAction={handleAction}
@@ -449,6 +488,7 @@ export default function EmpresasClient() {
         formatCurrency={formatCurrency}
         isInadimplente={isInadimplente}
         onAtualizar={fetchEmpresas}
+        adminsPorEmpresa={adminsPorEmpresa}
       />
 
       {/* Dialogs */}
