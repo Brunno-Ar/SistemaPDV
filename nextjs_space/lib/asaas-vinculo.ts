@@ -117,6 +117,33 @@ export function podePromover(
 }
 
 /**
+ * Retorna a data no fuso America/Sao_Paulo no formato ISO YYYY-MM-DD.
+ */
+export function dataHojeSaoPaulo(data: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(data);
+}
+
+/**
+ * Valida se a string representa uma data ISO valida no calendario real (YYYY-MM-DD).
+ */
+export function validarFormatoDataIso(dataStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) return false;
+  const [ano, mes, dia] = dataStr.split("-").map(Number);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return false;
+  const d = new Date(Date.UTC(ano, mes - 1, dia));
+  return (
+    d.getUTCFullYear() === ano &&
+    d.getUTCMonth() === mes - 1 &&
+    d.getUTCDate() === dia
+  );
+}
+
+/**
  * Monta a proposta de criacao sem fallback silencioso: valor, ciclo e primeiro
  * vencimento tem que vir de fonte inequivoca (assinatura existente, preco
  * publicado ou cupom valido) e o vencimento nao pode ser retroativo.
@@ -143,12 +170,12 @@ export function montarProposta(
   }
 
   const primeiro = dados.primeiroVencimento;
-  if (!primeiro || !/^\d{4}-\d{2}-\d{2}$/.test(primeiro)) {
+  if (!primeiro || !validarFormatoDataIso(primeiro)) {
     return { ok: false, motivo: "primeiro vencimento indefinido" };
   }
 
   const hoje = dados.hoje ?? new Date();
-  const hojeIso = hoje.toISOString().slice(0, 10);
+  const hojeIso = dataHojeSaoPaulo(hoje);
   if (primeiro < hojeIso) {
     return { ok: false, motivo: "primeiro vencimento retroativo" };
   }

@@ -115,8 +115,11 @@ function pagamentoRecebido() {
   ];
 }
 
-async function tokenAtual(empresaId = "E1"): Promise<string> {
-  const p = await montarPreview(empresaId, AGORA);
+async function tokenAtual(
+  empresaId = "E1",
+  opcoes?: { primeiroVencimento?: string | null },
+): Promise<string> {
+  const p = await montarPreview(empresaId, { agora: AGORA, ...opcoes });
   if (!p.ok) throw new Error(`preview falhou: ${p.erro}`);
   return p.preview.token;
 }
@@ -307,6 +310,126 @@ describe("confirmacao de provisionamento", () => {
 
     // Claims travam customer e assinatura (idempotencia).
     expect(updateManyMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("0 assinaturas com primeiroVencimento explicito para hoje: cria com data exata e nao altera status nem vencimento local", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    listSubsMock.mockResolvedValue([]);
+    createCustomerMock.mockResolvedValue({ id: "cus_novo" });
+    createSubscriptionMock.mockResolvedValue({ id: "sub_nova" });
+    listHistoryMock.mockResolvedValue([]);
+
+    const token = await tokenAtual("E1", { primeiroVencimento: "2026-11-15" });
+    const r = await aplicarConfirmacao({
+      empresaId: "E1",
+      token,
+      primeiroVencimento: "2026-11-15",
+      confirmarTermos: true,
+      agora: AGORA,
+    });
+
+    expect(r.http).toBe(200);
+    expect(r.body.criouCustomer).toBe(true);
+    expect(r.body.criouAssinatura).toBe(true);
+    expect(r.body.pagamentoComprovado).toBe(false);
+    expect(createCustomerMock).toHaveBeenCalledTimes(1);
+    expect(createSubscriptionMock).toHaveBeenCalledTimes(1);
+    // Valida que nextDueDate enviado ao Asaas foi exatamente a data aprovada no preview
+    expect(createSubscriptionMock.mock.calls[0][2].dueDate).toEqual(
+      new Date("2026-11-15T00:00:00.000Z"),
+    );
+    // Status e vencimento local permanecem inalterados
+    expect(updateMock.mock.calls[0][0].data.status).toBe("PENDENTE");
+    expect(updateMock.mock.calls[0][0].data.vencimentoPlano).toBeUndefined();
+  });
+
+  it("primeiroVencimento divergente do preview: 409 preview_invalido (divergente) e zero escritas", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    listSubsMock.mockResolvedValue([]);
+
+    // Token gerado para 2026-11-15
+    const token = await tokenAtual("E1", { primeiroVencimento: "2026-11-15" });
+
+    // Tentativa de confirmar sem o primeiroVencimento ou com data diferente
+    const rDivergente = await aplicarConfirmacao({
+      empresaId: "E1",
+      token,
+      primeiroVencimento: "2026-11-20",
+      confirmarTermos: true,
+      agora: AGORA,
+    });
+
+    expect(rDivergente.http).toBe(409);
+    expect(rDivergente.body.erro).toBe("preview_invalido");
+    expect(rDivergente.body.motivo).toBe("divergente");
+    expect(createCustomerMock).not.toHaveBeenCalled();
+    expect(createSubscriptionMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+
+    // Tentativa de confirmar omitindo o primeiroVencimento (cai no default +14 dias, divergindo)
+    const rOmitido = await aplicarConfirmacao({
+      empresaId: "E1",
+      token,
+      confirmarTermos: true,
+      agora: AGORA,
+    });
+
+    expect(rOmitido.http).toBe(409);
+    expect(rOmitido.body.erro).toBe("preview_invalido");
+    expect(rOmitido.body.motivo).toBe("divergente");
+    expect(createCustomerMock).not.toHaveBeenCalled();
+    expect(createSubscriptionMock).not.toHaveBeenCalled();
+  });
+
+  it("token adulterado com primeiroVencimento: 409 preview_invalido (assinatura) e zero escritas", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    listSubsMock.mockResolvedValue([]);
+
+    const tokenOriginal = await tokenAtual("E1", { primeiroVencimento: "2026-11-15" });
+    const tokenAdulterado = `${tokenOriginal}adulterado`;
+
+    const r = await aplicarConfirmacao({
+      empresaId: "E1",
+      token: tokenAdulterado,
+      primeiroVencimento: "2026-11-15",
+      confirmarTermos: true,
+      agora: AGORA,
+    });
+
+    expect(r.http).toBe(409);
+    expect(r.body.erro).toBe("preview_invalido");
+    expect(r.body.motivo).toBe("assinatura");
+    expect(createCustomerMock).not.toHaveBeenCalled();
+    expect(createSubscriptionMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it("token expirado com primeiroVencimento: 409 preview_invalido (expirado) e zero escritas", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    listSubsMock.mockResolvedValue([]);
+
+    const token = await tokenAtual("E1", { primeiroVencimento: "2026-11-15" });
+
+    // Confirmacao 15 minutos depois (TTL de 10 min expirou)
+    const futuro = new Date(AGORA.getTime() + 15 * 60 * 1000);
+    const r = await aplicarConfirmacao({
+      empresaId: "E1",
+      token,
+      primeiroVencimento: "2026-11-15",
+      confirmarTermos: true,
+      agora: futuro,
+    });
+
+    expect(r.http).toBe(409);
+    expect(r.body.erro).toBe("preview_invalido");
+    expect(r.body.motivo).toBe("expirado");
+    expect(createCustomerMock).not.toHaveBeenCalled();
+    expect(createSubscriptionMock).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
   });
 
   it("timeout do POST nao duplica: reconsulta acha a assinatura criada", async () => {

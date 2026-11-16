@@ -28,11 +28,13 @@ import {
 } from "@/lib/billing-policy";
 import {
   classificarAssinaturas,
+  dataHojeSaoPaulo,
   gerarTokenPreview,
   mascararDocumento,
   mascararEmail,
   montarProposta,
   podePromover,
+  validarFormatoDataIso,
   verificarTokenPreview,
   versaoSnapshot,
 } from "@/lib/asaas-vinculo";
@@ -234,16 +236,39 @@ async function resolverValor(
   return { ok: true, valor };
 }
 
+export interface OpcoesPreview {
+  agora?: Date;
+  primeiroVencimento?: string | null;
+}
+
 /**
  * Leitura completa do estado (Asaas + DB) e montagem da proposta. Chamado pelo
  * preview e pelo confirm (revalidacao). Nunca escreve.
  */
 export async function montarPreview(
   empresaId: string,
-  agora: Date = new Date(),
+  agoraOuOpcoes?: Date | OpcoesPreview,
+  opcoesExtra?: OpcoesPreview,
 ): Promise<ResultadoPreview> {
   const segredo = segredoPreview();
   if (!segredo) return { ok: false, http: 503, erro: "segredo_preview_ausente" };
+
+  let agora: Date;
+  let primeiroVencimentoOpt: string | null | undefined;
+
+  if (agoraOuOpcoes instanceof Date) {
+    agora = agoraOuOpcoes;
+    primeiroVencimentoOpt = opcoesExtra?.primeiroVencimento;
+  } else if (agoraOuOpcoes && typeof agoraOuOpcoes === "object") {
+    agora = agoraOuOpcoes.agora ?? new Date();
+    primeiroVencimentoOpt =
+      agoraOuOpcoes.primeiroVencimento !== undefined
+        ? agoraOuOpcoes.primeiroVencimento
+        : opcoesExtra?.primeiroVencimento;
+  } else {
+    agora = new Date();
+    primeiroVencimentoOpt = opcoesExtra?.primeiroVencimento;
+  }
 
   const empresa = await carregarEmpresa(empresaId);
   if (!empresa) return { ok: false, http: 404, erro: "empresa_nao_encontrada" };
@@ -686,9 +711,34 @@ export async function montarPreview(
     return { ok: false, http: 409, erro: "conflito_vinculo", motivo: valor.motivo };
   }
 
-  const primeiroVencimento = calcularVencimentoTrial(agora)
-    .toISOString()
-    .slice(0, 10);
+  let primeiroVencimento: string;
+  if (primeiroVencimentoOpt !== undefined && primeiroVencimentoOpt !== null) {
+    if (
+      typeof primeiroVencimentoOpt !== "string" ||
+      !validarFormatoDataIso(primeiroVencimentoOpt)
+    ) {
+      return {
+        ok: false,
+        http: 400,
+        erro: "primeiro_vencimento_invalido",
+        motivo: "formato_data_invalido",
+      };
+    }
+    const hojeIso = dataHojeSaoPaulo(agora);
+    if (primeiroVencimentoOpt < hojeIso) {
+      return {
+        ok: false,
+        http: 400,
+        erro: "primeiro_vencimento_invalido",
+        motivo: "data_retroativa",
+      };
+    }
+    primeiroVencimento = primeiroVencimentoOpt;
+  } else {
+    primeiroVencimento = calcularVencimentoTrial(agora)
+      .toISOString()
+      .slice(0, 10);
+  }
 
   const proposta = montarProposta({
     valor: valor.valor,
@@ -758,6 +808,7 @@ export interface ArgsConfirmacao {
   /** Criacao de customer/assinatura exige aceite dos termos do preview. */
   confirmarTermos?: boolean;
   agora?: Date;
+  primeiroVencimento?: string | null;
 }
 
 /**
@@ -772,7 +823,10 @@ export async function aplicarConfirmacao(
   }
 
   const agora = args.agora ?? new Date();
-  const atual = await montarPreview(args.empresaId, agora);
+  const atual = await montarPreview(args.empresaId, {
+    agora,
+    primeiroVencimento: args.primeiroVencimento,
+  });
   if (!atual.ok) {
     return {
       http: atual.http,
@@ -1015,7 +1069,7 @@ export async function aplicarConfirmacao(
         customerId,
         proposta.valor,
         {
-          dueDate: new Date(proposta.primeiroVencimento),
+          dueDate: new Date(`${proposta.primeiroVencimento}T00:00:00.000Z`),
           billingType: proposta.billingType,
         },
       );

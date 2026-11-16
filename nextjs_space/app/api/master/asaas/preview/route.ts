@@ -11,7 +11,10 @@ export const dynamic = "force-dynamic";
  * Asaas + leitura local, devolvendo a proposta e um token curto de preview.
  * A escrita so acontece em POST /api/master/asaas/confirm.
  */
-async function responder(empresaId: string | null) {
+async function responder(
+  empresaId: string | null,
+  primeiroVencimento?: string | null,
+) {
   if (!empresaId) {
     return NextResponse.json(
       { ok: false, erro: "empresaId_obrigatorio" },
@@ -19,7 +22,9 @@ async function responder(empresaId: string | null) {
     );
   }
 
-  const resultado = await montarPreview(empresaId);
+  const resultado = await montarPreview(empresaId, {
+    primeiroVencimento: primeiroVencimento || undefined,
+  });
 
   if (!resultado.ok) {
     return NextResponse.json(
@@ -43,9 +48,14 @@ export async function POST(request: NextRequest) {
   }
 
   let empresaId: string | null = null;
+  let primeiroVencimento: string | null = null;
   try {
     const body = await request.json();
     empresaId = typeof body?.empresaId === "string" ? body.empresaId : null;
+    primeiroVencimento =
+      typeof body?.primeiroVencimento === "string"
+        ? body.primeiroVencimento
+        : null;
   } catch {
     return NextResponse.json(
       { ok: false, erro: "json_invalido" },
@@ -53,7 +63,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return responder(empresaId);
+  return responder(empresaId, primeiroVencimento);
 }
 
 export async function GET(request: NextRequest) {
@@ -62,5 +72,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, erro: guarda.erro }, { status: guarda.status });
   }
 
-  return responder(request.nextUrl.searchParams.get("empresaId"));
+  return responder(
+    request.nextUrl.searchParams.get("empresaId"),
+    request.nextUrl.searchParams.get("primeiroVencimento"),
+  );
 }

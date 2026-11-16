@@ -85,6 +85,19 @@ describe("montarProposta", () => {
     expect(r.ok).toBe(false);
   });
 
+  it("aceita nextDueDate exatamente para hoje", () => {
+    const r = montarProposta({
+      valor: 49.9,
+      ciclo: "MONTHLY",
+      primeiroVencimento: "2026-11-15",
+      hoje: HOJE,
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.proposta.primeiroVencimento).toBe("2026-11-15");
+    }
+  });
+
   it("recusa nextDueDate retroativo", () => {
     const r = montarProposta({
       valor: 49.9,
@@ -93,6 +106,28 @@ describe("montarProposta", () => {
       hoje: HOJE,
     });
     expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.motivo).toBe("primeiro vencimento retroativo");
+    }
+  });
+
+  it("recusa formato de data invalido ou inexistente no calendario", () => {
+    expect(
+      montarProposta({
+        valor: 49.9,
+        ciclo: "MONTHLY",
+        primeiroVencimento: "2026-02-31",
+        hoje: HOJE,
+      }).ok,
+    ).toBe(false);
+    expect(
+      montarProposta({
+        valor: 49.9,
+        ciclo: "MONTHLY",
+        primeiroVencimento: "invalid-date",
+        hoje: HOJE,
+      }).ok,
+    ).toBe(false);
   });
 });
 

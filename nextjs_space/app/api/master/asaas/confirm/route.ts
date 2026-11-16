@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
     token?: unknown;
     confirmarTerminal?: unknown;
     confirmarTermos?: unknown;
+    primeiroVencimento?: unknown;
   };
   try {
     corpo = await request.json();
@@ -57,6 +58,10 @@ export async function POST(request: NextRequest) {
     token: corpo.token,
     confirmarTerminal: corpo.confirmarTerminal === true,
     confirmarTermos: corpo.confirmarTermos === true,
+    primeiroVencimento:
+      typeof corpo.primeiroVencimento === "string"
+        ? corpo.primeiroVencimento
+        : undefined,
   });
 
   return NextResponse.json(resultado.body, { status: resultado.http });

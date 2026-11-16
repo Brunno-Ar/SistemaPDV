@@ -354,6 +354,70 @@ describe("preview de empresa sem vinculo", () => {
     expect(createSubscriptionMock).not.toHaveBeenCalled();
   });
 
+  it("provisionamento aceita primeiroVencimento explicito para hoje", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+
+    const r = await montarPreview("E1", {
+      agora: AGORA,
+      primeiroVencimento: "2026-11-15",
+    });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.preview.provisionamento?.primeiroVencimento).toBe("2026-11-15");
+  });
+
+  it("provisionamento recusa primeiroVencimento no passado com 400", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+
+    const r = await montarPreview("E1", {
+      agora: AGORA,
+      primeiroVencimento: "2026-11-14",
+    });
+
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.http).toBe(400);
+    expect(r.erro).toBe("primeiro_vencimento_invalido");
+    expect(r.motivo).toBe("data_retroativa");
+  });
+
+  it("provisionamento recusa formato de data invalido com 400", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+
+    const r = await montarPreview("E1", {
+      agora: AGORA,
+      primeiroVencimento: "2026-02-31",
+    });
+
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.http).toBe(400);
+    expect(r.erro).toBe("primeiro_vencimento_invalido");
+    expect(r.motivo).toBe("formato_data_invalido");
+  });
+
+  it("token HMAC vincula primeiroVencimento (datas diferentes geram tokens distintos)", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+
+    const rHoje = await montarPreview("E1", {
+      agora: AGORA,
+      primeiroVencimento: "2026-11-15",
+    });
+    const rPadrao = await montarPreview("E1", AGORA);
+
+    expect(rHoje.ok).toBe(true);
+    expect(rPadrao.ok).toBe(true);
+    if (!rHoje.ok || !rPadrao.ok) return;
+
+    expect(rHoje.preview.token).not.toBe(rPadrao.preview.token);
+    expect(rHoje.preview.versao).not.toBe(rPadrao.preview.versao);
+  });
+
   it("sem segredo de preview: falha fechada 503", async () => {
     delete process.env.MASTER_PREVIEW_SECRET;
     delete process.env.ASAAS_WEBHOOK_SECRET;
