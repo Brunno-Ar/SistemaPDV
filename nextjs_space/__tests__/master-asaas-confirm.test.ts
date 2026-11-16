@@ -21,7 +21,7 @@ jest.mock("@/lib/db", () => ({
       update: jest.fn(),
       updateMany: jest.fn(),
     },
-    user: { findFirst: jest.fn() },
+    user: { findFirst: jest.fn(), findMany: jest.fn() },
     cupom: { findUnique: jest.fn() },
   },
 }));
@@ -52,6 +52,7 @@ const findFirstMock = prisma.empresa.findFirst as jest.Mock;
 const updateMock = prisma.empresa.update as jest.Mock;
 const updateManyMock = prisma.empresa.updateMany as jest.Mock;
 const userFindMock = prisma.user.findFirst as jest.Mock;
+const userFindManyMock = (prisma.user as any).findMany as jest.Mock;
 
 const getCustomerMock = asaas.getCustomer as jest.Mock;
 const buscarCustomerMock = asaas.buscarCustomerPorCpfCnpj as jest.Mock;
@@ -117,10 +118,10 @@ function pagamentoRecebido() {
 
 async function tokenAtual(
   empresaId = "E1",
-  opcoes?: { primeiroVencimento?: string | null },
+  opcoes?: { primeiroVencimento?: string | null; adminId?: string | null },
 ): Promise<string> {
   const p = await montarPreview(empresaId, { agora: AGORA, ...opcoes });
-  if (!p.ok) throw new Error(`preview falhou: ${p.erro}`);
+  if (!p.ok) throw new Error(`preview falhou: ${p.erro} ${p.motivo ?? ""}`);
   return p.preview.token;
 }
 
@@ -129,7 +130,14 @@ beforeEach(() => {
   process.env.MASTER_PREVIEW_SECRET = "segredo-preview";
   delete process.env.ASAAS_WEBHOOK_SECRET;
 
-  userFindMock.mockResolvedValue({ email: "admin@empresa.com" });
+  userFindMock.mockResolvedValue({
+    id: "admin-1",
+    name: "Admin 1",
+    email: "admin@empresa.com",
+  });
+  userFindManyMock.mockResolvedValue([
+    { id: "admin-1", name: "Admin 1", email: "admin@empresa.com" },
+  ]);
   findFirstMock.mockResolvedValue(null);
   getCustomerMock.mockResolvedValue({ id: "cus_E1" });
   buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
@@ -497,5 +505,90 @@ describe("confirmacao de provisionamento", () => {
     expect(r.body.erro).toBe("conflito_vinculo");
     expect(createSubscriptionMock).not.toHaveBeenCalled();
     expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it("multiplos admins sem adminId: recusa com 409 multiplos_admins_selecao_obrigatoria e zero escritas", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "admin2@empresa.com" },
+    ]);
+
+    const r = await aplicarConfirmacao({
+      empresaId: "E1",
+      token: "qualquer-token",
+      agora: AGORA,
+    });
+
+    expect(r.http).toBe(409);
+    expect(r.body.erro).toBe("conflito_vinculo");
+    expect(r.body.motivo).toBe("multiplos_admins_selecao_obrigatoria");
+    expect(createCustomerMock).not.toHaveBeenCalled();
+  });
+
+  it("adminId divergente do preview: 409 preview_invalido (divergente) e zero escritas", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    listSubsMock.mockResolvedValue([]);
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "admin2@empresa.com" },
+    ]);
+
+    const token = await tokenAtual("E1", { adminId: "admin-2" });
+
+    // Tentativa de confirmar com admin-1 usando token gerado para admin-2
+    const r = await aplicarConfirmacao({
+      empresaId: "E1",
+      token,
+      adminId: "admin-1",
+      confirmarTermos: true,
+      agora: AGORA,
+    });
+
+    expect(r.http).toBe(409);
+    expect(r.body.erro).toBe("preview_invalido");
+    expect(r.body.motivo).toBe("divergente");
+    expect(createCustomerMock).not.toHaveBeenCalled();
+    expect(createSubscriptionMock).not.toHaveBeenCalled();
+  });
+
+  it("admin-2 selecionado com primeiroVencimento custom: usa email do admin-2 no customer e dueDate exata", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    listSubsMock.mockResolvedValue([]);
+    createCustomerMock.mockResolvedValue({ id: "cus_novo" });
+    createSubscriptionMock.mockResolvedValue({ id: "sub_nova" });
+    listHistoryMock.mockResolvedValue([]);
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "adegagestao@empresa.com" },
+    ]);
+
+    const token = await tokenAtual("E1", {
+      adminId: "admin-2",
+      primeiroVencimento: "2026-11-16",
+    });
+
+    const r = await aplicarConfirmacao({
+      empresaId: "E1",
+      token,
+      adminId: "admin-2",
+      primeiroVencimento: "2026-11-16",
+      confirmarTermos: true,
+      agora: AGORA,
+    });
+
+    expect(r.http).toBe(200);
+    expect(r.body.criouCustomer).toBe(true);
+    expect(r.body.criouAssinatura).toBe(true);
+    // Valida que o email passado ao createCustomer foi o do admin-2
+    expect(createCustomerMock.mock.calls[0][2]).toBe("adegagestao@empresa.com");
+    // Valida dueDate 2026-11-16
+    expect(createSubscriptionMock.mock.calls[0][2].dueDate).toEqual(
+      new Date("2026-11-16T00:00:00.000Z"),
+    );
+    // Acesso local nao alterado
+    expect(updateMock.mock.calls[0][0].data.status).toBe("PENDENTE");
   });
 });

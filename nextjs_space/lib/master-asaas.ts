@@ -67,6 +67,10 @@ export interface PreviewPayload {
     cupomAplicado: string | null;
     documentoMascarado: string | null;
     emailMascarado: string | null;
+    adminId?: string | null;
+    adminEmailMascarado?: string | null;
+    admins?: Array<{ id: string; nome: string | null; emailMascarado: string | null }>;
+    adminEmail?: string | null;
   };
   asaas: {
     customer: { id: string | null; situacao: "existente" | "ausente" };
@@ -105,6 +109,7 @@ export interface PreviewPayload {
     ciclo: string;
     billingType: string;
     primeiroVencimento: string;
+    adminId?: string | null;
   };
   conflito?: { motivo: string; candidatos: CandidatoResumo[] };
   avisos: string[];
@@ -193,12 +198,83 @@ async function carregarEmpresa(empresaId: string): Promise<EmpresaPreview | null
   });
 }
 
-async function emailAdmin(empresaId: string): Promise<string | null> {
-  const admin = await prisma.user.findFirst({
+export interface AdminItem {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
+async function buscarAdmins(empresaId: string): Promise<AdminItem[]> {
+  if (typeof (prisma.user as any).findMany === "function") {
+    const list = await (prisma.user as any).findMany({
+      where: { empresaId, role: "admin" },
+      select: { id: true, name: true, email: true },
+    });
+    if (Array.isArray(list)) return list;
+  }
+  const single = await prisma.user.findFirst({
     where: { empresaId, role: "admin" },
-    select: { email: true },
+    select: { id: true, name: true, email: true },
   });
-  return admin?.email ?? null;
+  return single ? [single] : [];
+}
+
+async function resolverAdmin(
+  empresaId: string,
+  adminIdOpt?: string | null,
+): Promise<
+  | {
+      ok: true;
+      selecionado: AdminItem | null;
+      admins: Array<{ id: string; nome: string | null; emailMascarado: string | null }>;
+    }
+  | {
+      ok: false;
+      http: number;
+      erro: string;
+      motivo: string;
+    }
+> {
+  const admins = await buscarAdmins(empresaId);
+  const adminsResumo = admins.map((a) => ({
+    id: a.id,
+    nome: a.name,
+    emailMascarado: mascararEmail(a.email),
+  }));
+
+  if (adminIdOpt !== undefined && adminIdOpt !== null && adminIdOpt !== "") {
+    let admin = admins.find((a) => a.id === adminIdOpt) ?? null;
+    if (!admin) {
+      const direto = await prisma.user.findFirst({
+        where: { id: adminIdOpt, empresaId, role: "admin" },
+        select: { id: true, name: true, email: true },
+      });
+      if (direto) {
+        admin = direto;
+      }
+    }
+    if (!admin) {
+      return {
+        ok: false,
+        http: 400,
+        erro: "admin_invalido",
+        motivo: "admin_nao_encontrado_ou_invalido",
+      };
+    }
+    return { ok: true, selecionado: admin, admins: adminsResumo };
+  }
+
+  // Sem selecao explicita: se houver multiplos admins, recusa escolha arbitraria
+  if (admins.length > 1) {
+    return {
+      ok: false,
+      http: 409,
+      erro: "conflito_vinculo",
+      motivo: "multiplos_admins_selecao_obrigatoria",
+    };
+  }
+
+  return { ok: true, selecionado: admins[0] ?? null, admins: adminsResumo };
 }
 
 /**
@@ -239,6 +315,7 @@ async function resolverValor(
 export interface OpcoesPreview {
   agora?: Date;
   primeiroVencimento?: string | null;
+  adminId?: string | null;
 }
 
 /**
@@ -255,23 +332,43 @@ export async function montarPreview(
 
   let agora: Date;
   let primeiroVencimentoOpt: string | null | undefined;
+  let adminIdOpt: string | null | undefined;
 
   if (agoraOuOpcoes instanceof Date) {
     agora = agoraOuOpcoes;
     primeiroVencimentoOpt = opcoesExtra?.primeiroVencimento;
+    adminIdOpt = opcoesExtra?.adminId;
   } else if (agoraOuOpcoes && typeof agoraOuOpcoes === "object") {
     agora = agoraOuOpcoes.agora ?? new Date();
     primeiroVencimentoOpt =
       agoraOuOpcoes.primeiroVencimento !== undefined
         ? agoraOuOpcoes.primeiroVencimento
         : opcoesExtra?.primeiroVencimento;
+    adminIdOpt =
+      agoraOuOpcoes.adminId !== undefined
+        ? agoraOuOpcoes.adminId
+        : opcoesExtra?.adminId;
   } else {
     agora = new Date();
     primeiroVencimentoOpt = opcoesExtra?.primeiroVencimento;
+    adminIdOpt = opcoesExtra?.adminId;
   }
 
   const empresa = await carregarEmpresa(empresaId);
   if (!empresa) return { ok: false, http: 404, erro: "empresa_nao_encontrada" };
+
+  const adminRes = await resolverAdmin(empresaId, adminIdOpt);
+  if (!adminRes.ok) {
+    return {
+      ok: false,
+      http: adminRes.http,
+      erro: adminRes.erro,
+      motivo: adminRes.motivo,
+    };
+  }
+
+  const adminSelecionado = adminRes.selecionado;
+  const emailAdminValidado = adminSelecionado?.email ?? null;
 
   const avisos: string[] = [];
 
@@ -322,8 +419,6 @@ export async function montarPreview(
     }
   }
 
-  const email = await emailAdmin(empresaId);
-
   const baseEmpresa = {
     nome: empresa.nome,
     status: empresa.status,
@@ -331,7 +426,11 @@ export async function montarPreview(
     ciclo: empresa.ciclo,
     cupomAplicado: empresa.cupomAplicado,
     documentoMascarado: mascararDocumento(empresa.cpfCnpj),
-    emailMascarado: mascararEmail(email),
+    emailMascarado: mascararEmail(emailAdminValidado),
+    adminId: adminSelecionado?.id ?? null,
+    adminEmailMascarado: mascararEmail(emailAdminValidado),
+    admins: adminRes.admins,
+    adminEmail: emailAdminValidado,
   };
 
   /** Fecha o preview: calcula versao, token e devolve payload. */
@@ -498,7 +597,7 @@ export async function montarPreview(
   if (semDocumento) {
     avisos.push("Empresa sem CPF/CNPJ: nao e possivel provisionar no Asaas.");
   }
-  if (!email) {
+  if (!emailAdminValidado) {
     avisos.push("Empresa sem email de admin: customer no Asaas exige email.");
   }
 
@@ -557,6 +656,7 @@ export async function montarPreview(
     customer: customerId,
     assinaturas: candidatos,
     classificacao: classificacao.tipo,
+    adminId: adminSelecionado?.id ?? null,
   };
 
   // Conflito: nunca escolher sozinho, nunca criar por cima.
@@ -597,7 +697,7 @@ export async function montarPreview(
     );
   }
 
-  if (semDocumento || (!customerId && !email)) {
+  if (semDocumento || (!customerId && !emailAdminValidado)) {
     const motivo = semDocumento ? "sem_documento" : "sem_email_admin";
     return montarPayload(
       "conflito",
@@ -788,6 +888,7 @@ export async function montarPreview(
         ciclo: proposta.proposta.ciclo,
         billingType: proposta.proposta.billingType,
         primeiroVencimento: proposta.proposta.primeiroVencimento,
+        adminId: adminSelecionado?.id ?? null,
       },
     },
     {
@@ -796,6 +897,7 @@ export async function montarPreview(
       valor: proposta.proposta.valor,
       cicloProposta: proposta.proposta.ciclo,
       primeiroVencimento: proposta.proposta.primeiroVencimento,
+      adminId: adminSelecionado?.id ?? null,
     },
   );
 }
@@ -809,6 +911,7 @@ export interface ArgsConfirmacao {
   confirmarTermos?: boolean;
   agora?: Date;
   primeiroVencimento?: string | null;
+  adminId?: string | null;
 }
 
 /**
@@ -826,6 +929,7 @@ export async function aplicarConfirmacao(
   const atual = await montarPreview(args.empresaId, {
     agora,
     primeiroVencimento: args.primeiroVencimento,
+    adminId: args.adminId,
   });
   if (!atual.ok) {
     return {
@@ -970,7 +1074,7 @@ export async function aplicarConfirmacao(
         body: { ok: false, erro: "conflito_vinculo", motivo: "sem_documento" },
       };
     }
-    const email = await emailAdmin(args.empresaId);
+    const email = preview.empresa.adminEmail;
     if (!email) {
       return {
         http: 409,

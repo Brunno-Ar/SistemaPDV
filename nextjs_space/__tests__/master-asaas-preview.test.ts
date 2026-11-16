@@ -20,7 +20,7 @@ jest.mock("@/lib/db", () => ({
       update: jest.fn(),
       updateMany: jest.fn(),
     },
-    user: { findFirst: jest.fn() },
+    user: { findFirst: jest.fn(), findMany: jest.fn() },
     cupom: { findUnique: jest.fn() },
   },
 }));
@@ -51,6 +51,7 @@ const findFirstMock = prisma.empresa.findFirst as jest.Mock;
 const updateMock = prisma.empresa.update as jest.Mock;
 const updateManyMock = prisma.empresa.updateMany as jest.Mock;
 const userFindMock = prisma.user.findFirst as jest.Mock;
+const userFindManyMock = (prisma.user as any).findMany as jest.Mock;
 const cupomMock = prisma.cupom.findUnique as jest.Mock;
 
 const getCustomerMock = asaas.getCustomer as jest.Mock;
@@ -108,7 +109,14 @@ beforeEach(() => {
   process.env.MASTER_PREVIEW_SECRET = "segredo-preview";
   delete process.env.ASAAS_WEBHOOK_SECRET;
 
-  userFindMock.mockResolvedValue({ email: "admin@empresa.com" });
+  userFindMock.mockResolvedValue({
+    id: "admin-1",
+    name: "Admin 1",
+    email: "admin@empresa.com",
+  });
+  userFindManyMock.mockResolvedValue([
+    { id: "admin-1", name: "Admin 1", email: "admin@empresa.com" },
+  ]);
   findFirstMock.mockResolvedValue(null);
   getCustomerMock.mockResolvedValue({ id: "cus_E1" });
   buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
@@ -416,6 +424,80 @@ describe("preview de empresa sem vinculo", () => {
 
     expect(rHoje.preview.token).not.toBe(rPadrao.preview.token);
     expect(rHoje.preview.versao).not.toBe(rPadrao.preview.versao);
+  });
+
+  it("multiplos admins sem adminId explicito: conflito 409 (multiplos_admins_selecao_obrigatoria)", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "admin2@empresa.com" },
+    ]);
+
+    const r = await montarPreview("E1", AGORA);
+
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.http).toBe(409);
+    expect(r.erro).toBe("conflito_vinculo");
+    expect(r.motivo).toBe("multiplos_admins_selecao_obrigatoria");
+  });
+
+  it("multiplos admins com adminId explicito valido: sucesso e lista admins", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "admin2@empresa.com" },
+    ]);
+
+    const r = await montarPreview("E1", {
+      agora: AGORA,
+      adminId: "admin-2",
+    });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.preview.empresa.adminId).toBe("admin-2");
+    expect(r.preview.empresa.admins).toHaveLength(2);
+    expect(r.preview.provisionamento?.adminId).toBe("admin-2");
+  });
+
+  it("adminId inexistente ou invalido: erro 400 (admin_invalido)", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+    ]);
+    userFindMock.mockResolvedValue(null);
+
+    const r = await montarPreview("E1", {
+      agora: AGORA,
+      adminId: "admin-fantasma",
+    });
+
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.http).toBe(400);
+    expect(r.erro).toBe("admin_invalido");
+    expect(r.motivo).toBe("admin_nao_encontrado_ou_invalido");
+  });
+
+  it("token HMAC vincula adminId (adminId diferentes geram tokens distintos)", async () => {
+    findUniqueMock.mockResolvedValue(empresaSemVinculo());
+    buscarCustomerMock.mockResolvedValue({ ok: true, customer: null });
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "admin2@empresa.com" },
+    ]);
+
+    const r1 = await montarPreview("E1", { agora: AGORA, adminId: "admin-1" });
+    const r2 = await montarPreview("E1", { agora: AGORA, adminId: "admin-2" });
+
+    expect(r1.ok).toBe(true);
+    expect(r2.ok).toBe(true);
+    if (!r1.ok || !r2.ok) return;
+
+    expect(r1.preview.token).not.toBe(r2.preview.token);
+    expect(r1.preview.versao).not.toBe(r2.preview.versao);
   });
 
   it("sem segredo de preview: falha fechada 503", async () => {

@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 async function responder(
   empresaId: string | null,
   primeiroVencimento?: string | null,
+  adminId?: string | null,
 ) {
   if (!empresaId) {
     return NextResponse.json(
@@ -24,6 +25,7 @@ async function responder(
 
   const resultado = await montarPreview(empresaId, {
     primeiroVencimento: primeiroVencimento || undefined,
+    adminId: adminId || undefined,
   });
 
   if (!resultado.ok) {
@@ -49,6 +51,7 @@ export async function POST(request: NextRequest) {
 
   let empresaId: string | null = null;
   let primeiroVencimento: string | null = null;
+  let adminId: string | null = null;
   try {
     const body = await request.json();
     empresaId = typeof body?.empresaId === "string" ? body.empresaId : null;
@@ -56,6 +59,7 @@ export async function POST(request: NextRequest) {
       typeof body?.primeiroVencimento === "string"
         ? body.primeiroVencimento
         : null;
+    adminId = typeof body?.adminId === "string" ? body.adminId : null;
   } catch {
     return NextResponse.json(
       { ok: false, erro: "json_invalido" },
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return responder(empresaId, primeiroVencimento);
+  return responder(empresaId, primeiroVencimento, adminId);
 }
 
 export async function GET(request: NextRequest) {
@@ -75,5 +79,6 @@ export async function GET(request: NextRequest) {
   return responder(
     request.nextUrl.searchParams.get("empresaId"),
     request.nextUrl.searchParams.get("primeiroVencimento"),
+    request.nextUrl.searchParams.get("adminId"),
   );
 }

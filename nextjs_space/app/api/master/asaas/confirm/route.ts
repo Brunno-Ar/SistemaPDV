@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     confirmarTerminal?: unknown;
     confirmarTermos?: unknown;
     primeiroVencimento?: unknown;
+    adminId?: unknown;
   };
   try {
     corpo = await request.json();
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       typeof corpo.primeiroVencimento === "string"
         ? corpo.primeiroVencimento
         : undefined,
+    adminId: typeof corpo.adminId === "string" ? corpo.adminId : undefined,
   });
 
   return NextResponse.json(resultado.body, { status: resultado.http });
