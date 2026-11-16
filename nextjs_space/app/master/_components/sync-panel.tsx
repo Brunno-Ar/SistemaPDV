@@ -34,10 +34,6 @@ interface SyncResult {
   details: SyncDetail[];
 }
 
-interface SyncErrorBody {
-  error?: string;
-}
-
 export function SyncPanel() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SyncResult | null>(null);
@@ -51,32 +47,32 @@ export function SyncPanel() {
         method: "POST",
       });
 
-      const data = (await res.json()) as
-        | (SyncResult & { success?: boolean })
-        | SyncErrorBody;
+      const data = await res.json();
 
       // Sucesso: backend retorna `success: true`. Qualquer outro shape ou
       // status não-200 é tratado como falha sem fingir sucesso.
-      if (!res.ok || data.success !== true) {
+      if (!res.ok || !data || data.success !== true) {
         throw new Error(
-          data.error || `Erro ao sincronizar (HTTP ${res.status})`,
+          data?.error || `Erro ao sincronizar (HTTP ${res.status})`,
         );
       }
 
+      const syncData = data as SyncResult;
+
       setResult({
-        total: data.total,
-        vinculadas: data.vinculadas ?? 0,
-        semCadastro: data.semCadastro ?? 0,
-        updated: data.updated,
-        pendentes: data.pendentes,
-        errors: data.errors,
-        timeout: data.timeout,
-        parcial: data.parcial,
-        details: data.details ?? [],
+        total: syncData.total,
+        vinculadas: syncData.vinculadas ?? 0,
+        semCadastro: syncData.semCadastro ?? 0,
+        updated: syncData.updated,
+        pendentes: syncData.pendentes,
+        errors: syncData.errors,
+        timeout: syncData.timeout,
+        parcial: syncData.parcial,
+        details: syncData.details ?? [],
       });
 
       toast.success(
-        `Sincronização concluída: ${data.updated} atualizada(s), ${data.semCadastro} sem cadastro no Asaas, ${data.pendentes} pendente(s), ${data.errors} erro(s).`,
+        `Sincronização concluída: ${syncData.updated} atualizada(s), ${syncData.semCadastro} sem cadastro no Asaas, ${syncData.pendentes} pendente(s), ${syncData.errors} erro(s).`,
       );
     } catch (error) {
       toast.error("Erro ao sincronizar", {
@@ -88,9 +84,8 @@ export function SyncPanel() {
     }
   };
 
-  const empresasSemCadastro = result?.details.filter(
-    (d) => d.status === "sem_cadastro",
-  );
+  const empresasSemCadastro =
+    result?.details?.filter((d) => d.status === "sem_cadastro") ?? [];
 
   return (
     <Card>
@@ -175,7 +170,7 @@ export function SyncPanel() {
               </AlertDescription>
             </Alert>
 
-            {empresasSemCadastro?.length > 0 && (
+            {empresasSemCadastro.length > 0 && (
               <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800/30 p-3">
                 <AlertTitle className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-1">
                   <span className="h-3 w-3 text-blue-600">i</span>
@@ -187,7 +182,7 @@ export function SyncPanel() {
                   ))}
                 </ul>
                 <p className="text-xs text-blue-600 dark:text-blue-300 mt-2">
-                  Use o menu por empresa → "Sincronizar Asaas" para revisar e,
+                  Use o menu por empresa → &quot;Sincronizar Asaas&quot; para revisar e,
                       se aplicável, provisionar individualmente.
                 </p>
               </div>

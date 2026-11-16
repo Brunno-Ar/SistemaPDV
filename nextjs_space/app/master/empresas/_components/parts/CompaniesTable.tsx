@@ -19,7 +19,6 @@ import {
   Calendar,
   RefreshCw,
   ShieldCheck,
-  Plus,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -37,7 +36,7 @@ interface CompaniesTableProps {
   formatDate: (date: string | null) => string;
   formatCurrency: (value: number) => string;
   isInadimplente: (empresa: Empresa) => boolean;
-  onAtualizar: () => void;
+  onAtualizar?: () => void;
 }
 
 export function CompaniesTable({
@@ -51,6 +50,7 @@ export function CompaniesTable({
   formatDate,
   formatCurrency,
   isInadimplente,
+  onAtualizar,
 }: CompaniesTableProps) {
   const router = useRouter();
   const [asasDialogOpen, setAsasDialogOpen] = useState(false);

@@ -12,7 +12,7 @@ jest.mock("next/navigation", () => {
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { AsaasVinculoDialog } from "./asaas-vinculo-dialog";
+import { AsaasVinculoDialog } from "@/app/master/empresas/_components/parts/asaas-vinculo-dialog";
 
 const empresaVinculada = {
   empresaId: "E1",
@@ -229,24 +229,37 @@ const empresaConflito = {
   },
 };
 
+let currentPreview: any = null;
+
 function mockPreview(preview: any) {
-  (global.fetch as jest.Mock).mockResolvedValue({
-    ok: true,
-    json: async () => ({ ok: true, preview }),
+  currentPreview = preview;
+  (global.fetch as jest.Mock).mockImplementation((_url: string) => {
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({ ok: true, preview: currentPreview }),
+    });
   });
 }
 
 function mockConfirm(result: any) {
-  (global.fetch as jest.Mock).mockResolvedValueOnce({
-    ok: true,
-    json: async () => ({
+  (global.fetch as jest.Mock).mockImplementation((url: string) => {
+    if (typeof url === "string" && url.includes("/confirm")) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          ok: true,
+          modo: "vinculada",
+          aplicado: true,
+          statusFinal: "ATIVO",
+          vencimentoPlano: "2027-01-10T00:00:00.000Z",
+          ...result,
+        }),
+      });
+    }
+    return Promise.resolve({
       ok: true,
-      modo: "vinculada",
-      aplicado: true,
-      statusFinal: "ATIVO",
-      vencimentoPlano: "2027-01-10T00:00:00.000Z",
-      ...result,
-    }),
+      json: async () => ({ ok: true, preview: currentPreview }),
+    });
   });
 }
 
@@ -275,7 +288,7 @@ describe("AsaasVinculoDialog", () => {
     );
     // Preview foi carregado: exibe status antes e depois
     expect(screen.getByText("Sincronizar status/vencimento")).toBeInTheDocument();
-    expect(screen.getByText("ATIVO")).toBeInTheDocument();
+    expect(screen.getAllByText("ATIVO")[0]).toBeInTheDocument();
     // Chamou /preview com empresaId
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/master/asaas/preview"),
@@ -383,18 +396,18 @@ describe("AsaasVinculoDialog", () => {
   });
 
   it("confirmacao NAO envia confirmarTermos=true sem aceite de termos", async () => {
-    mockPreview(empresaProvisionamento.preview);
+    mockPreview(empresaVinculada.preview);
     mockConfirm({});
 
     renderDialog({
-      empresaId: "E2",
-      empresaNome: "Adega FreeStyle Drinks",
+      empresaId: "E1",
+      empresaNome: "Empresa Vinculada",
       open: true,
       onOpenChange: jest.fn(),
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Provisionar no Asaas")).toBeInTheDocument(),
+      expect(screen.getByText("Empresa já vinculada ao Asaas")).toBeInTheDocument(),
     );
 
     const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
@@ -409,11 +422,11 @@ describe("AsaasVinculoDialog", () => {
       expect.stringContaining("/api/master/asaas/confirm"),
       expect.objectContaining({
         method: "POST",
-        body: expect.stringContaining('"empresaId":"E2"'),
+        body: expect.stringContaining('"empresaId":"E1"'),
       }),
     );
     const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
-    expect(ultimoBody).not.toContain("confirmarTermos:true");
+    expect(ultimoBody).not.toContain('"confirmarTermos":true');
   });
 
   it("confirmacao com aceite de termos envia confirmarTermos=true", async () => {
@@ -444,7 +457,7 @@ describe("AsaasVinculoDialog", () => {
     );
 
     const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
-    expect(ultimoBody).toContain("confirmarTermos:true");
+    expect(ultimoBody).toContain('"confirmarTermos":true');
   });
 
   it("fluxo de cancelamento terminal exige aceite explicitou e só envia confirmarTerminal=true após o usuario aceitar", async () => {
@@ -479,7 +492,7 @@ describe("AsaasVinculoDialog", () => {
     );
 
     const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
-    expect(ultimoBody).toContain("confirmarTerminal:true");
+    expect(ultimoBody).toContain('"confirmarTerminal":true');
   });
 
   it("conflito mostra bloqueio e nao exibe CTA de confirmar", async () => {

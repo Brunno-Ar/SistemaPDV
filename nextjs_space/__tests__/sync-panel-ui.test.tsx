@@ -16,7 +16,21 @@ import "@testing-library/jest-dom";
 import { SyncPanel } from "../app/master/_components/sync-panel";
 import { toast } from "sonner";
 
-function mockFetch(res: Response) {
+interface MockResponse {
+  ok: boolean;
+  status: number;
+  json: () => Promise<any>;
+}
+
+function createResponse(data: any, status = 200): MockResponse {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => data,
+  };
+}
+
+function mockFetch(res: MockResponse) {
   (global.fetch as jest.Mock).mockResolvedValue(res);
 }
 
@@ -30,23 +44,20 @@ describe("SyncPanel", () => {
 
   it("exibe resultado de sucesso e lista empresas sem cadastro (sem criar assinatura)", async () => {
     mockFetch(
-      new Response(
-        JSON.stringify({
-          success: true,
-          total: 5,
-          vinculadas: 3,
-          semCadastro: 2,
-          updated: 3,
-          pendentes: 0,
-          errors: 0,
-          details: [
-            { empresa: "Empresa A", status: "sem_cadastro" },
-            { empresa: "Empresa B", status: "sem_cadastro" },
-            { empresa: "Empresa C", status: "success", oldStatus: "PENDENTE", newStatus: "ATIVO" },
-          ],
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
+      createResponse({
+        success: true,
+        total: 5,
+        vinculadas: 3,
+        semCadastro: 2,
+        updated: 3,
+        pendentes: 0,
+        errors: 0,
+        details: [
+          { empresa: "Empresa A", status: "sem_cadastro" },
+          { empresa: "Empresa B", status: "sem_cadastro" },
+          { empresa: "Empresa C", status: "success", oldStatus: "PENDENTE", newStatus: "ATIVO" },
+        ],
+      }),
     );
 
     render(<SyncPanel />);
@@ -66,12 +77,7 @@ describe("SyncPanel", () => {
   });
 
   it("tratamento de falha sem `success` (shape {error}) nao finge sucesso", async () => {
-    mockFetch(
-      new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    mockFetch(createResponse({ error: "Unauthorized" }, 401));
 
     render(<SyncPanel />);
 
@@ -83,12 +89,7 @@ describe("SyncPanel", () => {
   });
 
   it("tratamento de status nao-200 nao finge sucesso", async () => {
-    mockFetch(
-      new Response(JSON.stringify({ error: "Internal Server Error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }),
-    );
+    mockFetch(createResponse({ error: "Internal Server Error" }, 500));
 
     render(<SyncPanel />);
 
@@ -99,8 +100,8 @@ describe("SyncPanel", () => {
   });
 
   it("botao desabilitado durante o carregamento", async () => {
-    let resolveFetch: (v: Response) => void = () => {};
-    const fetchPromise = new Promise<Response>((res) => {
+    let resolveFetch: (v: MockResponse) => void = () => {};
+    const fetchPromise = new Promise<MockResponse>((res) => {
       resolveFetch = res;
     });
     (global.fetch as jest.Mock).mockReturnValue(fetchPromise);
@@ -113,19 +114,16 @@ describe("SyncPanel", () => {
     ).toBeDisabled();
 
     resolveFetch(
-      new Response(
-        JSON.stringify({
-          success: true,
-          total: 0,
-          vinculadas: 0,
-          semCadastro: 0,
-          updated: 0,
-          pendentes: 0,
-          errors: 0,
-          details: [],
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
+      createResponse({
+        success: true,
+        total: 0,
+        vinculadas: 0,
+        semCadastro: 0,
+        updated: 0,
+        pendentes: 0,
+        errors: 0,
+        details: [],
+      }),
     );
 
     await waitFor(() =>

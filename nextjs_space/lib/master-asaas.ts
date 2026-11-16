@@ -14,6 +14,7 @@
  */
 
 import { prisma } from "@/lib/db";
+import { StatusEmpresa } from "@prisma/client";
 import { asaas } from "@/lib/asaas";
 import { decidirStatusSincronizado } from "@/lib/access";
 import {

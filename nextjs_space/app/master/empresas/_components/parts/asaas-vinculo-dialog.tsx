@@ -16,7 +16,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
-import { RefreshCw, AlertTriangle, CreditCard, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CreditCard } from "lucide-react";
 import {
   montarPreviewAsaas,
   confirmarPreviewAsaas,
@@ -157,6 +157,8 @@ export function AsaasVinculoDialog({
     );
   }
 
+  if (!preview) return null;
+
   const p = preview;
   const modo = p.modo;
   const proposta = p.proposta;
@@ -214,8 +216,14 @@ export function AsaasVinculoDialog({
           <>
             <div className="mb-4 space-y-2 text-sm">
               <div className="flex justify-between">
+                <span className="text-gray-500">Situação</span>
+                <span className="font-medium">
+                  {modo === "vinculada" ? "Vinculado" : "Não vinculado"}
+                </span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-gray-500">Modo</span>
-                <span className="font-medium">{modoLabel}</span>
+                <span className="font-medium capitalize">{modo}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Ação proposta</span>
@@ -279,10 +287,19 @@ export function AsaasVinculoDialog({
                   <li>
                     Criar assinatura:{p.provisionamento.criarAssinatura ? " sim" : " não"}
                   </li>
-                  <li>Valor: {String(p.provisionamento.valor)}</li>
-                  <li>Ciclo: {p.provisionamento.ciclo}</li>
-                  <li>Tipo: {p.provisionamento.billingType}</li>
-                  <li>Primeiro vencimento: {p.provisionamento.primeiroVencimento}</li>
+                  <li>
+                    Valor: <span>{String(p.provisionamento.valor)}</span>
+                  </li>
+                  <li>
+                    Ciclo: <span>{p.provisionamento.ciclo}</span>
+                  </li>
+                  <li>
+                    Tipo: <span>{p.provisionamento.billingType}</span>
+                  </li>
+                  <li>
+                    Primeiro vencimento:{" "}
+                    <span>{p.provisionamento.primeiroVencimento}</span>
+                  </li>
                 </ul>
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                   O acesso pago permanece condicionado a{" "}
@@ -290,12 +307,14 @@ export function AsaasVinculoDialog({
                   ação sozinha não libera acesso.
                 </p>
                 {precisaTermos && (
-                  <div className="mt-3">
+                  <div className="mt-3 flex items-center">
                     <Checkbox
+                      id="termos-checkbox"
+                      aria-label="Li e concordo com os termos acima (criação de cobrança)"
                       checked={termosAceito}
-                      onCheckedChange={setTermosAceito}
+                      onCheckedChange={(c) => setTermosAceito(c === true)}
                     />
-                    <label className="ml-2 text-sm cursor-pointer select-none">
+                    <label htmlFor="termos-checkbox" className="ml-2 text-sm cursor-pointer select-none">
                       Li e concordo com os termos acima (criação de cobrança)
                     </label>
                   </div>
@@ -311,12 +330,14 @@ export function AsaasVinculoDialog({
                 <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
                   O cancelamento terminal exige confirmação explícita.
                 </p>
-                <div className="mt-3">
+                <div className="mt-3 flex items-center">
                   <Checkbox
+                    id="terminal-checkbox"
+                    aria-label="Confirmo que desejo aplicar o cancelamento terminal"
                     checked={terminalAceito}
-                    onCheckedChange={setTerminalAceito}
+                    onCheckedChange={(c) => setTerminalAceito(c === true)}
                   />
-                  <label className="ml-2 text-sm cursor-pointer select-none">
+                  <label htmlFor="terminal-checkbox" className="ml-2 text-sm cursor-pointer select-none">
                     Confirmo que desejo aplicar o cancelamento terminal
                   </label>
                 </div>
