@@ -5,12 +5,7 @@ import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
 import { StatusEmpresa } from "@prisma/client";
 import { podeReativarManualmente } from "@/lib/access";
-import {
-  conferirPagamentoConfirmado,
-  coberturaComprovada,
-  avancarVencimentoSeMaior,
-} from "@/lib/pagamento";
-import type { PagamentoHistorico } from "@/lib/pagamento";
+import { conferirPagamentoConfirmado } from "@/lib/pagamento";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -514,141 +509,20 @@ export async function POST(request: NextRequest) {
           message: "Dados de teste limpos com sucesso! Estoque zerado.",
         });
 
-      case "syncAsaas":
-        // Sincronizar dados do Asaas para o sistema local
-        if (!empresaId) {
-          return NextResponse.json(
-            { error: "empresaId obrigatório" },
-            { status: 400 },
-          );
-        }
-
-        const empresaParaSync = await prisma.empresa.findUnique({
-          where: { id: empresaId },
-        });
-
-        if (!empresaParaSync?.asaasSubscriptionId) {
-          return NextResponse.json(
-            { error: "Empresa não tem assinatura no Asaas" },
-            { status: 400 },
-          );
-        }
-
-        try {
-          const subscription = await asaas.getSubscription(
-            empresaParaSync.asaasSubscriptionId,
-          );
-
-          // Prova server-side de PAYMENT_RECEIVED (estado local do webhook ou
-          // historico do Asaas). So isso ativa/estende a cobertura; CONFIRMED
-          // nao conta. Falha FECHADA: sem prova, mantem o status e nao avanca
-          // o vencimento (o webhook RECEIVED continua sendo a unica fonte de
-          // liberacao/renovacao).
-          const buscaHistorico = async (
-            id: string,
-          ): Promise<PagamentoHistorico[] | null> => {
-            try {
-              return await asaas.listPaymentHistory(id);
-            } catch {
-              return null;
-            }
-          };
-
-          const historico = await buscaHistorico(
-            empresaParaSync.asaasSubscriptionId,
-          );
-
-          const conferencia = await conferirPagamentoConfirmado(
-            {
-              asaasCustomerId: empresaParaSync.asaasCustomerId,
-              asaasSubscriptionId: empresaParaSync.asaasSubscriptionId,
-              vencimentoPlano: empresaParaSync.vencimentoPlano,
-            },
-            buscaHistorico,
-          );
-
-          // Falha/pendência do Asaas ou histórico indisponível: 503,
-          // sem escrita e com o status mantido.
-          if (conferencia.pendente || historico === null) {
-            return NextResponse.json(
-              {
-                success: false,
-                error:
-                  "Sincronização pendente: não foi possível confirmar pagamento no Asaas",
-                status: "pendente",
-              },
-              { status: 503 },
-            );
-          }
-
-          // Cobertura provada apenas pelo histórico RECEIVED (nunca por
-          // subscription.nextDueDate, que existe mesmo sem pagamento).
-          const cobertura = coberturaComprovada(historico, {
-            customerId: empresaParaSync.asaasCustomerId ?? null,
-            subscriptionId: empresaParaSync.asaasSubscriptionId,
-          });
-
-          if (!cobertura) {
-            return NextResponse.json(
-              {
-                success: false,
-                error: "Sem cobertura de pagamento comprovada",
-                status: "sem_cobertura",
-              },
-              { status: 503 },
-            );
-          }
-
-          // Mapear status do Asaas para status do sistema
-          // IMPORTANTE: Preservar EM_TESTE se a conta ainda está em período de trial
-          let novoStatus = empresaParaSync.status;
-
-          // Se está EM_TESTE, NÃO alterar baseado no Asaas (trial não tem pagamento)
-          if (empresaParaSync.status === "EM_TESTE") {
-            // Manter EM_TESTE - a sincronização não deve alterar contas em trial
-            novoStatus = "EM_TESTE";
-          } else if (subscription.status === "INACTIVE") {
-            novoStatus = "PAUSADO";
-          } else if (
-            conferencia.confirmado &&
-            subscription.status === "ACTIVE"
-          ) {
-            novoStatus = "ATIVO";
-          }
-
-          // Vencimento local avança apenas com cobertura comprovada e nunca
-          // diminui (avancarVencimentoSeMaior é no-op quando alvo <= atual).
-          const proximoVencimento = avancarVencimentoSeMaior(
-            empresaParaSync.vencimentoPlano ?? null,
-            cobertura,
-          );
-
-          const dataUpdate: Record<string, unknown> = { status: novoStatus };
-          if (proximoVencimento) {
-            dataUpdate.vencimentoPlano = proximoVencimento;
-          }
-
-          const empresaSincronizada = await prisma.empresa.update({
-            where: { id: empresaId },
-            data: dataUpdate,
-          });
-
-          return NextResponse.json({
-            success: true,
-            message: `Sincronizado! Vencimento: ${proximoVencimento
-              ? proximoVencimento.toISOString()
-              : empresaParaSync.vencimentoPlano
-                ? empresaParaSync.vencimentoPlano.toISOString()
-                : "mantido"}, Status Asaas: ${subscription.status}`,
-            empresa: empresaSincronizada,
-          });
-        } catch (syncError) {
-          console.error("Erro ao sincronizar com Asaas:", syncError);
-          return NextResponse.json(
-            { error: "Erro ao buscar dados do Asaas" },
-            { status: 500 },
-          );
-        }
+      case "syncAsaas": {
+        // DEPRECADO: esta acao escrevia status/vencimento sem preview. O fluxo
+        // master agora e POST /api/master/asaas/preview (somente leitura) e
+        // POST /api/master/asaas/confirm (token + revalidacao). Sem escrita
+        // aqui: nenhum caminho antigo pode alterar estado por chamada direta.
+        return NextResponse.json(
+          {
+            error: "Acao descontinuada. Use o preview e a confirmacao do vinculo Asaas.",
+            previewEndpoint: "/api/master/asaas/preview",
+            confirmEndpoint: "/api/master/asaas/confirm",
+          },
+          { status: 410 },
+        );
+      }
 
       default:
         return NextResponse.json({ error: "Ação inválida." }, { status: 400 });

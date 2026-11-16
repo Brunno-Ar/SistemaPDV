@@ -200,6 +200,11 @@ function statusAtualSincronizavel(statusAtual: string): StatusSincronizavel {
  * `pagamentoRecebido` (prova server-side de PAYMENT_RECEIVED ja conferida) e o
  * unico caminho que promove para ATIVO. Sem ele, o status NUNCA sobe para
  * ATIVO — pausar/cancelar continuam permitidos. Fail-closed.
+ *
+ * TERMINAL: assinatura `CANCELLED/CANCELED` no Asaas NAO cancela a empresa
+ * sozinha. So vira CANCELADO com `opcoes.confirmarTerminal === true`, que o
+ * master envia explicitamente no confirm (nunca em lote). `INACTIVE` e nao
+ * terminal: pausa e o acesso pode voltar com pagamento.
  */
 export function decidirStatusSincronizado(
   statusAtual: string,
@@ -207,6 +212,7 @@ export function decidirStatusSincronizado(
   vencimentoPlano: string | Date | null,
   agora: Date = new Date(),
   pagamentoRecebido: boolean = false,
+  opcoes: { confirmarTerminal?: boolean } = {},
 ): StatusSincronizavel {
   switch (statusAsaas.toUpperCase()) {
     case "RECEIVED":
@@ -219,9 +225,14 @@ export function decidirStatusSincronizado(
       // promover PAUSADO -> ATIVO (evita liberar sem PAYMENT_RECEIVED).
       return statusAtualSincronizavel(statusAtual);
     case "INACTIVE":
+    case "EXPIRED":
+      // Assinatura parada/vencida nao e cancelamento: pausa (reversivel).
+      return "PAUSADO";
     case "CANCELLED":
     case "CANCELED":
-      return "CANCELADO";
+      return opcoes.confirmarTerminal
+        ? "CANCELADO"
+        : statusAtualSincronizavel(statusAtual);
     default: {
       const candidato: StatusSincronizavel =
         statusAtual === "EM_TESTE" ? "EM_TESTE" : "ATIVO";
@@ -236,8 +247,11 @@ export function decidirStatusSincronizado(
       );
       // Pausar/vencer continua valendo sem pagamento (nao e promocao).
       if (!avaliacao.permitido) return "PAUSADO";
+      // Prova de PAYMENT_RECEIVED e o UNICO caminho que promove o trial
+      // (EM_TESTE -> ATIVO). Sem ela, o status nao sobe.
+      if (pagamentoRecebido) return "ATIVO";
       // NUNCA promove para ATIVO sem prova de PAYMENT_RECEIVED.
-      if (candidato === "ATIVO" && !pagamentoRecebido) {
+      if (candidato === "ATIVO") {
         return statusAtualSincronizavel(statusAtual);
       }
       return candidato;

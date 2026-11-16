@@ -389,13 +389,28 @@ describe("decidirStatusSincronizado (mesmas tolerâncias do runtime)", () => {
     ).toBe("PAUSADO");
   });
 
-  it("INACTIVE/CANCELLED vira CANCELADO", () => {
+  it("INACTIVE vira PAUSADO; CANCELLED so com confirmacao terminal", () => {
+    // Assinatura inativa nao e cancelamento: pausa reversivel.
     expect(decidirStatusSincronizado("ATIVO", "INACTIVE", null, AGORA)).toBe(
-      "CANCELADO",
+      "PAUSADO",
     );
+    expect(
+      decidirStatusSincronizado("EM_TESTE", "INACTIVE", null, AGORA),
+    ).toBe("PAUSADO");
+    // Terminal exige flag explicita; sem ela o status atual e preservado.
     expect(decidirStatusSincronizado("ATIVO", "CANCELLED", null, AGORA)).toBe(
-      "CANCELADO",
+      "ATIVO",
     );
+    expect(
+      decidirStatusSincronizado("ATIVO", "CANCELLED", null, AGORA, false, {
+        confirmarTerminal: true,
+      }),
+    ).toBe("CANCELADO");
+    expect(
+      decidirStatusSincronizado("ATIVO", "CANCELED", null, AGORA, false, {
+        confirmarTerminal: true,
+      }),
+    ).toBe("CANCELADO");
   });
 
   it("assinatura ACTIVE nao promove para ATIVO sem PAYMENT_RECEIVED", () => {

@@ -166,6 +166,137 @@ it("RECEIVED comprovado: promove para ATIVO e avanca o vencimento uma vez", asyn
   expect(body.updated).toBe(1);
 });
 
+it("empresa sem assinatura aparece como sem_cadastro e NAO e provisionada", async () => {
+  findManyMock.mockResolvedValue([
+    {
+      id: "E9",
+      nome: "Empresa sem Asaas",
+      asaasSubscriptionId: null,
+      asaasCustomerId: null,
+      status: "PENDENTE",
+      vencimentoPlano: null,
+    },
+  ]);
+
+  const res = await POST();
+  const body = await res.json();
+
+  expect(res.status).toBe(200);
+  expect(body.semCadastro).toBe(1);
+  expect(body.vinculadas).toBe(0);
+  expect(body.details[0]).toMatchObject({
+    empresa: "Empresa sem Asaas",
+    status: "sem_cadastro",
+  });
+  // Lote nunca provisiona: nenhum GET/POST ao Asaas e nenhuma escrita.
+  expect(getSubscriptionMock).not.toHaveBeenCalled();
+  expect(updateMock).not.toHaveBeenCalled();
+});
+
+it("CANCELLED no Asaas nao vira CANCELADO em lote (pendencia de confirmacao)", async () => {
+  const emp = empresa("E1", new Date("2026-11-10T00:00:00.000Z"), "ATIVO");
+  findManyMock.mockResolvedValue([emp]);
+  getSubscriptionMock.mockResolvedValue({
+    status: "CANCELLED",
+    customerId: "cus_E1",
+    nextDueDate: "2026-12-10",
+  });
+  conferenciaMock.mockResolvedValue({
+    confirmado: false,
+    fonte: "nenhuma",
+    pendente: false,
+  });
+  coberturaMock.mockReturnValue(null);
+
+  const res = await POST();
+  const body = await res.json();
+
+  expect(res.status).toBe(200);
+  expect(body.pendentes).toBe(1);
+  // Status atual preservado, nunca terminal silencioso.
+  const data = updateMock.mock.calls[0][0].data;
+  expect(data.status).toBe("ATIVO");
+  expect(data.status).not.toBe("CANCELADO");
+  expect(body.details.some((d: { pendencia?: string }) => d.pendencia)).toBe(true);
+  // A decisao de status nem e consultada para terminal.
+  expect(decidirMock).not.toHaveBeenCalled();
+});
+
+it("INACTIVE pausa em lote (nunca CANCELADO)", async () => {
+  const emp = empresa("E1", new Date("2026-11-10T00:00:00.000Z"), "ATIVO");
+  findManyMock.mockResolvedValue([emp]);
+  getSubscriptionMock.mockResolvedValue({
+    status: "INACTIVE",
+    customerId: "cus_E1",
+    nextDueDate: "2026-12-10",
+  });
+  conferenciaMock.mockResolvedValue({
+    confirmado: false,
+    fonte: "nenhuma",
+    pendente: false,
+  });
+  coberturaMock.mockReturnValue(null);
+  decisaoMock.mockImplementation(
+    (_atual, asaas, _venc, _agora, _recebido, opcoes) =>
+      // Espelha a regra real do lib/access para o caso INACTIVE.
+      String(asaas).toUpperCase() === "INACTIVE"
+        ? "PAUSADO"
+        : opcoes?.confirmarTerminal
+          ? "CANCELADO"
+          : "ATIVO",
+  );
+
+  const res = await POST();
+
+  expect(res.status).toBe(200);
+  const data = updateMock.mock.calls[0][0].data;
+  expect(data.status).toBe("PAUSADO");
+  expect(decidirMock).toHaveBeenCalledWith(
+    "ATIVO",
+    "INACTIVE",
+    expect.anything(),
+    expect.any(Date),
+    false,
+    { confirmarTerminal: false },
+  );
+});
+
+it("interrompe execucao quando atinge deadline de 45s retornando resultado parcial", async () => {
+  const emp1 = empresa("E1", new Date("2026-11-10T00:00:00.000Z"), "ATIVO");
+  const emp2 = empresa("E2", new Date("2026-11-10T00:00:00.000Z"), "ATIVO");
+  findManyMock.mockResolvedValue([emp1, emp2]);
+
+  const realNow = Date.now;
+  let callCount = 0;
+  // Simula avanço de tempo: primeira empresa ok, segunda empresa passa de 45s
+  jest.spyOn(Date, "now").mockImplementation(() => {
+    callCount++;
+    return callCount > 2 ? realNow() + 50_000 : realNow();
+  });
+
+  conferenciaMock.mockResolvedValue({
+    confirmado: false,
+    fonte: "nenhuma",
+    pendente: false,
+  });
+  coberturaMock.mockReturnValue(null);
+
+  const res = await POST();
+  const body = await res.json();
+
+  expect(res.status).toBe(200);
+  expect(body.timeout).toBe(true);
+  expect(body.parcial).toBe(true);
+  expect(body.pendentes).toBe(1);
+  expect(
+    body.details.some(
+      (d: { pendencia?: string }) => d.pendencia && d.pendencia.includes("45s"),
+    ),
+  ).toBe(true);
+
+  jest.spyOn(Date, "now").mockRestore();
+});
+
 it("nao e master: 401", async () => {
   sessaoMock.mockResolvedValue({ user: { role: "cliente" } });
 
