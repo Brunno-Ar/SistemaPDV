@@ -4,12 +4,26 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
 import { decidirStatusSincronizado } from "@/lib/access";
-import { conferirPagamentoConfirmado, avancarVencimentoSeMaior, coberturaComprovada } from "@/lib/pagamento";
+import {
+  conferirPagamentoConfirmado,
+  avancarVencimentoSeMaior,
+  coberturaComprovada,
+} from "@/lib/pagamento";
 import { sincronizarBeneficiosEmpresa } from "@/lib/mgm-sync";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Permitir execuções mais longas (Vercel/Next.js)
 
+/**
+ * Sincronizacao em lote das empresas JA VINCULADAS ao Asaas.
+ *
+ * Limites deliberados (contrato master):
+ *  - NAO provisiona: empresa sem `asaasSubscriptionId` volta como `sem_cadastro`
+ *    e nada e criado. Provisionamento tem endpoint proprio (preview/confirm).
+ *  - NAO cancela terminal em lote: `CANCELLED/CANCELED` no Asaas vira pendencia
+ *    de confirmacao explicita, nunca `CANCELADO` silencioso. `INACTIVE` pausa.
+ *  - Nao escreve `plano`: o lote nao e lugar de mexer em plano.
+ */
 export async function POST() {
   const session = await getServerSession(authOptions);
 
@@ -18,11 +32,7 @@ export async function POST() {
   }
 
   try {
-    // 1. Buscar todas as empresas com assinatura vinculada
     const empresas = await prisma.empresa.findMany({
-      where: {
-        asaasSubscriptionId: { not: null },
-      },
       select: {
         id: true,
         nome: true,
@@ -33,13 +43,20 @@ export async function POST() {
       },
     });
 
+    const vinculadas = empresas.filter((e) => Boolean(e.asaasSubscriptionId));
+    const semCadastro = empresas.filter((e) => !e.asaasSubscriptionId);
+
     console.log(
-      `🔄 Iniciando sincronização em massa para ${empresas.length} empresas...`,
+      `🔄 Sincronizando ${vinculadas.length} empresas vinculadas; ` +
+        `${semCadastro.length} sem cadastro no Asaas (nao provisionadas).`,
     );
 
     let updatedCount = 0;
     let errorCount = 0;
     let pendentesCount = 0;
+    let atingiuTimeout = false;
+    const inicio = Date.now();
+    const DEADLINE_MS = 45_000;
     const details: {
       empresa: string;
       status: string;
@@ -47,55 +64,67 @@ export async function POST() {
       newStatus?: string;
       error?: string;
       pendencia?: string;
-    }[] = [];
+    }[] = semCadastro.map((empresa) => ({
+      empresa: empresa.nome,
+      status: "sem_cadastro",
+    }));
 
-    // 2. Iterar e atualizar (serialmente para evitar rate limit agressivo)
-    for (const empresa of empresas) {
-      if (!empresa.asaasSubscriptionId) continue;
+    // Serial de proposito: rate limit do Asaas.
+    for (const empresa of vinculadas) {
+      if (Date.now() - inicio > DEADLINE_MS) {
+        atingiuTimeout = true;
+        pendentesCount++;
+        details.push({
+          empresa: empresa.nome,
+          status: "pending",
+          pendencia: "Limite de tempo (45s) atingido: sincronizacao parcial",
+        });
+        continue;
+      }
+
+      const subscriptionId = empresa.asaasSubscriptionId;
+      if (!subscriptionId) continue;
 
       try {
-        const sub = await asaas.getSubscription(empresa.asaasSubscriptionId);
+        const sub = await asaas.getSubscription(subscriptionId);
+        const statusAsaas = sub.status ?? "";
+        const terminal =
+          statusAsaas.toUpperCase() === "CANCELLED" ||
+          statusAsaas.toUpperCase() === "CANCELED";
 
         // Cobertura NUNCA vem de `sub.nextDueDate`: o campo existe mesmo para
         // cobranca NAO paga. A unica prova aceita e historico RECEIVED
         // vinculado ao cliente/assinatura. `null` = Asaas indisponivel.
-        const historico = await asaas.listPaymentHistory(
-          empresa.asaasSubscriptionId,
-        );
+        const historico = await asaas.listPaymentHistory(subscriptionId);
 
-        // Prova server-side de PAYMENT_RECEIVED: estado local gravado pelo
-        // webhook ou historico do Asaas (RECEIVED vinculado e cobrindo o ciclo
-        // atual). CONFIRMED nao conta. Falha FECHADA: sem prova, o status NAO
-        // sobe para ATIVO e o vencimento local NAO avanca.
+        const customerId = empresa.asaasCustomerId ?? sub.customerId ?? null;
+
         const conferencia = await conferirPagamentoConfirmado(
           {
-            asaasCustomerId: empresa.asaasCustomerId,
-            asaasSubscriptionId: empresa.asaasSubscriptionId,
+            asaasCustomerId: customerId,
+            asaasSubscriptionId: subscriptionId,
             vencimentoPlano: empresa.vencimentoPlano,
           },
           async () => historico,
         );
 
-        // Cobertura comprovada por RECEIVED (dueDate + 1 ciclo). Entrada
-        // incompleta e ignorada; sem prova, nada avanca.
         const cobertura = coberturaComprovada(historico, {
-          customerId: empresa.asaasCustomerId,
-          subscriptionId: empresa.asaasSubscriptionId,
+          customerId,
+          subscriptionId,
         });
 
-        // Decisao de status pela policy UNICA (tolerancia trial +1d / plano
-        // +10d). NAO pausa no vencimento cru do Asaas, NAO ativa em CONFIRMED e
-        // so promove para ATIVO com pagamento RECEIVED comprovado.
-        const novoStatus = decidirStatusSincronizado(
-          empresa.status,
-          sub.status,
-          cobertura ?? empresa.vencimentoPlano,
-          new Date(),
-          conferencia.confirmado,
-        );
+        // Terminal nao e aplicado em lote: mantem o status atual e sinaliza.
+        const novoStatus = terminal
+          ? empresa.status
+          : decidirStatusSincronizado(
+              empresa.status,
+              statusAsaas,
+              cobertura ?? empresa.vencimentoPlano,
+              new Date(),
+              conferencia.confirmado,
+              { confirmarTerminal: false },
+            );
 
-        // Vencimento local SO avanca com pagamento RECEIVED comprovado — e
-        // apenas para frente: nunca encolhe o mes gratis ja concedido (MGM).
         const vencAvancado = avancarVencimentoSeMaior(
           empresa.vencimentoPlano,
           cobertura,
@@ -106,8 +135,10 @@ export async function POST() {
           data: {
             status: novoStatus,
             ...(vencAvancado ? { vencimentoPlano: vencAvancado } : {}),
-            plano: "PRO", // Garantir que tenha um plano setado
-            asaasCustomerId: sub.customerId, // Atualizar customer ID se necessário
+            // Recupera o vinculo quando o GET /subscriptions devolve `customer`.
+            ...(!empresa.asaasCustomerId && sub.customerId
+              ? { asaasCustomerId: sub.customerId }
+              : {}),
           },
         });
 
@@ -122,19 +153,35 @@ export async function POST() {
 
         // Entrada incompleta (historico indisponivel) e PENDENCIA, nao erro:
         // registra e segue o lote sem promover nem estender.
-        if (conferencia.pendente) pendentesCount++;
-        else updatedCount++;
+        if (terminal) {
+          pendentesCount++;
+          details.push({
+            empresa: empresa.nome,
+            status: "pending",
+            oldStatus: empresa.status,
+            newStatus: empresa.status,
+            pendencia:
+              "Assinatura cancelada no Asaas: cancelamento terminal exige confirmacao",
+          });
+        } else if (conferencia.pendente) {
+          pendentesCount++;
+          details.push({
+            empresa: empresa.nome,
+            status: "pending",
+            oldStatus: empresa.status,
+            newStatus: novoStatus,
+            pendencia: "Historico do Asaas indisponivel",
+          });
+        } else {
+          updatedCount++;
+          details.push({
+            empresa: empresa.nome,
+            status: "success",
+            oldStatus: empresa.status,
+            newStatus: novoStatus,
+          });
+        }
 
-        details.push({
-          empresa: empresa.nome,
-          status: conferencia.pendente ? "pending" : "success",
-          oldStatus: empresa.status,
-          newStatus: novoStatus,
-          ...(conferencia.pendente
-            ? { pendencia: "Historico do Asaas indisponivel" }
-            : {}),
-        });
-        // Pequeno delay para ser gentil com a API
         await new Promise((resolve) => setTimeout(resolve, 200));
       } catch (err) {
         console.error(`❌ Falha ao sincronizar empresa ${empresa.nome}:`, err);
@@ -154,9 +201,12 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       total: empresas.length,
+      vinculadas: vinculadas.length,
+      semCadastro: semCadastro.length,
       updated: updatedCount,
       pendentes: pendentesCount,
       errors: errorCount,
+      ...(atingiuTimeout ? { timeout: true, parcial: true } : {}),
       details,
     });
   } catch (error) {

@@ -33,7 +33,9 @@ interface AsaasCustomer {
 
 interface AsaasSubscription {
   id: string;
+  /** Campo normalizado (ver getSubscription). A API devolve `customer`. */
   customerId: string;
+  customer?: string;
   value: number;
   nextDueDate: string;
   cycle: string;
@@ -175,6 +177,34 @@ export const asaas = {
   },
 
   /**
+   * Busca por CPF/CNPJ distinguindo "nao existe" de "falhou".
+   *
+   * O `findCustomerByCpfCnpj` acima devolve `null` nos dois casos, o que faz o
+   * provisionamento criar um cliente duplicado quando a busca falha. Aqui a
+   * falha e explicita para quem for escrever: `ok: false` = nao crie nada.
+   */
+  async buscarCustomerPorCpfCnpj(
+    cpfCnpj: string,
+  ): Promise<{ ok: true; customer: AsaasCustomer | null } | { ok: false }> {
+    try {
+      const { ok, data, status } = await asaasRequest<{
+        data?: AsaasCustomer[];
+      }>(`/customers?cpfCnpj=${encodeURIComponent(cpfCnpj)}`);
+
+      if (!ok) {
+        logError("buscarCustomerPorCpfCnpj", `HTTP ${status}`, { cpfCnpj });
+        return { ok: false };
+      }
+
+      const lista = data.data ?? [];
+      return { ok: true, customer: lista.length > 0 ? lista[0] : null };
+    } catch (error) {
+      logError("buscarCustomerPorCpfCnpj", error, { cpfCnpj });
+      return { ok: false };
+    }
+  },
+
+  /**
    * Updates an existing customer in Asaas
    */
   async updateCustomer(
@@ -304,16 +334,21 @@ export const asaas = {
 
   /**
    * Creates a subscription with fine and interest rules.
-   * Starts after the trial period.
+   *
+   * `opcoes.dueDate` e o primeiro vencimento decidido e CONFIRMADO pelo master
+   * (nunca retroativo; quem chama ja validou). Sem ele, mantem o trial padrao:
+   * hoje + TRIAL_DAYS.
    */
   async createSubscription(
     customerId: string,
     customValue?: number,
+    opcoes: { dueDate?: Date; billingType?: string } = {},
   ): Promise<AsaasSubscription> {
-    const nextDueDate = calcularVencimentoTrial();
+    const nextDueDate = opcoes.dueDate ?? calcularVencimentoTrial();
     const nextDueDateStr = nextDueDate.toISOString().split("T")[0];
 
     const value = customValue !== undefined ? customValue : PRECO_PLANO_PADRAO;
+    const billingType = opcoes.billingType ?? "UNDEFINED";
 
     console.log("🔄 [Asaas.createSubscription] Creating subscription:", {
       customerId,
@@ -329,7 +364,7 @@ export const asaas = {
         method: "POST",
         body: JSON.stringify({
           customer: customerId,
-          billingType: "UNDEFINED", // Permite Pix/Boleto
+          billingType: billingType, // Padrao UNDEFINED (Pix/Boleto), ou o confirmado
           value: value,
           nextDueDate: nextDueDateStr,
           cycle: "MONTHLY",
@@ -619,6 +654,10 @@ export const asaas = {
 
   /**
    * Gets subscription details from Asaas.
+   *
+   * Normaliza `customer` (campo real da API) em `customerId` para os chamadores
+   * existentes: sem isso, `sub.customerId` era sempre `undefined` e o vinculo
+   * de customer nunca era recuperado.
    */
   async getSubscription(subscriptionId: string): Promise<AsaasSubscription> {
     console.log("🔍 [Asaas.getSubscription]", subscriptionId);
@@ -634,7 +673,43 @@ export const asaas = {
       throw new Error(errorMsg);
     }
 
-    return data;
+    return {
+      ...data,
+      customerId: data.customerId || data.customer || "",
+      customer: data.customer,
+    };
+  },
+
+  /**
+   * Lista assinaturas de um customer (GET /subscriptions?customer=).
+   *
+   * `null` = falha do Asaas. Quem provisiona precisa tratar falha como
+   * fail-closed: nunca assumir "nao existe assinatura" por erro de rede.
+   */
+  async listSubscriptionsByCustomer(
+    customerId: string,
+    limite: number = 100,
+  ): Promise<AsaasSubscription[] | null> {
+    try {
+      const { ok, data, status } = await asaasRequest<{
+        data?: AsaasSubscription[];
+      }>(`/subscriptions?customer=${customerId}&limit=${limite}`);
+
+      if (!ok) {
+        logError("listSubscriptionsByCustomer", `HTTP ${status}`, {
+          customerId,
+        });
+        return null;
+      }
+
+      return (data.data ?? []).map((sub) => ({
+        ...sub,
+        customerId: sub.customerId || sub.customer || customerId,
+      }));
+    } catch (error) {
+      logError("listSubscriptionsByCustomer", error, { customerId });
+      return null;
+    }
   },
 
   /**
