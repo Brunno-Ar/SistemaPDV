@@ -165,4 +165,29 @@ describe("GET /api/billing/pending - contrato HTTP e autenticação", () => {
     expect(body.billing.value).toBe(99.9);
     expect(body.billing.status).toBe("PENDING");
   });
+
+  it("limita requisições por IP retornando 429 com corpo genérico", async () => {
+    sessaoMock.mockResolvedValue(null);
+    const ip = "198.51.100.42";
+
+    // Esgota as 20 requisições permitidas na janela de rate limit
+    for (let i = 0; i < 20; i++) {
+      const req = new NextRequest("http://localhost:3000/api/billing/pending", {
+        headers: { "x-forwarded-for": ip },
+      });
+      const res = await GET(req);
+      expect(res.status).toBe(401);
+    }
+
+    // A 21ª requisição do mesmo IP deve ser rejeitada com HTTP 429
+    const reqBloqueada = new NextRequest(
+      "http://localhost:3000/api/billing/pending",
+      { headers: { "x-forwarded-for": ip } },
+    );
+    const resBloqueada = await GET(reqBloqueada);
+
+    expect(resBloqueada.status).toBe(429);
+    const body = await resBloqueada.json();
+    expect(body).toEqual({ billing: null });
+  });
 });
