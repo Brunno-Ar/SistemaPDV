@@ -18,9 +18,13 @@ import {
   MoreVertical,
   Calendar,
   RefreshCw,
+  ShieldCheck,
+  Plus,
 } from "lucide-react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Empresa } from "./types";
+import { AsaasVinculoDialog } from "./asaas-vinculo-dialog";
 
 interface CompaniesTableProps {
   empresas: Empresa[];
@@ -33,6 +37,7 @@ interface CompaniesTableProps {
   formatDate: (date: string | null) => string;
   formatCurrency: (value: number) => string;
   isInadimplente: (empresa: Empresa) => boolean;
+  onAtualizar: () => void;
 }
 
 export function CompaniesTable({
@@ -48,6 +53,10 @@ export function CompaniesTable({
   isInadimplente,
 }: CompaniesTableProps) {
   const router = useRouter();
+  const [asasDialogOpen, setAsasDialogOpen] = useState(false);
+  const [asasEmpresaSelecionada, setAsasEmpresaSelecionada] = useState<
+    Empresa | null
+  >(null);
 
   return (
     <div className="overflow-x-auto bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
@@ -65,6 +74,9 @@ export function CompaniesTable({
             </th>
             <th className="px-6 py-3 text-center" scope="col">
               Status
+            </th>
+            <th className="px-6 py-3 text-center" scope="col">
+              Asaas
             </th>
             <th className="px-6 py-3" scope="col">
               Vencimento
@@ -123,6 +135,18 @@ export function CompaniesTable({
                     <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                       <span className="size-2 inline-block bg-blue-500 rounded-full"></span>
                       Em Teste
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 align-middle text-center">
+                  {empresa.asaasSubscriptionId ? (
+                    <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      <ShieldCheck className="size-2 inline-block" />
+                      Vinculado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center justify-center gap-1.5 py-1 pl-2.5 pr-5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-800/50 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                      Não vinculado
                     </span>
                   )}
                 </td>
@@ -227,7 +251,10 @@ export function CompaniesTable({
                           Aviso
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => onAction("syncAsaas", empresa.id)}
+                          onClick={() => {
+                            setAsasEmpresaSelecionada(empresa);
+                            setAsasDialogOpen(true);
+                          }}
                           className="text-blue-600 focus:text-blue-600"
                         >
                           <RefreshCw className="mr-2 h-4 w-4" /> Sincronizar
@@ -255,6 +282,14 @@ export function CompaniesTable({
           })}
         </tbody>
       </table>
+
+      <AsaasVinculoDialog
+        empresaId={asasEmpresaSelecionada?.id ?? ""}
+        empresaNome={asasEmpresaSelecionada?.nome ?? ""}
+        open={asasDialogOpen}
+        onOpenChange={setAsasDialogOpen}
+        onAtualizar={onAtualizar}
+      />
     </div>
   );
 }

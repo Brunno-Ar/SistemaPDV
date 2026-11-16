@@ -448,6 +448,7 @@ export default function EmpresasClient() {
         formatDate={formatDate}
         formatCurrency={formatCurrency}
         isInadimplente={isInadimplente}
+        onAtualizar={fetchEmpresas}
       />
 
       {/* Dialogs */}

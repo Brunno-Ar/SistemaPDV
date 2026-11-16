@@ -7,6 +7,8 @@ export interface Empresa {
   telefone: string | null;
   createdAt: string;
   faturamentoTotal: number;
+  asaasCustomerId: string | null;
+  asaasSubscriptionId: string | null;
   _count: {
     users: number;
     products: number;
