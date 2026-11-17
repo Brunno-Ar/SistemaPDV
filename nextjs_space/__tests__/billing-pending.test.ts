@@ -1,3 +1,34 @@
+/**
+ * @jest-environment node
+ */
+jest.mock("next-auth", () => ({
+  getServerSession: jest.fn(),
+  default: jest.fn(() => ({})),
+}));
+
+jest.mock("@/lib/auth", () => ({
+  authOptions: {},
+  getServerSession: jest.fn(),
+}));
+
+jest.mock("@/lib/db", () => ({
+  prisma: {
+    user: { findFirst: jest.fn() },
+  },
+}));
+
+jest.mock("@/lib/asaas", () => ({
+  asaas: {
+    getSubscriptionBillingInfo: jest.fn(),
+    listPaymentHistory: jest.fn(),
+  },
+}));
+
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/db";
+import { asaas } from "@/lib/asaas";
+import { GET } from "@/app/api/billing/pending/route";
+import { NextRequest } from "next/server";
 import {
   montarRespostaFatura,
   respostaGenerica,
@@ -64,5 +95,99 @@ describe("billing/pending - resposta genérica (anti-enumeração)", () => {
     expect(r.body).toEqual({
       billing: { value: 10, invoiceUrl: null, status: "PENDING", vencimento: "" },
     });
+  });
+});
+
+describe("GET /api/billing/pending - contrato HTTP e autenticação", () => {
+  const sessaoMock = getServerSession as jest.Mock;
+  const findFirstMock = prisma.user.findFirst as jest.Mock;
+  const billingInfoMock = asaas.getSubscriptionBillingInfo as jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("sem sessão retorna 401 com { error: 'Não autenticado' }", async () => {
+    sessaoMock.mockResolvedValue(null);
+    const req = new NextRequest("http://localhost:3000/api/billing/pending");
+    const res = await GET(req);
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body).toEqual({ error: "Não autenticado" });
+  });
+
+  it("sessão sem email retorna 401 com { error: 'Não autenticado' }", async () => {
+    sessaoMock.mockResolvedValue({ user: {} });
+    const req = new NextRequest("http://localhost:3000/api/billing/pending");
+    const res = await GET(req);
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body).toEqual({ error: "Não autenticado" });
+  });
+
+  it("autenticado com empresa sem assinatura retorna 200 com { billing: null }", async () => {
+    sessaoMock.mockResolvedValue({ user: { email: "admin@empresa.com" } });
+    findFirstMock.mockResolvedValue({
+      id: "u-1",
+      email: "admin@empresa.com",
+      empresa: { id: "emp-1", asaasSubscriptionId: null },
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/billing/pending");
+    const res = await GET(req);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({ billing: null });
+  });
+
+  it("autenticado com fatura pendente retorna 200 com fatura", async () => {
+    sessaoMock.mockResolvedValue({ user: { email: "admin@empresa.com" } });
+    findFirstMock.mockResolvedValue({
+      id: "u-1",
+      email: "admin@empresa.com",
+      empresa: { id: "emp-1", asaasSubscriptionId: "sub_123" },
+    });
+    billingInfoMock.mockResolvedValue({
+      value: 99.9,
+      invoiceUrl: "https://asaas/inv/99",
+      dueDate: "2026-11-20T00:00:00.000Z",
+    });
+
+    const req = new NextRequest("http://localhost:3000/api/billing/pending");
+    const res = await GET(req);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.billing).toBeDefined();
+    expect(body.billing.value).toBe(99.9);
+    expect(body.billing.status).toBe("PENDING");
+  });
+
+  it("limita requisições por IP retornando 429 com corpo genérico", async () => {
+    sessaoMock.mockResolvedValue(null);
+    const ip = "198.51.100.42";
+
+    // Esgota as 20 requisições permitidas na janela de rate limit
+    for (let i = 0; i < 20; i++) {
+      const req = new NextRequest("http://localhost:3000/api/billing/pending", {
+        headers: { "x-forwarded-for": ip },
+      });
+      const res = await GET(req);
+      expect(res.status).toBe(401);
+    }
+
+    // A 21ª requisição do mesmo IP deve ser rejeitada com HTTP 429
+    const reqBloqueada = new NextRequest(
+      "http://localhost:3000/api/billing/pending",
+      { headers: { "x-forwarded-for": ip } },
+    );
+    const resBloqueada = await GET(reqBloqueada);
+
+    expect(resBloqueada.status).toBe(429);
+    const body = await resBloqueada.json();
+    expect(body).toEqual({ billing: null });
   });
 });

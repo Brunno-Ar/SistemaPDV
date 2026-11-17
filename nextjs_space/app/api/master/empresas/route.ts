@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
+import { mascararEmail } from "@/lib/asaas-vinculo";
 import bcrypt from "bcryptjs";
 
 // GET - Listar todas as empresas (apenas master)
@@ -20,6 +21,14 @@ export async function GET() {
 
     const empresas = await prisma.empresa.findMany({
       include: {
+        users: {
+          where: { role: "admin" },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         _count: {
           select: {
             users: true,
@@ -61,8 +70,14 @@ export async function GET() {
         return acc;
       }, 0);
 
-      // Remover o array de sales para não pesar o JSON
-      const { _count, ...rest } = empresa;
+      const adminsFaturamento = (empresa.users ?? []).map((u) => ({
+        id: u.id,
+        nome: u.name ?? u.email,
+        emailMascarado: mascararEmail(u.email),
+      }));
+
+      // Remover o array de sales e users para não pesar o JSON
+      const { _count, users: _users, ...rest } = empresa;
 
       return {
         ...rest,
@@ -70,6 +85,7 @@ export async function GET() {
         faturamentoMensal,
         totalProdutos: _count.products,
         totalVendas: _count.sales,
+        adminsFaturamento,
         _count, // Mantendo _count caso o frontend ainda use para users
       };
     });
