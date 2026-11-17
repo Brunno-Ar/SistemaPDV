@@ -68,6 +68,8 @@ export function AsaasVinculoDialog({
   const [adminSelecionado, setAdminSelecionado] = useState<string | null>(null);
   // Quando o backend exige seleção de admin (múltiplos admins), exibe a lista.
   const [adminsExigidos, setAdminsExigidos] = useState(false);
+  // Admins recebidos do erro 409 multiplos_admins_selecao_obrigatoria.
+  const [adminsErro, setAdminsErro] = useState<AsaasAdminResumo[]>([]);
 
   const carregarPreview = useCallback(
     async (data?: string | null, adminId?: string | null) => {
@@ -83,6 +85,7 @@ export function AsaasVinculoDialog({
           adminId ?? undefined,
         );
         setPreview(p);
+        setAdminsErro([]);
         setPrimeiroVencimento(
           p.provisionamento?.primeiroVencimento ?? data ?? null,
         );
@@ -90,16 +93,24 @@ export function AsaasVinculoDialog({
           setAdminSelecionado(p.empresa.adminId);
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Não foi possível carregar a prévia.";
-        if (msg.includes("multiplos_admins")) {
+        const erro = e as { codigo?: string; mensagem?: string; admins?: AsaasAdminResumo[] };
+        const msg = erro.mensagem || "Não foi possível carregar a prévia.";
+        // 409 multiplos_admins_selecao_obrigatoria: preserva o motivo e exibe
+        // a lista para o usuário escolher (não esconde a ação nem converte
+        // em conflito irresolvível).
+        if (erro.codigo === "multiplos_admins_selecao_obrigatoria") {
           setAdminsExigidos(true);
+          setAdminsErro(erro.admins ?? []);
           setError(null);
-        } else if (msg.includes("admin_invalido")) {
-          setAdminSelecionado(null);
-          setError("Contato de faturamento inválido");
-        } else {
-          setError(msg);
+          return;
         }
+        if (erro.codigo === "admin_invalido" || msg.includes("admin_invalido")) {
+          setAdminSelecionado(null);
+          setError("Contato de faturamento inválido. Escolha outro admin.");
+          return;
+        }
+        // Outros erros: exibe a mensagem real do backend (não mascara conflitos).
+        setError(msg);
       }
     },
     [empresaId],
@@ -130,6 +141,7 @@ export function AsaasVinculoDialog({
       setTerminalAceito(false);
       setAdminsExigidos(false);
       setDataCustomizada(null);
+      setAdminsErro([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, empresaId, carregarPreview]);
@@ -247,7 +259,9 @@ export function AsaasVinculoDialog({
       }[proposta.acao]
     : "";
 
-  const adminsDisponiveis = admins.length > 0 ? admins : (p?.empresa?.admins ?? []);
+  const adminsDisponiveis = admins.length > 0
+    ? admins
+    : p?.empresa?.admins ?? adminsErro;
   const precisaTermos = proposta?.requerConfirmacaoTermos ?? false;
   const precisaTerminal = proposta?.requerConfirmacaoTerminal ?? false;
   const requerAdmin =

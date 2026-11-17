@@ -1,4 +1,5 @@
 import type {
+  AsaasAdminResumo,
   AsaasPreviewPayload,
   AsaasPreviewRequest,
   ConfirmacaoResultado,
@@ -6,9 +7,19 @@ import type {
 
 const BASE = "/api/master/asaas";
 
+/** Erro tipificado do preview: motivo estrutural do backend. */
+export interface AsaasPreviewErro {
+  codigo: string;
+  mensagem: string;
+  admins?: AsaasAdminResumo[];
+}
+
 /**
  * Obtem a previa da sincronizacao/vinculo Asaas.
  * Endpoint estritamente de leitura (seguro, idempotente).
+ * Preserva o motivo 409 multiplos_admins_selecao_obrigatoria para que o
+ * dialog possa exibir a lista de admins e permitir selecao (nao esconde a
+ * acao nem converte em conflito irresolvivel).
  */
 export async function montarPreviewAsaas(
   empresaId: string,
@@ -27,7 +38,19 @@ export async function montarPreviewAsaas(
 
   const json = await res.json();
   if (!res.ok) {
-    throw new Error(json.erro || "Falha ao obter prévia");
+    const erro: AsaasPreviewErro = {
+      codigo: json.erro || "preview_falhou",
+      mensagem: json.erro || "Falha ao obter prévia",
+    };
+    // 409 multiplos_admins_selecao_obrigatoria: preserva o motivo e, quando
+    // o backend enviar, a lista de admins para selecao.
+    if (res.status === 409 && json.erro === "multiplos_admins_selecao_obrigatoria") {
+      erro.codigo = "multiplos_admins_selecao_obrigatoria";
+      if (Array.isArray(json.admins)) {
+        erro.admins = json.admins;
+      }
+    }
+    throw erro;
   }
   return json.preview;
 }
