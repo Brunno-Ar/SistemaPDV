@@ -267,7 +267,7 @@ export function AsaasVinculoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg sm:max-w-xl p-6">
+      <DialogContent className="max-w-lg sm:max-w-xl p-4 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{modoLabel}</DialogTitle>
           <DialogDescription>{empresaNome}</DialogDescription>
@@ -299,7 +299,7 @@ export function AsaasVinculoDialog({
         {!resultado && (
           <>
             {p && proposta && (
-              <div className="mb-4 space-y-2 text-sm">
+              <div className="mb-3 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Situação</span>
                   <span className="font-medium">
@@ -342,7 +342,7 @@ export function AsaasVinculoDialog({
             )}
 
             {asaas?.customer?.id && (
-              <div className="mb-4 rounded-lg border bg-gray-50 dark:bg-zinc-800/50 p-3 text-xs text-gray-600 dark:text-gray-300">
+              <div className="mb-3 rounded-lg border bg-gray-50 dark:bg-zinc-800/50 p-2 text-xs text-gray-600 dark:text-gray-300">
                 <p className="font-semibold mb-1">Asaas</p>
                 <p>Customer: {asaas.customer.id} ({asaas.customer.situacao})</p>
                 <p>
@@ -360,7 +360,7 @@ export function AsaasVinculoDialog({
 
             {/* Admin exigido pelo backend (409 multiplos_admins). */}
             {adminsExigidos && (
-              <div className="mb-4 rounded-lg border bg-orange-50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-800/30 p-3 text-sm">
+              <div className="mb-3 rounded-lg border bg-orange-50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-800/30 p-2 text-sm">
                 <p className="font-semibold mb-1">Escolha o contato de faturamento</p>
                 <p className="text-xs text-orange-700 dark:text-orange-300 mb-2">
                   A empresa tem múltiplos admins. Selecione um para continuar.
@@ -391,7 +391,7 @@ export function AsaasVinculoDialog({
 
             {/* Contato de faturamento selecionado */}
             {adminsDisponiveis.length > 0 && !adminsExigidos && (
-              <div className="mb-4 rounded-lg border bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30 p-3 text-sm">
+              <div className="mb-3 rounded-lg border bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30 p-2 text-sm">
                 <p className="font-semibold mb-1">Contato de faturamento</p>
                 {adminSelecionado ? (
                   <p>
@@ -413,7 +413,7 @@ export function AsaasVinculoDialog({
             )}
 
             {proposta?.acao === "criar_assinatura" && p?.provisionamento && (
-              <div className="mb-4 rounded-lg border bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30 p-4">
+              <div className="mb-3 rounded-lg border bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30 p-3">
                 <div className="flex items-start gap-2 mb-2">
                   <CreditCard className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm">
@@ -509,7 +509,7 @@ export function AsaasVinculoDialog({
             )}
 
             {precisaTerminal && proposta?.statusAsaasTerminal && (
-              <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800/30 p-4">
+              <div className="mb-3 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800/30 p-3">
                 <AlertTitle className="text-sm font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
                   <span>Assinatura cancelada no Asaas</span>
@@ -532,7 +532,7 @@ export function AsaasVinculoDialog({
             )}
 
             {p?.avisos && p.avisos.length > 0 && (
-              <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800/30 p-3">
+              <div className="mb-3 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800/30 p-2">
                 <AlertTitle className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
                   <span>Avisos</span>
@@ -546,7 +546,7 @@ export function AsaasVinculoDialog({
             )}
 
             {modo === "conflito" && p?.conflito && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800/30 p-4">
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800/30 p-3">
                 <AlertTitle className="text-sm font-semibold text-red-800 dark:text-red-300 flex items-center gap-1">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
                   <span>Conflito — não resolver automaticamente</span>
