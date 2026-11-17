@@ -27,6 +27,7 @@ import { AlertTriangle, CreditCard } from "lucide-react";
 import {
   montarPreviewAsaas,
   confirmarPreviewAsaas,
+  AsaasPreviewError,
 } from "./asaas-vinculo-service";
 import type {
   AsaasAdminResumo,
@@ -93,23 +94,34 @@ export function AsaasVinculoDialog({
           setAdminSelecionado(p.empresa.adminId);
         }
       } catch (e) {
-        const erro = e as { codigo?: string; mensagem?: string; admins?: AsaasAdminResumo[] };
-        const msg = erro.mensagem || "Não foi possível carregar a prévia.";
-        // 409 multiplos_admins_selecao_obrigatoria: preserva o motivo e exibe
-        // a lista para o usuário escolher (não esconde a ação nem converte
-        // em conflito irresolvível).
-        if (erro.codigo === "multiplos_admins_selecao_obrigatoria") {
-          setAdminsExigidos(true);
-          setAdminsErro(erro.admins ?? []);
-          setError(null);
+        // Erro tipado do backend: preserva motivo estruturado (ex.: 409
+        // multiplos_admins_selecao_obrigatoria com lista de admins).
+        if (e instanceof AsaasPreviewError) {
+          // 409 multiplos_admins_selecao_obrigatoria: exibe a lista para o
+          // usuario escolher (nao esconde a ação nem converte em conflito
+          // irresolvivel). Sem admins na resposta, informa que a selecao e
+          // obrigatoria sem travar a tela.
+          if (e.codigo === "multiplos_admins_selecao_obrigatoria") {
+            setAdminsExigidos(true);
+            setAdminsErro(e.admins ?? []);
+            setError(
+              e.admins && e.admins.length > 0
+                ? null
+                : "A empresa tem múltiplos admins. Selecione um contato de faturamento para continuar.",
+            );
+            return;
+          }
+          if (e.codigo === "admin_invalido") {
+            setAdminSelecionado(null);
+            setError("Contato de faturamento inválido. Escolha outro admin.");
+            return;
+          }
+          // Outros erros tipados: exibe a mensagem real do backend (não mascara conflitos).
+          setError(e.message);
           return;
         }
-        if (erro.codigo === "admin_invalido" || msg.includes("admin_invalido")) {
-          setAdminSelecionado(null);
-          setError("Contato de faturamento inválido. Escolha outro admin.");
-          return;
-        }
-        // Outros erros: exibe a mensagem real do backend (não mascara conflitos).
+        // Erro não tipado (rede, parse): exibe a mensagem real, sem mascarar conflitos.
+        const msg = e instanceof Error ? e.message : "Não foi possível carregar a prévia.";
         setError(msg);
       }
     },
