@@ -993,7 +993,7 @@ describe("AsaasVinculoDialog", () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Contato de faturamento inválido")).toBeInTheDocument(),
+      expect(screen.getByText(/Contato de faturamento inválido/)).toBeInTheDocument(),
     );
     expect(screen.getByText("Nenhum contato selecionado")).toBeInTheDocument();
   });

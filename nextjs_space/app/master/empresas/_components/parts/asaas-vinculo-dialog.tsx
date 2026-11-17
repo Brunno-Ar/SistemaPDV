@@ -229,8 +229,8 @@ export function AsaasVinculoDialog({
     );
   }
 
-  // Erro fatal que impede exibição do dialog
-  if (error && error !== "Contato de faturamento inválido" && !adminsExigidos) {
+  // Erro fatal que impede exibição do dialog (sem preview e sem seleção de admin exigida)
+  if (!preview && !error && !adminsExigidos) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
@@ -315,10 +315,10 @@ export function AsaasVinculoDialog({
           </div>
         )}
 
-        {error === "Contato de faturamento inválido" && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTitle>Contato de faturamento inválido</AlertTitle>
-            <AlertDescription>Escolha outro admin para faturamento.</AlertDescription>
+        {error && !adminsExigidos && modo !== "conflito" && (
+          <Alert variant="destructive" className="mb-4" role="alert">
+            <AlertTitle>Erro ao carregar prévia</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
