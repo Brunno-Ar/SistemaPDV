@@ -398,6 +398,7 @@ export function AsaasVinculoDialog({
                       type="button"
                       onClick={() => {
                         setAdminSelecionado(a.id);
+                        setAdminsExigidos(false);
                         setTermosAceito(false);
                         carregarPreview(primeiroVencimento, a.id);
                       }}

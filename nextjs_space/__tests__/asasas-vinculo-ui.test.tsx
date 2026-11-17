@@ -1018,9 +1018,8 @@ describe("AsaasVinculoDialog", () => {
     await waitFor(() =>
       expect(screen.getByText(/múltiplos admins/)).toBeInTheDocument(),
     );
-    expect(
-      screen.queryByText("Escolha o contato de faturamento"),
-    ).not.toBeInTheDocument();
+    // Sem lista de admins: exibe mensagem informativa, mas nao exibe botoes de admin
+    expect(screen.queryByRole("button", { name: /Admin/ })).not.toBeInTheDocument();
     const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
     expect(btnConfirmar).toBeDisabled();
   });
@@ -1065,15 +1064,18 @@ describe("AsaasVinculoDialog", () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Admin 2 — ad***s@gmail.com")).toBeInTheDocument(),
+      expect(screen.getByRole("button", { name: /Admin 2/ })).toBeInTheDocument(),
     );
     const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
     expect(btnConfirmar).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: /Admin 2/ }));
 
+    // adminsExigidos limpo: bloco de escolha desaparece
     await waitFor(() =>
-      expect(screen.getByText("Admin 2 — ad***s@gmail.com")).toBeInTheDocument(),
+      expect(
+        screen.queryByText("Escolha o contato de faturamento"),
+      ).not.toBeInTheDocument(),
     );
     const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
     expect(ultimoBody).toContain('"adminId":"A2"');
@@ -1124,7 +1126,7 @@ describe("AsaasVinculoDialog", () => {
       expect(screen.getByText("Escolha o contato de faturamento")).toBeInTheDocument(),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Fechar/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Cancelar/ }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
