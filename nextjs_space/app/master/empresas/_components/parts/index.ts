@@ -7,3 +7,4 @@ export { ResetPasswordDialog } from "./ResetPasswordDialog";
 export { SuccessPasswordDialog } from "./SuccessPasswordDialog";
 export { AvisoDialog } from "./AvisoDialog";
 export { UpdatePlanDialog } from "./UpdatePlanDialog";
+export { EmpresaContatoDialog } from "./EmpresaContatoDialog";
