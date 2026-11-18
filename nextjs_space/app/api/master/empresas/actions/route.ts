@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
 import { StatusEmpresa } from "@prisma/client";
 import { podeReativarManualmente } from "@/lib/access";
+import { obterLimiteExclusivoSaoPaulo } from "@/lib/billing-policy";
 import { conferirPagamentoConfirmado } from "@/lib/pagamento";
 import bcrypt from "bcryptjs";
 
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
       importante,
       novoVencimento,
       novoDiaVencimento,
+      novaDataCivil,
     } = body;
 
     // Validações
@@ -364,6 +366,131 @@ export async function POST(request: NextRequest) {
           message: `Empresa reativada com sucesso! (Status: ${statusRestaurado})`,
           empresa: empresaReativada,
         });
+
+      case "prorrogarAcesso": {
+        // Prorrogacao manual de acesso (master), SEM tocar em cobranca.
+        // Grava apenas `liberacaoTemporariaAte`, que `avaliarAcesso` le antes de
+        // PAUSADO/vencimento. Nao muda status, dia de vencimento, vencimento
+        // cobrado nem o Asaas — o gate financeiro de renovar/reativar segue
+        // exigindo PAYMENT_RECEIVED.
+        if (!empresaId || !novaDataCivil) {
+          return NextResponse.json(
+            { error: "empresaId e novaDataCivil (AAAA-MM-DD) obrigatórios" },
+            { status: 400 },
+          );
+        }
+
+        const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(novaDataCivil));
+        if (!partes) {
+          return NextResponse.json(
+            { error: "Informe a data no formato AAAA-MM-DD." },
+            { status: 400 },
+          );
+        }
+
+        const [ano, mes, dia] = [
+          Number(partes[1]),
+          Number(partes[2]),
+          Number(partes[3]),
+        ];
+        const verificacao = new Date(Date.UTC(ano, mes - 1, dia));
+        const dataReal =
+          verificacao.getUTCFullYear() === ano &&
+          verificacao.getUTCMonth() === mes - 1 &&
+          verificacao.getUTCDate() === dia;
+        if (!dataReal) {
+          return NextResponse.json(
+            { error: "Data inexistente no calendário." },
+            { status: 400 },
+          );
+        }
+
+        const empresaParaProrrogar = await prisma.empresa.findUnique({
+          where: { id: empresaId },
+        });
+
+        if (!empresaParaProrrogar) {
+          return NextResponse.json(
+            { error: "Empresa não encontrada" },
+            { status: 404 },
+          );
+        }
+
+        if (
+          empresaParaProrrogar.status === "PENDENTE" ||
+          empresaParaProrrogar.status === "CANCELADO"
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                empresaParaProrrogar.status === "PENDENTE"
+                  ? "Empresa pendente de aprovação não recebe prorrogação de acesso."
+                  : "Empresa cancelada não recebe prorrogação de acesso.",
+            },
+            { status: 400 },
+          );
+        }
+
+        // Pausa MANUAL é registrada por `pausar` como marcador 1970 em
+        // `liberacaoTemporariaAte`. Nao sobrescrever: reativar primeiro.
+        // PAUSADO pelo cron (sem marcador) continua elegivel.
+        const marcadorPausa = empresaParaProrrogar.liberacaoTemporariaAte
+          ? empresaParaProrrogar.liberacaoTemporariaAte.getTime()
+          : null;
+        if (
+          empresaParaProrrogar.status === "PAUSADO" &&
+          (marcadorPausa === new Date("1970-01-01T00:00:00.000Z").getTime() ||
+            marcadorPausa === new Date("1970-01-02T00:00:00.000Z").getTime())
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                "Empresa pausada manualmente. Reative a empresa antes de prorrogar o acesso.",
+            },
+            { status: 409 },
+          );
+        }
+
+        // Campo e limite EXCLUSIVO: gravamos 00:00 de São Paulo do dia seguinte,
+        // para o acesso valer até 23:59:59.999 do dia escolhido.
+        const limite = obterLimiteExclusivoSaoPaulo(
+          `${partes[1]}-${partes[2]}-${partes[3]}`,
+        );
+        if (!limite || limite.getTime() <= Date.now()) {
+          return NextResponse.json(
+            { error: "A data informada já passou. Escolha um dia futuro." },
+            { status: 400 },
+          );
+        }
+
+        // Escrita condicional: so aplica se status e campo observados na leitura
+        // continuam iguais. Evita sobrescrever pausa/cancelamento concorrente.
+        const escrita = await prisma.empresa.updateMany({
+          where: {
+            id: empresaId,
+            status: empresaParaProrrogar.status,
+            liberacaoTemporariaAte:
+              empresaParaProrrogar.liberacaoTemporariaAte ?? null,
+          },
+          data: { liberacaoTemporariaAte: limite },
+        });
+
+        if (escrita.count === 0) {
+          return NextResponse.json(
+            {
+              error:
+                "O estado da empresa mudou durante a prorrogação. Recarregue e tente novamente.",
+            },
+            { status: 409 },
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: `Acesso prorrogado até ${partes[3]}/${partes[2]}/${partes[1]} (23:59 em São Paulo). Status, vencimento e cobrança não foram alterados.`,
+          liberacaoTemporariaAte: limite,
+        });
+      }
 
       case "spy":
         // Spy Mode - Buscar faturamento total da empresa

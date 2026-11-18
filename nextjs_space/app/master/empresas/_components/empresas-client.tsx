@@ -539,6 +539,43 @@ export default function EmpresasClient() {
           open={updatePlanDialogOpen}
           onOpenChange={setUpdatePlanDialogOpen}
           empresa={empresaToUpdatePlan}
+          onProrrogar={async (dataCivil) => {
+            try {
+              const response = await fetch("/api/master/empresas/actions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "prorrogarAcesso",
+                  empresaId: empresaToUpdatePlan.id,
+                  novaDataCivil: dataCivil,
+                }),
+              });
+
+              const data = await response.json();
+
+              if (!response.ok) {
+                throw new Error(data.error || "Erro ao prorrogar acesso");
+              }
+
+              toast({
+                title: "Sucesso",
+                description: data.message,
+              });
+
+              fetchEmpresas();
+              setUpdatePlanDialogOpen(false);
+              setEmpresaToUpdatePlan(null);
+            } catch (error) {
+              toast({
+                title: "Erro",
+                description:
+                  error instanceof Error
+                    ? error.message
+                    : "Erro ao prorrogar acesso",
+                variant: "destructive",
+              });
+            }
+          }}
           onUpdate={async ({ date, diaVencimento }) => {
             try {
               const response = await fetch("/api/master/empresas/actions", {

@@ -22,6 +22,23 @@ interface UpdatePlanDialogProps {
   onOpenChange: (open: boolean) => void;
   empresa: Empresa;
   onUpdate: (data: { date: Date; diaVencimento?: number }) => void;
+  onProrrogar: (dataCivil: string) => Promise<void>;
+}
+
+/** Data civil de São Paulo do limite exclusivo gravado (subtrai 1 ms). */
+function dataCivilDoLimite(limite: string | null | undefined): string | null {
+  if (!limite) return null;
+  const data = new Date(new Date(limite).getTime() - 1);
+  if (Number.isNaN(data.getTime())) return null;
+  return data.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
+/** Data civil AAAA-MM-DD de São Paulo do limite exclusivo gravado. */
+function dataCivilIsoDoLimite(limite: string | null | undefined): string {
+  if (!limite) return "";
+  const data = new Date(new Date(limite).getTime() - 1);
+  if (Number.isNaN(data.getTime())) return "";
+  return data.toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
 
 export function UpdatePlanDialog({
@@ -29,6 +46,7 @@ export function UpdatePlanDialog({
   onOpenChange,
   empresa,
   onUpdate,
+  onProrrogar,
 }: UpdatePlanDialogProps) {
   const [date, setDate] = useState<string>(
     empresa.vencimentoPlano ? empresa.vencimentoPlano.split("T")[0] : "",
@@ -37,6 +55,15 @@ export function UpdatePlanDialog({
     empresa.diaVencimento || 10,
   );
   const [loading, setLoading] = useState(false);
+  const [dataLiberacao, setDataLiberacao] = useState<string>(
+    dataCivilIsoDoLimite(empresa.liberacaoTemporariaAte),
+  );
+  const [prorrogando, setProrrogando] = useState(false);
+
+  const limiteAtual = dataCivilDoLimite(empresa.liberacaoTemporariaAte);
+  const limiteAtualVigente =
+    !!empresa.liberacaoTemporariaAte &&
+    new Date(empresa.liberacaoTemporariaAte).getTime() > Date.now();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +77,17 @@ export function UpdatePlanDialog({
 
     onUpdate({ date: newDate, diaVencimento });
     setLoading(false);
+  };
+
+  const handleProrrogar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dataLiberacao) return;
+    setProrrogando(true);
+    try {
+      await onProrrogar(dataLiberacao);
+    } finally {
+      setProrrogando(false);
+    }
   };
 
   return (
@@ -71,7 +109,8 @@ export function UpdatePlanDialog({
               required
             />
             <p className="text-xs text-muted-foreground mt-1">
-              O acesso será bloqueado automaticamente 3 dias após esta data.
+              Exige pagamento recebido. O acesso encerra às 23:59 de São Paulo
+              do dia informado, sem carência.
             </p>
           </div>
 
@@ -105,6 +144,40 @@ export function UpdatePlanDialog({
             disabled={loading}
           >
             {loading ? "Atualizando..." : "Salvar Alterações"}
+          </InteractiveHoverButton>
+        </form>
+
+        <form
+          onSubmit={handleProrrogar}
+          className="space-y-3 border-t pt-4 mt-2"
+        >
+          <div>
+            <Label htmlFor="liberacao">Prorrogar acesso até</Label>
+            <Input
+              id="liberacao"
+              type="date"
+              value={dataLiberacao}
+              onChange={(e) => setDataLiberacao(e.target.value)}
+              required
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Libera o uso até 23:59 de São Paulo do dia escolhido, inclusive.
+              Não altera status, vencimento cobrado, dia de cobrança nem o
+              Asaas.
+            </p>
+            {limiteAtual && limiteAtualVigente && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Prorrogação ativa até {limiteAtual} (23:59 em São Paulo).
+              </p>
+            )}
+          </div>
+
+          <InteractiveHoverButton
+            type="submit"
+            className="w-full"
+            disabled={prorrogando || !dataLiberacao}
+          >
+            {prorrogando ? "Prorrogando..." : "Prorrogar acesso"}
           </InteractiveHoverButton>
         </form>
       </DialogContent>
