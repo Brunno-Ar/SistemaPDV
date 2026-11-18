@@ -465,6 +465,27 @@ describe("preview de empresa sem vinculo", () => {
     expect(r.preview.provisionamento?.adminId).toBe("admin-2");
   });
 
+  it("multiplos admins com adminId valido mas sem cpfCnpj: modo conflito e motivo sem_documento", async () => {
+    findUniqueMock.mockResolvedValue(
+      empresaSemVinculo({ cpfCnpj: null }),
+    );
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "admin2@empresa.com" },
+    ]);
+
+    const r = await montarPreview("E1", {
+      agora: AGORA,
+      adminId: "admin-2",
+    });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.preview.modo).toBe("conflito");
+    expect(r.preview.conflito?.motivo).toBe("sem_documento");
+    expect(r.preview.empresa.adminId).toBe("admin-2");
+  });
+
   it("adminId inexistente ou invalido: erro 400 (admin_invalido)", async () => {
     findUniqueMock.mockResolvedValue(empresaSemVinculo());
     userFindManyMock.mockResolvedValue([
