@@ -18,8 +18,8 @@ const BASE = new Date("2026-11-12T12:00:00.000Z");
 describe("billing-policy (fonte unica dos prazos)", () => {
   it("valores confirmados pelo usuario", () => {
     expect(TRIAL_DAYS).toBe(14);
-    expect(TRIAL_TOLERANCE_DAYS).toBe(1);
-    expect(OVERDUE_GRACE_DAYS).toBe(10);
+    expect(TRIAL_TOLERANCE_DAYS).toBe(0);
+    expect(OVERDUE_GRACE_DAYS).toBe(0);
   });
 
   it("lib/access re-exporta os mesmos valores (sem divergencia)", () => {
@@ -48,7 +48,7 @@ describe("billing-policy (fonte unica dos prazos)", () => {
   });
 });
 
-describe("grace period de atraso (webhook PAYMENT_OVERDUE)", () => {
+describe("corte no vencimento sem tolerância (webhook PAYMENT_OVERDUE)", () => {
   it("conta dias de atraso a partir do vencimento", () => {
     const venc = new Date("2026-11-01T00:00:00.000Z");
     const agora = new Date("2026-11-11T00:00:00.000Z");
@@ -61,16 +61,33 @@ describe("grace period de atraso (webhook PAYMENT_OVERDUE)", () => {
     expect(calcularDiasAtraso("nao-e-data")).toBe(0);
   });
 
-  it("bloqueia só a partir de OVERDUE_GRACE_DAYS (10), nunca antes", () => {
-    expect(deveBloquearPorAtraso(9)).toBe(false);
-    expect(deveBloquearPorAtraso(10)).toBe(true);
-    expect(deveBloquearPorAtraso(11)).toBe(true);
+  it("bloqueia a partir de 00:00 do dia seguinte com OVERDUE_GRACE_DAYS = 0 (dia do vencimento é inclusivo)", () => {
+    expect(deveBloquearPorAtraso(-1)).toBe(false); // antes do vencimento
+    expect(deveBloquearPorAtraso(0)).toBe(false);  // no dia do vencimento (inclusivo até 23:59:59)
+    expect(deveBloquearPorAtraso(1)).toBe(true);   // a partir de 00:00 do dia seguinte (corte imediato)
   });
 
-  it("o limite vem da política, não de env divergente", () => {
-    // regressão: ASAAS_GRACE_PERIOD_DAYS=5 não pode reduzir a tolerância.
-    expect(OVERDUE_GRACE_DAYS).toBe(10);
-    expect(deveBloquearPorAtraso(7)).toBe(false);
-    expect(deveBloquearPorAtraso(7, 5)).toBe(true); // parâmetro explícito ainda funciona
+  it("o limite vem da política (0 dias), não de env divergente", () => {
+    expect(OVERDUE_GRACE_DAYS).toBe(0);
+    expect(deveBloquearPorAtraso(0)).toBe(false);
+    expect(deveBloquearPorAtraso(1)).toBe(true);
+    expect(deveBloquearPorAtraso(1, 5)).toBe(false); // carência explícita de 5 dias protege dia 1
+    expect(deveBloquearPorAtraso(5, 5)).toBe(false); // dia 5 ainda dentro dos 5 dias de carência
+    expect(deveBloquearPorAtraso(6, 5)).toBe(true);  // dia 6 excede a carência de 5 dias
+  });
+
+  it("calcularInicioDiaCivilSaoPaulo não vira data antes das 00:00 BRT (03:00 UTC)", () => {
+    const { calcularInicioDiaCivilSaoPaulo } = require("@/lib/billing-policy");
+    // 18/11 às 21:00 BRT (19/11 às 00:00:00 UTC) -> ainda deve ser 18/11
+    const t21h = new Date("2026-11-19T00:00:00.000Z");
+    expect(calcularInicioDiaCivilSaoPaulo(t21h).toISOString()).toBe("2026-11-18T00:00:00.000Z");
+
+    // 18/11 às 23:59:59 BRT (19/11 às 02:59:59 UTC) -> ainda deve ser 18/11
+    const t23h = new Date("2026-11-19T02:59:59.000Z");
+    expect(calcularInicioDiaCivilSaoPaulo(t23h).toISOString()).toBe("2026-11-18T00:00:00.000Z");
+
+    // 19/11 às 00:00:00 BRT (19/11 às 03:00:00 UTC) -> vira para 19/11
+    const t00h = new Date("2026-11-19T03:00:00.000Z");
+    expect(calcularInicioDiaCivilSaoPaulo(t00h).toISOString()).toBe("2026-11-19T00:00:00.000Z");
   });
 });

@@ -80,12 +80,9 @@ export default function DashboardClient() {
                 Plano Vencido!
               </h3>
               <p className="text-red-700 dark:text-red-400/90">
-                O pagamento da sua mensalidade não foi identificado. Você
-                perderá o acesso em{" "}
-                <span className="font-bold">
-                  {Math.max(0, 10 + diffDays)} dias
-                </span>
-                . Entre em contato com o suporte.
+                O pagamento da sua mensalidade não foi identificado. O acesso é
+                bloqueado no vencimento sem tolerância adicional. Entre em
+                contato com o suporte ou realize o pagamento para regularizar.
               </p>
             </div>
           </CardContent>

@@ -86,8 +86,8 @@ export default function TermosPage() {
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               O FlowPDV opera em modelo de assinatura mensal. O pagamento deve
               ser realizado até a data de vencimento para manter o acesso ao
-              sistema. Em caso de atraso superior a 10 dias, o acesso pode ser
-              suspenso.
+              sistema. Em caso de não identificação do pagamento na data de
+              vencimento, o acesso é suspenso.
             </p>
 
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mt-8 mb-4">
