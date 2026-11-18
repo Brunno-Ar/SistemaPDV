@@ -85,6 +85,7 @@ export default function DashboardClient() {
       metrics={data}
       caixaData={caixaData}
       loading={loading}
+      escopo={session?.user?.role === "caixa" ? "proprio" : "empresa"}
     />
   );
 }
