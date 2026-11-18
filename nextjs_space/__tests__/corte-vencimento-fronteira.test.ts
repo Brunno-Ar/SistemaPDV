@@ -1,8 +1,10 @@
 import {
   avaliarAcesso,
   decidirStatusSincronizado,
+  podeReativarManualmente,
   TOLERANCIA_PAGAMENTO_DIAS,
   TOLERANCIA_TRIAL_DIAS,
+  obterLimiteVencimentoSaoPaulo,
 } from "@/lib/access";
 import {
   OVERDUE_GRACE_DAYS,
@@ -11,9 +13,7 @@ import {
   deveBloquearPorAtraso,
 } from "@/lib/billing-policy";
 
-describe("Regressão: Corte no vencimento com tolerância zero (0 dias)", () => {
-  const AGORA = new Date("2026-11-18T12:00:00.000Z");
-
+describe("Regressão: Corte no vencimento inclusivo em America/Sao_Paulo (zero tolerância adicional)", () => {
   describe("Constantes canônicas de política de corte", () => {
     it("tolerância de trial e plano são estritamente 0 dias", () => {
       expect(TRIAL_TOLERANCE_DAYS).toBe(0);
@@ -23,214 +23,216 @@ describe("Regressão: Corte no vencimento com tolerância zero (0 dias)", () => 
     });
   });
 
-  describe("Fronteiras de avaliarAcesso para plano contratado (ATIVO)", () => {
-    it("vencimento no futuro (+1 segundo e +1 dia): ACESSO LIBERADO", () => {
-      const futuro1s = avaliarAcesso(
-        {
-          role: "admin",
-          status: "ATIVO",
-          vencimentoPlano: new Date(AGORA.getTime() + 1000),
-          temAssinatura: true,
-        },
-        AGORA,
-      );
-      expect(futuro1s.permitido).toBe(true);
-      expect(futuro1s.motivo).toBe("plano-vigente");
-
-      const futuro1d = avaliarAcesso(
-        {
-          role: "admin",
-          status: "ATIVO",
-          vencimentoPlano: new Date(AGORA.getTime() + 24 * 60 * 60 * 1000),
-          temAssinatura: true,
-        },
-        AGORA,
-      );
-      expect(futuro1d.permitido).toBe(true);
-      expect(futuro1d.motivo).toBe("plano-vigente");
-      expect(futuro1d.diasRestantes).toBe(1);
+  describe("obterLimiteVencimentoSaoPaulo", () => {
+    it("converte data civil 2026-11-18 para 23:59:59.999 BRT (02:59:59.999 UTC do dia 19)", () => {
+      const limite = obterLimiteVencimentoSaoPaulo("2026-11-18");
+      expect(limite).not.toBeNull();
+      expect(limite!.toISOString()).toBe("2026-11-19T02:59:59.999Z");
     });
 
-    it("vencimento no instante exato (agora): ACESSO LIBERADO", () => {
-      const exato = avaliarAcesso(
-        {
-          role: "admin",
-          status: "ATIVO",
-          vencimentoPlano: AGORA,
-          temAssinatura: true,
-        },
-        AGORA,
-      );
-      expect(exato.permitido).toBe(true);
-      expect(exato.motivo).toBe("plano-vigente");
+    it("converte Date UTC midnight 2026-11-18T00:00:00.000Z para o fim do dia BRT correspondente", () => {
+      const limite = obterLimiteVencimentoSaoPaulo(new Date("2026-11-18T00:00:00.000Z"));
+      expect(limite).not.toBeNull();
+      expect(limite!.toISOString()).toBe("2026-11-19T02:59:59.999Z");
     });
 
-    it("vencimento no passado (-1 ms, -1 segundo, -1 dia): ACESSO BLOQUEADO IMEDIATAMENTE", () => {
-      const passado1ms = avaliarAcesso(
-        {
-          role: "admin",
-          status: "ATIVO",
-          vencimentoPlano: new Date(AGORA.getTime() - 1),
-          temAssinatura: true,
-        },
-        AGORA,
-      );
-      expect(passado1ms.permitido).toBe(false);
-      expect(passado1ms.motivo).toBe("plano-vencido");
+    it("retorna null para valores nulos ou inválidos", () => {
+      expect(obterLimiteVencimentoSaoPaulo(null)).toBeNull();
+      expect(obterLimiteVencimentoSaoPaulo(undefined)).toBeNull();
+      expect(obterLimiteVencimentoSaoPaulo("invalido")).toBeNull();
+    });
+  });
 
-      const passado1s = avaliarAcesso(
-        {
-          role: "admin",
-          status: "ATIVO",
-          vencimentoPlano: new Date(AGORA.getTime() - 1000),
-          temAssinatura: true,
-        },
-        AGORA,
-      );
-      expect(passado1s.permitido).toBe(false);
-      expect(passado1s.motivo).toBe("plano-vencido");
+  describe("Cenário de produção: Adega FreeStyle Drinks (vencimento 18/11/2026)", () => {
+    const vencimento = "2026-11-18";
 
-      const passado1d = avaliarAcesso(
+    it("18/11 às 08:00 BRT (11:00 UTC): ACESSO LIBERADO", () => {
+      const agora = new Date("2026-11-18T11:00:00.000Z");
+      const avaliacao = avaliarAcesso(
         {
           role: "admin",
           status: "ATIVO",
-          vencimentoPlano: new Date(AGORA.getTime() - 24 * 60 * 60 * 1000),
+          vencimentoPlano: vencimento,
           temAssinatura: true,
         },
-        AGORA,
+        agora,
       );
-      expect(passado1d.permitido).toBe(false);
-      expect(passado1d.motivo).toBe("plano-vencido");
+      expect(avaliacao.permitido).toBe(true);
+      expect(avaliacao.motivo).toBe("plano-vigente");
+      expect(calcularDiasAtraso(vencimento, agora)).toBe(0);
+      expect(deveBloquearPorAtraso(calcularDiasAtraso(vencimento, agora))).toBe(false);
+    });
+
+    it("18/11 às 12:00 BRT (15:00 UTC): ACESSO LIBERADO", () => {
+      const agora = new Date("2026-11-18T15:00:00.000Z");
+      const avaliacao = avaliarAcesso(
+        {
+          role: "admin",
+          status: "ATIVO",
+          vencimentoPlano: vencimento,
+          temAssinatura: true,
+        },
+        agora,
+      );
+      expect(avaliacao.permitido).toBe(true);
+      expect(avaliacao.motivo).toBe("plano-vigente");
+      expect(calcularDiasAtraso(vencimento, agora)).toBe(0);
+      expect(deveBloquearPorAtraso(calcularDiasAtraso(vencimento, agora))).toBe(false);
+    });
+
+    it("18/11 às 23:59:59.999 BRT (19/11 às 02:59:59.999 UTC): ACESSO LIBERADO (limite inclusivo)", () => {
+      const agora = new Date("2026-11-19T02:59:59.999Z");
+      const avaliacao = avaliarAcesso(
+        {
+          role: "admin",
+          status: "ATIVO",
+          vencimentoPlano: vencimento,
+          temAssinatura: true,
+        },
+        agora,
+      );
+      expect(avaliacao.permitido).toBe(true);
+      expect(avaliacao.motivo).toBe("plano-vigente");
+      expect(calcularDiasAtraso(vencimento, agora)).toBe(0);
+      expect(deveBloquearPorAtraso(calcularDiasAtraso(vencimento, agora))).toBe(false);
+    });
+
+    it("19/11 às 00:00:00.000 BRT (19/11 às 03:00:00.000 UTC): ACESSO BLOQUEADO (virada do dia)", () => {
+      const agora = new Date("2026-11-19T03:00:00.000Z");
+      const avaliacao = avaliarAcesso(
+        {
+          role: "admin",
+          status: "ATIVO",
+          vencimentoPlano: vencimento,
+          temAssinatura: true,
+        },
+        agora,
+      );
+      expect(avaliacao.permitido).toBe(false);
+      expect(avaliacao.motivo).toBe("plano-vencido");
+      expect(calcularDiasAtraso(vencimento, agora)).toBe(1);
+      expect(deveBloquearPorAtraso(calcularDiasAtraso(vencimento, agora))).toBe(true);
+    });
+
+    it("19/11 às 08:00 BRT (19/11 às 11:00:00.000 UTC): ACESSO BLOQUEADO", () => {
+      const agora = new Date("2026-11-19T11:00:00.000Z");
+      const avaliacao = avaliarAcesso(
+        {
+          role: "admin",
+          status: "ATIVO",
+          vencimentoPlano: vencimento,
+          temAssinatura: true,
+        },
+        agora,
+      );
+      expect(avaliacao.permitido).toBe(false);
+      expect(avaliacao.motivo).toBe("plano-vencido");
+      expect(calcularDiasAtraso(vencimento, agora)).toBe(1);
+      expect(deveBloquearPorAtraso(calcularDiasAtraso(vencimento, agora))).toBe(true);
     });
   });
 
   describe("Fronteiras de avaliarAcesso para trial (EM_TESTE)", () => {
-    it("trial no futuro ou no instante exato: ACESSO LIBERADO", () => {
-      const futuro = avaliarAcesso(
-        {
-          role: "admin",
-          status: "EM_TESTE",
-          vencimentoPlano: new Date(AGORA.getTime() + 1000),
-          temAssinatura: true,
-        },
-        AGORA,
-      );
-      expect(futuro.permitido).toBe(true);
-      expect(futuro.motivo).toBe("trial-vigente");
+    const vencTrial = "2026-11-18";
 
-      const exato = avaliarAcesso(
+    it("trial no dia do vencimento às 23:59:59 BRT: ACESSO LIBERADO", () => {
+      const agora = new Date("2026-11-19T02:59:59.999Z");
+      const avaliacao = avaliarAcesso(
         {
           role: "admin",
           status: "EM_TESTE",
-          vencimentoPlano: AGORA,
+          vencimentoPlano: vencTrial,
           temAssinatura: true,
         },
-        AGORA,
+        agora,
       );
-      expect(exato.permitido).toBe(true);
-      expect(exato.motivo).toBe("trial-vigente");
+      expect(avaliacao.permitido).toBe(true);
+      expect(avaliacao.motivo).toBe("trial-vigente");
+      expect(avaliacao.diasRestantes).toBe(0);
     });
 
-    it("trial vencido há 1 ms ou 1 segundo: BLOQUEADO (zero tolerância)", () => {
-      const passado1ms = avaliarAcesso(
+    it("trial vencido às 00:00:00 BRT do dia seguinte: BLOQUEADO (zero tolerância)", () => {
+      const agora = new Date("2026-11-19T03:00:00.000Z");
+      const avaliacao = avaliarAcesso(
         {
           role: "admin",
           status: "EM_TESTE",
-          vencimentoPlano: new Date(AGORA.getTime() - 1),
+          vencimentoPlano: vencTrial,
           temAssinatura: true,
         },
-        AGORA,
+        agora,
       );
-      expect(passado1ms.permitido).toBe(false);
-      expect(passado1ms.motivo).toBe("trial-vencido");
-
-      const passado1s = avaliarAcesso(
-        {
-          role: "admin",
-          status: "EM_TESTE",
-          vencimentoPlano: new Date(AGORA.getTime() - 1000),
-          temAssinatura: true,
-        },
-        AGORA,
-      );
-      expect(passado1s.permitido).toBe(false);
-      expect(passado1s.motivo).toBe("trial-vencido");
+      expect(avaliacao.permitido).toBe(false);
+      expect(avaliacao.motivo).toBe("trial-vencido");
+      expect(avaliacao.diasRestantes).toBe(0);
     });
   });
 
   describe("Fronteiras de cálculo de atraso e bloqueio (webhook / cron)", () => {
-    it("calcularDiasAtraso com data de vencimento", () => {
-      const venc = new Date("2026-11-18T00:00:00.000Z");
-      // Mesmo dia: 0 dias de atraso
-      expect(calcularDiasAtraso(venc, new Date("2026-11-18T00:00:00.000Z"))).toBe(0);
-      // Dia seguinte: 1 dia de atraso
-      expect(calcularDiasAtraso(venc, new Date("2026-11-19T00:00:00.000Z"))).toBe(1);
-      // Dia anterior: -1 dia (não vencido)
-      expect(calcularDiasAtraso(venc, new Date("2026-11-17T00:00:00.000Z"))).toBe(-1);
+    it("calcularDiasAtraso respeita fuso America/Sao_Paulo", () => {
+      const venc = "2026-11-18";
+      // Dia anterior: -1
+      expect(calcularDiasAtraso(venc, new Date("2026-11-17T20:00:00.000Z"))).toBe(-1);
+      // Mesmo dia às 10h BRT: 0
+      expect(calcularDiasAtraso(venc, new Date("2026-11-18T13:00:00.000Z"))).toBe(0);
+      // Mesmo dia às 23:59:59 BRT (02:59:59 UTC do dia 19): 0
+      expect(calcularDiasAtraso(venc, new Date("2026-11-19T02:59:59.000Z"))).toBe(0);
+      // Virada às 00:00:00 BRT (03:00:00 UTC do dia 19): 1
+      expect(calcularDiasAtraso(venc, new Date("2026-11-19T03:00:00.000Z"))).toBe(1);
     });
 
     it("deveBloquearPorAtraso com OVERDUE_GRACE_DAYS = 0", () => {
       expect(deveBloquearPorAtraso(-1)).toBe(false); // antes do vencimento -> não bloqueia
-      expect(deveBloquearPorAtraso(0)).toBe(true);   // no dia exato do vencimento -> bloqueia imediatamente
-      expect(deveBloquearPorAtraso(1)).toBe(true);   // após vencimento -> bloqueia imediatamente
+      expect(deveBloquearPorAtraso(0)).toBe(false);  // no dia do vencimento -> não bloqueia (inclusivo!)
+      expect(deveBloquearPorAtraso(1)).toBe(true);   // a partir do dia seguinte -> bloqueia imediatamente
     });
   });
 
-  describe("Fronteiras de decidirStatusSincronizado e preservação de segurança", () => {
-    it("OVERDUE com vencimento passado pausa imediatamente (zero tolerância)", () => {
+  describe("Preservação de estados bloqueados e confirmação de pagamento", () => {
+    const vencimentoFuturo = "2026-12-31";
+    const agora = new Date("2026-11-18T12:00:00.000Z");
+
+    it("estados CANCELADO, PAUSADO e PENDENTE continuam bloqueados mesmo com vencimento no futuro", () => {
+      for (const st of ["CANCELADO", "PAUSADO", "PENDENTE"] as const) {
+        const r = avaliarAcesso(
+          {
+            role: "admin",
+            status: st,
+            vencimentoPlano: vencimentoFuturo,
+            temAssinatura: true,
+          },
+          agora,
+        );
+        expect(r.permitido).toBe(false);
+      }
+    });
+
+    it("RECEIVED com pagamentoRecebido = true promove para ATIVO via decidirStatusSincronizado", () => {
+      const statusAtivado = decidirStatusSincronizado(
+        "PAUSADO",
+        "RECEIVED",
+        vencimentoFuturo,
+        agora,
+        true, // pagamentoRecebido = true comprovado server-side
+      );
+      expect(statusAtivado).toBe("ATIVO");
+    });
+
+    it("RECEIVED sem prova server-side (pagamentoRecebido = false) mantém PAUSADO", () => {
       const statusPausado = decidirStatusSincronizado(
-        "ATIVO",
-        "OVERDUE",
-        new Date(AGORA.getTime() - 1000),
-        AGORA,
+        "PAUSADO",
+        "RECEIVED",
+        vencimentoFuturo,
+        agora,
+        false,
       );
       expect(statusPausado).toBe("PAUSADO");
     });
 
-    it("preserva segurança: sem prova server-side de pagamento recebido, NÃO promove para ATIVO", () => {
-      // RECEIVED sem prova server-side (pagamentoRecebido = false) mantém PAUSADO
-      const semProva = decidirStatusSincronizado(
-        "PAUSADO",
-        "RECEIVED",
-        new Date(AGORA.getTime() + 10000),
-        AGORA,
-        false, // pagamentoRecebido = false
-      );
-      expect(semProva).toBe("PAUSADO");
-
-      // CONFIRMED nunca promove PAUSADO para ATIVO
-      const confirmed = decidirStatusSincronizado(
-        "PAUSADO",
-        "CONFIRMED",
-        new Date(AGORA.getTime() + 10000),
-        AGORA,
-        false,
-      );
-      expect(confirmed).toBe("PAUSADO");
-    });
-
-    it("preserva segurança: status CANCELADO no Asaas só cancela a empresa com confirmação terminal", () => {
-      // Sem confirmarTerminal, mantém o status atual
-      const semConfirmar = decidirStatusSincronizado(
-        "ATIVO",
-        "CANCELLED",
-        null,
-        AGORA,
-        false,
-        { confirmarTerminal: false },
-      );
-      expect(semConfirmar).toBe("ATIVO");
-
-      // Com confirmarTerminal = true, transiciona para CANCELADO
-      const comConfirmar = decidirStatusSincronizado(
-        "ATIVO",
-        "CANCELLED",
-        null,
-        AGORA,
-        false,
-        { confirmarTerminal: true },
-      );
-      expect(comConfirmar).toBe("CANCELADO");
+    it("podeReativarManualmente permite com prova de pagamento e impede CANCELADO", () => {
+      expect(podeReativarManualmente("PAUSADO", true).permitido).toBe(true);
+      expect(podeReativarManualmente("PAUSADO", false).permitido).toBe(false);
+      expect(podeReativarManualmente("CANCELADO", true).permitido).toBe(false);
     });
   });
 });

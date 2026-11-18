@@ -61,16 +61,18 @@ describe("corte no vencimento sem tolerância (webhook PAYMENT_OVERDUE)", () => 
     expect(calcularDiasAtraso("nao-e-data")).toBe(0);
   });
 
-  it("bloqueia a partir de OVERDUE_GRACE_DAYS (0), isto é, no dia exato do vencimento", () => {
+  it("bloqueia a partir de 00:00 do dia seguinte com OVERDUE_GRACE_DAYS = 0 (dia do vencimento é inclusivo)", () => {
     expect(deveBloquearPorAtraso(-1)).toBe(false); // antes do vencimento
-    expect(deveBloquearPorAtraso(0)).toBe(true);  // no dia exato do vencimento
-    expect(deveBloquearPorAtraso(1)).toBe(true);  // após o vencimento
+    expect(deveBloquearPorAtraso(0)).toBe(false);  // no dia do vencimento (inclusivo até 23:59:59)
+    expect(deveBloquearPorAtraso(1)).toBe(true);   // a partir de 00:00 do dia seguinte (corte imediato)
   });
 
   it("o limite vem da política (0 dias), não de env divergente", () => {
     expect(OVERDUE_GRACE_DAYS).toBe(0);
-    expect(deveBloquearPorAtraso(0)).toBe(true);
-    expect(deveBloquearPorAtraso(0, 5)).toBe(false); // parâmetro explícito ainda funciona
-    expect(deveBloquearPorAtraso(5, 5)).toBe(true);
+    expect(deveBloquearPorAtraso(0)).toBe(false);
+    expect(deveBloquearPorAtraso(1)).toBe(true);
+    expect(deveBloquearPorAtraso(1, 5)).toBe(false); // carência explícita de 5 dias protege dia 1
+    expect(deveBloquearPorAtraso(5, 5)).toBe(false); // dia 5 ainda dentro dos 5 dias de carência
+    expect(deveBloquearPorAtraso(6, 5)).toBe(true);  // dia 6 excede a carência de 5 dias
   });
 });

@@ -10,7 +10,18 @@ import {
   TRIAL_DAYS,
   TRIAL_TOLERANCE_DAYS,
   OVERDUE_GRACE_DAYS,
+  obterLimiteVencimentoSaoPaulo,
+  extrairDataCalendario,
+  calcularDiasAtraso,
+  FUSO_SAO_PAULO,
 } from "@/lib/billing-policy";
+
+export {
+  obterLimiteVencimentoSaoPaulo,
+  extrairDataCalendario,
+  calcularDiasAtraso,
+  FUSO_SAO_PAULO,
+};
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
@@ -147,14 +158,31 @@ export function avaliarAcesso(
   const toleranciaDias = emTeste
     ? TOLERANCIA_TRIAL_DIAS
     : TOLERANCIA_PAGAMENTO_DIAS;
-  const limite = new Date(vencimento.getTime() + toleranciaDias * DIA_MS);
+  const limite = obterLimiteVencimentoSaoPaulo(
+    dados.vencimentoPlano ?? vencimento,
+    toleranciaDias,
+  );
+
+  if (!limite) {
+    return {
+      permitido: false,
+      motivo: "sem-vencimento",
+      limite: agora,
+      diasRestantes: 0,
+    };
+  }
 
   if (agora <= limite) {
+    const diasRestantes = Math.max(
+      0,
+      -calcularDiasAtraso(dados.vencimentoPlano ?? vencimento, agora) +
+        toleranciaDias,
+    );
     return {
       permitido: true,
       motivo: emTeste ? "trial-vigente" : "plano-vigente",
       limite,
-      diasRestantes: Math.ceil((limite.getTime() - agora.getTime()) / DIA_MS),
+      diasRestantes,
     };
   }
 

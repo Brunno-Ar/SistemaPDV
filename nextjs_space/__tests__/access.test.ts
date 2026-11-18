@@ -38,7 +38,7 @@ describe("avaliarAcesso", () => {
     expect(r.motivo).toBe("master");
   });
 
-  it("bloqueia trial imediatamente após o vencimento (zero tolerância)", () => {
+  it("bloqueia trial imediatamente após o vencimento (zero tolerância, inclusivo até 23:59:59 BRT)", () => {
     const vigente = avaliarAcesso(
       {
         role: "admin",
@@ -51,17 +51,33 @@ describe("avaliarAcesso", () => {
     expect(vigente.permitido).toBe(true);
     expect(vigente.motivo).toBe("trial-vigente");
 
-    const vencido1s = avaliarAcesso(
+    // No mesmo dia do vencimento às 23:59:59 BRT (02:59:59 UTC do dia seguinte): ainda liberado
+    const fimDoDiaBRT = new Date("2026-11-13T02:59:59.999Z");
+    const noFimDoDia = avaliarAcesso(
       {
         role: "admin",
         status: "EM_TESTE",
-        vencimentoPlano: new Date(AGORA.getTime() - 1000),
+        vencimentoPlano: AGORA,
         temAssinatura: true,
       },
-      AGORA,
+      fimDoDiaBRT,
     );
-    expect(vencido1s.permitido).toBe(false);
-    expect(vencido1s.motivo).toBe("trial-vencido");
+    expect(noFimDoDia.permitido).toBe(true);
+    expect(noFimDoDia.motivo).toBe("trial-vigente");
+
+    // Na virada às 00:00:00 BRT do dia seguinte (03:00:00 UTC): bloqueado imediatamente
+    const viradaDiaSeguinte = new Date("2026-11-13T03:00:00.000Z");
+    const vencidoVirada = avaliarAcesso(
+      {
+        role: "admin",
+        status: "EM_TESTE",
+        vencimentoPlano: AGORA,
+        temAssinatura: true,
+      },
+      viradaDiaSeguinte,
+    );
+    expect(vencidoVirada.permitido).toBe(false);
+    expect(vencidoVirada.motivo).toBe("trial-vencido");
 
     const vencido1d = avaliarAcesso(
       {
@@ -76,7 +92,7 @@ describe("avaliarAcesso", () => {
     expect(vencido1d.motivo).toBe("trial-vencido");
   });
 
-  it("bloqueia cobrança vencida imediatamente após o vencimento (zero tolerância)", () => {
+  it("bloqueia cobrança vencida imediatamente após o vencimento (zero tolerância, inclusivo até 23:59:59 BRT)", () => {
     const noLimite = avaliarAcesso(
       {
         role: "admin",
@@ -89,17 +105,33 @@ describe("avaliarAcesso", () => {
     expect(noLimite.permitido).toBe(true);
     expect(noLimite.motivo).toBe("plano-vigente");
 
-    const vencido1s = avaliarAcesso(
+    // No mesmo dia do vencimento às 23:59:59 BRT: ainda liberado
+    const fimDoDiaBRT = new Date("2026-11-13T02:59:59.999Z");
+    const noFimDoDia = avaliarAcesso(
       {
         role: "admin",
         status: "ATIVO",
-        vencimentoPlano: new Date(AGORA.getTime() - 1000),
+        vencimentoPlano: AGORA,
         temAssinatura: true,
       },
-      AGORA,
+      fimDoDiaBRT,
     );
-    expect(vencido1s.permitido).toBe(false);
-    expect(vencido1s.motivo).toBe("plano-vencido");
+    expect(noFimDoDia.permitido).toBe(true);
+    expect(noFimDoDia.motivo).toBe("plano-vigente");
+
+    // Na virada às 00:00:00 BRT do dia seguinte: bloqueado imediatamente
+    const viradaDiaSeguinte = new Date("2026-11-13T03:00:00.000Z");
+    const vencidoVirada = avaliarAcesso(
+      {
+        role: "admin",
+        status: "ATIVO",
+        vencimentoPlano: AGORA,
+        temAssinatura: true,
+      },
+      viradaDiaSeguinte,
+    );
+    expect(vencidoVirada.permitido).toBe(false);
+    expect(vencidoVirada.motivo).toBe("plano-vencido");
 
     const passou = avaliarAcesso(
       {
@@ -506,13 +538,23 @@ describe("decidirStatusSincronizado (mesmas tolerâncias do runtime)", () => {
       ),
     ).toBe("ATIVO");
 
-    // Vencimento passado (1s ou 1d) pausa
+    // No dia do vencimento, OVERDUE preserva ATIVO até 23:59:59 BRT
     expect(
       decidirStatusSincronizado(
         "ATIVO",
         "OVERDUE",
-        new Date(AGORA.getTime() - 1000),
         AGORA,
+        new Date("2026-11-13T02:59:59.999Z"), // 23:59:59 BRT de 12/11
+      ),
+    ).toBe("ATIVO");
+
+    // Na virada às 00:00:00 BRT do dia seguinte (03:00 UTC) ou vencimento passado (1d), pausa
+    expect(
+      decidirStatusSincronizado(
+        "ATIVO",
+        "OVERDUE",
+        AGORA,
+        new Date("2026-11-13T03:00:00.000Z"), // 00:00:00 BRT de 13/11
       ),
     ).toBe("PAUSADO");
 
@@ -536,12 +578,23 @@ describe("decidirStatusSincronizado (mesmas tolerâncias do runtime)", () => {
       ),
     ).toBe("EM_TESTE");
 
+    // No mesmo dia do vencimento às 23:59:59 BRT preserva EM_TESTE
     expect(
       decidirStatusSincronizado(
         "EM_TESTE",
         "ACTIVE",
-        new Date(AGORA.getTime() - 1000),
         AGORA,
+        new Date("2026-11-13T02:59:59.999Z"),
+      ),
+    ).toBe("EM_TESTE");
+
+    // Na virada às 00:00:00 BRT do dia seguinte pausa imediatamente
+    expect(
+      decidirStatusSincronizado(
+        "EM_TESTE",
+        "ACTIVE",
+        AGORA,
+        new Date("2026-11-13T03:00:00.000Z"),
       ),
     ).toBe("PAUSADO");
 

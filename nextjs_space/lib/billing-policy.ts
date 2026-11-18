@@ -15,6 +15,91 @@ export const TRIAL_DAYS =
 export const TRIAL_TOLERANCE_DAYS = 0;
 export const OVERDUE_GRACE_DAYS = 0;
 
+export const FUSO_SAO_PAULO = "America/Sao_Paulo";
+export const DIA_MS = 24 * 60 * 60 * 1000;
+
+export interface DataCalendario {
+  ano: number;
+  mes: number;
+  dia: number;
+  iso: string; // YYYY-MM-DD
+}
+
+/**
+ * Extrai a data civil (ano, mês, dia) considerando convenção de data civil
+ * (strings YYYY-MM-DD ou datas instanciadas à meia-noite UTC) e o fuso
+ * America/Sao_Paulo para timestamps com horário real.
+ */
+export function extrairDataCalendario(
+  valor: string | Date | null | undefined,
+  fuso: string = FUSO_SAO_PAULO,
+): DataCalendario | null {
+  if (!valor) return null;
+
+  // Se for string YYYY-MM-DD direta ou prefixo de ISO com T00:00:00
+  if (typeof valor === "string") {
+    const match = valor.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match && (valor.length === 10 || valor.includes("T00:00:00"))) {
+      const ano = Number(match[1]);
+      const mes = Number(match[2]);
+      const dia = Number(match[3]);
+      return { ano, mes, dia, iso: `${match[1]}-${match[2]}-${match[3]}` };
+    }
+  }
+
+  const d = valor instanceof Date ? valor : new Date(valor);
+  if (Number.isNaN(d.getTime())) return null;
+
+  // Date instanciado exatamente à meia-noite UTC (ex.: new Date("2026-11-18T00:00:00.000Z")
+  // ou new Date("2026-11-18"), formato padrão do Prisma para campos DateTime de vencimento)
+  if (
+    d.getUTCHours() === 0 &&
+    d.getUTCMinutes() === 0 &&
+    d.getUTCSeconds() === 0 &&
+    d.getUTCMilliseconds() === 0
+  ) {
+    const ano = d.getUTCFullYear();
+    const mes = d.getUTCMonth() + 1;
+    const dia = d.getUTCDate();
+    const iso = `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+    return { ano, mes, dia, iso };
+  }
+
+  // Timestamp com horário real: projeta no fuso America/Sao_Paulo
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: fuso,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const iso = fmt.format(d);
+  const [ano, mes, dia] = iso.split("-").map(Number);
+  return { ano, mes, dia, iso };
+}
+
+/**
+ * Calcula o instante exato do corte de acesso:
+ * 23:59:59.999 no fuso America/Sao_Paulo (UTC-3).
+ * No fuso de Brasília permanente (UTC-3), 23:59:59.999 corresponde a 02:59:59.999 UTC
+ * do dia civil seguinte.
+ * Tolerâncias adicionais somam dias inteiros além desse fim de dia.
+ */
+export function obterLimiteVencimentoSaoPaulo(
+  valor: string | Date | null | undefined,
+  toleranciaDias: number = 0,
+): Date | null {
+  const data = extrairDataCalendario(valor);
+  if (!data) return null;
+
+  // 23:59:59.999 em America/Sao_Paulo (UTC-3 = +3h em UTC)
+  const baseUtcMs =
+    Date.UTC(data.ano, data.mes - 1, data.dia, 23, 59, 59, 999) +
+    3 * 60 * 60 * 1000 +
+    toleranciaDias * DIA_MS;
+
+  return new Date(baseUtcMs);
+}
+
 /**
  * Preco mensal base EXATO (fonte unica). 50% = R$24,95.
  * Nao vem de env: uma NEXT_PUBLIC_PLAN_PRICE divergente mudaria a cobranca e a
@@ -53,27 +138,37 @@ export function calcularVencimentoTrial(
 }
 
 /**
- * Dias de atraso (inteiro) entre o vencimento e agora. 0 se nao houver
- * vencimento valido. Fonte unica para o webhook e o cron nao divergirem.
+ * Dias civis de atraso entre o vencimento e agora no fuso America/Sao_Paulo.
+ * Retorna 0 no dia do vencimento (acesso segue liberado até 23:59:59).
+ * Retorna 1 a partir de 00:00 do dia seguinte.
+ * Retorna valores negativos se a data atual for anterior ao vencimento.
  */
 export function calcularDiasAtraso(
   dueDate: string | Date | null | undefined,
-  agora: Date = new Date(),
+  agora: string | Date = new Date(),
 ): number {
   if (!dueDate) return 0;
-  const venc = new Date(dueDate);
-  if (Number.isNaN(venc.getTime())) return 0;
-  return Math.floor((agora.getTime() - venc.getTime()) / (24 * 60 * 60 * 1000));
+  const dataVenc = extrairDataCalendario(dueDate);
+  if (!dataVenc) return 0;
+  const dataAgora = extrairDataCalendario(agora);
+  if (!dataAgora) return 0;
+
+  const utcVenc = Date.UTC(dataVenc.ano, dataVenc.mes - 1, dataVenc.dia);
+  const utcAgora = Date.UTC(dataAgora.ano, dataAgora.mes - 1, dataAgora.dia);
+
+  return Math.round((utcAgora - utcVenc) / DIA_MS);
 }
 
 /**
- * Decide se o atraso ja passou da tolerancia de cobranca regular.
- * O limite NAO vem de env: e a politica unica (OVERDUE_GRACE_DAYS), para que
- * uma variavel ASAAS_GRACE_PERIOD_DAYS divergente nao sobrescreva a regra.
+ * Decide se o atraso já passou da tolerância de cobrança regular.
+ * Com OVERDUE_GRACE_DAYS = 0 (zero tolerância adicional):
+ * - diasAtraso <= 0 (dia do vencimento ou antes): false (acesso liberado até 23:59:59)
+ * - diasAtraso > 0 (a partir de 00:00 do dia seguinte): true (bloqueado imediatamente)
  */
 export function deveBloquearPorAtraso(
   diasAtraso: number,
   graceDias: number = OVERDUE_GRACE_DAYS,
 ): boolean {
-  return diasAtraso >= graceDias;
+  if (diasAtraso <= 0) return false;
+  return diasAtraso > graceDias;
 }
