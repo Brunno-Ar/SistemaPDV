@@ -440,6 +440,9 @@ describe("preview de empresa sem vinculo", () => {
     expect(r.http).toBe(409);
     expect(r.erro).toBe("conflito_vinculo");
     expect(r.motivo).toBe("multiplos_admins_selecao_obrigatoria");
+    expect(r.admins).toHaveLength(2);
+    expect(r.admins?.[0].id).toBe("admin-1");
+    expect(r.admins?.[1].id).toBe("admin-2");
   });
 
   it("multiplos admins com adminId explicito valido: sucesso e lista admins", async () => {
@@ -460,6 +463,27 @@ describe("preview de empresa sem vinculo", () => {
     expect(r.preview.empresa.adminId).toBe("admin-2");
     expect(r.preview.empresa.admins).toHaveLength(2);
     expect(r.preview.provisionamento?.adminId).toBe("admin-2");
+  });
+
+  it("multiplos admins com adminId valido mas sem cpfCnpj: modo conflito e motivo sem_documento", async () => {
+    findUniqueMock.mockResolvedValue(
+      empresaSemVinculo({ cpfCnpj: null }),
+    );
+    userFindManyMock.mockResolvedValue([
+      { id: "admin-1", name: "Admin 1", email: "admin1@empresa.com" },
+      { id: "admin-2", name: "Admin 2", email: "admin2@empresa.com" },
+    ]);
+
+    const r = await montarPreview("E1", {
+      agora: AGORA,
+      adminId: "admin-2",
+    });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.preview.modo).toBe("conflito");
+    expect(r.preview.conflito?.motivo).toBe("sem_documento");
+    expect(r.preview.empresa.adminId).toBe("admin-2");
   });
 
   it("adminId inexistente ou invalido: erro 400 (admin_invalido)", async () => {
