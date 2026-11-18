@@ -6,6 +6,7 @@ import {
   TOLERANCIA_PAGAMENTO_DIAS,
   TOLERANCIA_TRIAL_DIAS,
 } from "@/lib/access";
+import { calcularInicioDiaCivilSaoPaulo } from "@/lib/billing-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -16,35 +17,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Cutoffs (regra única em lib/access)
-    // Limite do dia em UTC (consistente entre servidores/regiões). Contas sem
-    // vencimento (free) não entram: NULL não casa com `lt` no filtro.
+    // 2. Cutoffs alinhados ao fuso America/Sao_Paulo (regra única em lib/billing-policy)
+    // Contas sem vencimento (free) não entram: NULL não casa com `lt` no filtro.
     const agora = new Date();
-    const inicioDiaUtc = Date.UTC(
-      agora.getUTCFullYear(),
-      agora.getUTCMonth(),
-      agora.getUTCDate(),
-    );
+    const inicioDiaSaoPaulo = calcularInicioDiaCivilSaoPaulo(agora);
     const DIA_MS = 24 * 60 * 60 * 1000;
 
     // Plano vencido: pausa após vencimento sem tolerância (0 dias).
     const pagamentoCutoff = new Date(
-      inicioDiaUtc - TOLERANCIA_PAGAMENTO_DIAS * DIA_MS,
+      inicioDiaSaoPaulo.getTime() - TOLERANCIA_PAGAMENTO_DIAS * DIA_MS,
     );
 
     // Trial vencido: pausa após vencimento do trial sem tolerância (0 dias).
     const trialCutoff = new Date(
-      inicioDiaUtc - TOLERANCIA_TRIAL_DIAS * DIA_MS,
+      inicioDiaSaoPaulo.getTime() - TOLERANCIA_TRIAL_DIAS * DIA_MS,
     );
 
     // Cutoff de vencimento derivado de createdAt (trial + graça/tolerância) para
     // contas sem vencimentoPlano (legadas NULL): não prescreve acesso infinito.
     const overdueFromCriacaoCutoff = new Date(
-      inicioDiaUtc -
+      inicioDiaSaoPaulo.getTime() -
         (TRIAL_DIAS_PADRAO + TOLERANCIA_PAGAMENTO_DIAS) * DIA_MS,
     );
     const expiredTrialFromCriacaoCutoff = new Date(
-      inicioDiaUtc - (TRIAL_DIAS_PADRAO + TOLERANCIA_TRIAL_DIAS) * DIA_MS,
+      inicioDiaSaoPaulo.getTime() -
+        (TRIAL_DIAS_PADRAO + TOLERANCIA_TRIAL_DIAS) * DIA_MS,
     );
 
     // 3. Empresas ATIVAS com mensalidade vencida além da tolerância

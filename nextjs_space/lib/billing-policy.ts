@@ -101,6 +101,24 @@ export function obterLimiteVencimentoSaoPaulo(
 }
 
 /**
+ * Retorna a meia-noite UTC correspondente ao início do dia civil atual
+ * no fuso America/Sao_Paulo (UTC-3).
+ * Usado por rotinas de cron para que o corte só alcance empresas cujo
+ * vencimento pertencia a um dia civil estritamente anterior ao dia corrente em SP.
+ */
+export function calcularInicioDiaCivilSaoPaulo(agora: Date = new Date()): Date {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO_SAO_PAULO,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const iso = fmt.format(agora);
+  const [ano, mes, dia] = iso.split("-").map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia, 0, 0, 0, 0));
+}
+
+/**
  * Preco mensal base EXATO (fonte unica). 50% = R$24,95.
  * Nao vem de env: uma NEXT_PUBLIC_PLAN_PRICE divergente mudaria a cobranca e a
  * validacao de valor em silencio.

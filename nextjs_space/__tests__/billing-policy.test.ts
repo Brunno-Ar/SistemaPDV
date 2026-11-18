@@ -75,4 +75,19 @@ describe("corte no vencimento sem tolerância (webhook PAYMENT_OVERDUE)", () => 
     expect(deveBloquearPorAtraso(5, 5)).toBe(false); // dia 5 ainda dentro dos 5 dias de carência
     expect(deveBloquearPorAtraso(6, 5)).toBe(true);  // dia 6 excede a carência de 5 dias
   });
+
+  it("calcularInicioDiaCivilSaoPaulo não vira data antes das 00:00 BRT (03:00 UTC)", () => {
+    const { calcularInicioDiaCivilSaoPaulo } = require("@/lib/billing-policy");
+    // 18/11 às 21:00 BRT (19/11 às 00:00:00 UTC) -> ainda deve ser 18/11
+    const t21h = new Date("2026-11-19T00:00:00.000Z");
+    expect(calcularInicioDiaCivilSaoPaulo(t21h).toISOString()).toBe("2026-11-18T00:00:00.000Z");
+
+    // 18/11 às 23:59:59 BRT (19/11 às 02:59:59 UTC) -> ainda deve ser 18/11
+    const t23h = new Date("2026-11-19T02:59:59.000Z");
+    expect(calcularInicioDiaCivilSaoPaulo(t23h).toISOString()).toBe("2026-11-18T00:00:00.000Z");
+
+    // 19/11 às 00:00:00 BRT (19/11 às 03:00:00 UTC) -> vira para 19/11
+    const t00h = new Date("2026-11-19T03:00:00.000Z");
+    expect(calcularInicioDiaCivilSaoPaulo(t00h).toISOString()).toBe("2026-11-19T00:00:00.000Z");
+  });
 });
