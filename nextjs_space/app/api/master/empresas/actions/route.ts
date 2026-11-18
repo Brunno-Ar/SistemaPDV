@@ -7,6 +7,7 @@ import { StatusEmpresa } from "@prisma/client";
 import { podeReativarManualmente } from "@/lib/access";
 import { obterLimiteExclusivoSaoPaulo } from "@/lib/billing-policy";
 import { conferirPagamentoConfirmado } from "@/lib/pagamento";
+import { editarEmpresaContato } from "@/lib/master-empresa-contato";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -649,6 +650,34 @@ export async function POST(request: NextRequest) {
           },
           { status: 410 },
         );
+      }
+
+      case "editarContato": {
+        if (!empresaId) {
+          return NextResponse.json(
+            { error: "empresaId obrigatório" },
+            { status: 400 },
+          );
+        }
+
+        const resultado = await editarEmpresaContato({
+          empresaId,
+          cpfCnpj: body.cpfCnpj,
+          telefone: body.telefone,
+        });
+
+        if (!resultado.ok) {
+          return NextResponse.json(
+            { error: resultado.erro },
+            { status: resultado.status },
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: "Dados cadastrais atualizados com sucesso!",
+          empresa: resultado.empresa,
+        });
       }
 
       default:

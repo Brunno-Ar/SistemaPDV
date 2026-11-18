@@ -19,12 +19,14 @@ import {
   Calendar,
   RefreshCw,
   ShieldCheck,
+  Phone,
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Empresa } from "./types";
 import type { AsaasAdminResumo } from "./asaas-vinculo-types";
 import { AsaasVinculoDialog } from "./asaas-vinculo-dialog";
+import { EmpresaContatoDialog } from "./EmpresaContatoDialog";
 
 interface CompaniesTableProps {
   empresas: Empresa[];
@@ -34,6 +36,7 @@ interface CompaniesTableProps {
   onResetPassword: (empresa: Empresa) => void;
   onSendAviso: (empresa: Empresa) => void;
   onUpdatePlan: (empresa: Empresa) => void;
+  onEditarContato: (empresa: Empresa) => void;
   formatDate: (date: string | null) => string;
   formatCurrency: (value: number) => string;
   isInadimplente: (empresa: Empresa) => boolean;
@@ -49,6 +52,7 @@ export function CompaniesTable({
   onResetPassword,
   onSendAviso,
   onUpdatePlan,
+  onEditarContato,
   formatDate,
   formatCurrency,
   isInadimplente,
@@ -58,6 +62,10 @@ export function CompaniesTable({
   const router = useRouter();
   const [asasDialogOpen, setAsasDialogOpen] = useState(false);
   const [asasEmpresaSelecionada, setAsasEmpresaSelecionada] = useState<
+    Empresa | null
+  >(null);
+  const [contatoDialogOpen, setContatoDialogOpen] = useState(false);
+  const [contatoEmpresaSelecionada, setContatoEmpresaSelecionada] = useState<
     Empresa | null
   >(null);
 
@@ -265,6 +273,16 @@ export function CompaniesTable({
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
+                          onClick={() => {
+                            setContatoEmpresaSelecionada(empresa);
+                            setContatoDialogOpen(true);
+                          }}
+                          className="text-indigo-600 focus:text-indigo-600"
+                        >
+                          <Phone className="mr-2 h-4 w-4" /> Editar Contato
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
                           className="text-orange-600 focus:text-orange-600"
                           onClick={() => onClearData(empresa)}
                         >
@@ -293,6 +311,13 @@ export function CompaniesTable({
         onOpenChange={setAsasDialogOpen}
         onAtualizar={onAtualizar}
         admins={adminsPorEmpresa?.[asasEmpresaSelecionada?.id ?? ""] ?? []}
+      />
+
+      <EmpresaContatoDialog
+        open={contatoDialogOpen}
+        onOpenChange={setContatoDialogOpen}
+        empresa={contatoEmpresaSelecionada ?? { id: "", nome: "" }}
+        onAtualizar={onAtualizar ?? (() => {})}
       />
     </div>
   );
