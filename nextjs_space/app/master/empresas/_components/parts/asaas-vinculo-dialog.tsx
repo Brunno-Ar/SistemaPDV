@@ -27,6 +27,7 @@ import { AlertTriangle, CreditCard } from "lucide-react";
 import {
   montarPreviewAsaas,
   confirmarPreviewAsaas,
+  AsaasPreviewError,
 } from "./asaas-vinculo-service";
 import type {
   AsaasAdminResumo,
@@ -68,6 +69,8 @@ export function AsaasVinculoDialog({
   const [adminSelecionado, setAdminSelecionado] = useState<string | null>(null);
   // Quando o backend exige seleção de admin (múltiplos admins), exibe a lista.
   const [adminsExigidos, setAdminsExigidos] = useState(false);
+  // Admins recebidos do erro 409 multiplos_admins_selecao_obrigatoria.
+  const [adminsErro, setAdminsErro] = useState<AsaasAdminResumo[]>([]);
 
   const carregarPreview = useCallback(
     async (data?: string | null, adminId?: string | null) => {
@@ -83,6 +86,7 @@ export function AsaasVinculoDialog({
           adminId ?? undefined,
         );
         setPreview(p);
+        setAdminsErro([]);
         setPrimeiroVencimento(
           p.provisionamento?.primeiroVencimento ?? data ?? null,
         );
@@ -90,16 +94,35 @@ export function AsaasVinculoDialog({
           setAdminSelecionado(p.empresa.adminId);
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Não foi possível carregar a prévia.";
-        if (msg.includes("multiplos_admins")) {
-          setAdminsExigidos(true);
-          setError(null);
-        } else if (msg.includes("admin_invalido")) {
-          setAdminSelecionado(null);
-          setError("Contato de faturamento inválido");
-        } else {
-          setError(msg);
+        // Erro tipado do backend: preserva motivo estruturado (ex.: 409
+        // multiplos_admins_selecao_obrigatoria com lista de admins).
+        if (e instanceof AsaasPreviewError) {
+          // 409 multiplos_admins_selecao_obrigatoria: exibe a lista para o
+          // usuario escolher (nao esconde a ação nem converte em conflito
+          // irresolvivel). Sem admins na resposta, informa que a selecao e
+          // obrigatoria sem travar a tela.
+          if (e.codigo === "multiplos_admins_selecao_obrigatoria") {
+            setAdminsExigidos(true);
+            setAdminsErro(e.admins ?? []);
+            setError(
+              e.admins && e.admins.length > 0
+                ? null
+                : "A empresa tem múltiplos admins. Selecione um contato de faturamento para continuar.",
+            );
+            return;
+          }
+          if (e.codigo === "admin_invalido") {
+            setAdminSelecionado(null);
+            setError("Contato de faturamento inválido. Escolha outro admin.");
+            return;
+          }
+          // Outros erros tipados: exibe a mensagem real do backend (não mascara conflitos).
+          setError(e.message);
+          return;
         }
+        // Erro não tipado (rede, parse): exibe a mensagem real, sem mascarar conflitos.
+        const msg = e instanceof Error ? e.message : "Não foi possível carregar a prévia.";
+        setError(msg);
       }
     },
     [empresaId],
@@ -130,6 +153,7 @@ export function AsaasVinculoDialog({
       setTerminalAceito(false);
       setAdminsExigidos(false);
       setDataCustomizada(null);
+      setAdminsErro([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, empresaId, carregarPreview]);
@@ -205,8 +229,8 @@ export function AsaasVinculoDialog({
     );
   }
 
-  // Erro fatal que impede exibição do dialog
-  if (error && error !== "Contato de faturamento inválido" && !adminsExigidos) {
+  // Erro fatal que impede exibição do dialog (sem preview e sem seleção de admin exigida)
+  if (!preview && !error && !adminsExigidos) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
@@ -247,7 +271,9 @@ export function AsaasVinculoDialog({
       }[proposta.acao]
     : "";
 
-  const adminsDisponiveis = admins.length > 0 ? admins : (p?.empresa?.admins ?? []);
+  const adminsDisponiveis = admins.length > 0
+    ? admins
+    : p?.empresa?.admins ?? adminsErro;
   const precisaTermos = proposta?.requerConfirmacaoTermos ?? false;
   const precisaTerminal = proposta?.requerConfirmacaoTerminal ?? false;
   const requerAdmin =
@@ -267,7 +293,7 @@ export function AsaasVinculoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg sm:max-w-xl p-6">
+      <DialogContent className="max-w-lg sm:max-w-xl p-4 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{modoLabel}</DialogTitle>
           <DialogDescription>{empresaNome}</DialogDescription>
@@ -289,17 +315,17 @@ export function AsaasVinculoDialog({
           </div>
         )}
 
-        {error === "Contato de faturamento inválido" && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTitle>Contato de faturamento inválido</AlertTitle>
-            <AlertDescription>Escolha outro admin para faturamento.</AlertDescription>
+        {error && !adminsExigidos && modo !== "conflito" && (
+          <Alert variant="destructive" className="mb-4" role="alert">
+            <AlertTitle>Erro ao carregar prévia</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {!resultado && (
           <>
             {p && proposta && (
-              <div className="mb-4 space-y-2 text-sm">
+              <div className="mb-3 space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Situação</span>
                   <span className="font-medium">
@@ -342,7 +368,7 @@ export function AsaasVinculoDialog({
             )}
 
             {asaas?.customer?.id && (
-              <div className="mb-4 rounded-lg border bg-gray-50 dark:bg-zinc-800/50 p-3 text-xs text-gray-600 dark:text-gray-300">
+              <div className="mb-3 rounded-lg border bg-gray-50 dark:bg-zinc-800/50 p-2 text-xs text-gray-600 dark:text-gray-300">
                 <p className="font-semibold mb-1">Asaas</p>
                 <p>Customer: {asaas.customer.id} ({asaas.customer.situacao})</p>
                 <p>
@@ -360,7 +386,7 @@ export function AsaasVinculoDialog({
 
             {/* Admin exigido pelo backend (409 multiplos_admins). */}
             {adminsExigidos && (
-              <div className="mb-4 rounded-lg border bg-orange-50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-800/30 p-3 text-sm">
+              <div className="mb-3 rounded-lg border bg-orange-50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-800/30 p-2 text-sm">
                 <p className="font-semibold mb-1">Escolha o contato de faturamento</p>
                 <p className="text-xs text-orange-700 dark:text-orange-300 mb-2">
                   A empresa tem múltiplos admins. Selecione um para continuar.
@@ -372,6 +398,7 @@ export function AsaasVinculoDialog({
                       type="button"
                       onClick={() => {
                         setAdminSelecionado(a.id);
+                        setAdminsExigidos(false);
                         setTermosAceito(false);
                         carregarPreview(primeiroVencimento, a.id);
                       }}
@@ -391,7 +418,7 @@ export function AsaasVinculoDialog({
 
             {/* Contato de faturamento selecionado */}
             {adminsDisponiveis.length > 0 && !adminsExigidos && (
-              <div className="mb-4 rounded-lg border bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30 p-3 text-sm">
+              <div className="mb-3 rounded-lg border bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30 p-2 text-sm">
                 <p className="font-semibold mb-1">Contato de faturamento</p>
                 {adminSelecionado ? (
                   <p>
@@ -413,7 +440,7 @@ export function AsaasVinculoDialog({
             )}
 
             {proposta?.acao === "criar_assinatura" && p?.provisionamento && (
-              <div className="mb-4 rounded-lg border bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30 p-4">
+              <div className="mb-3 rounded-lg border bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30 p-3">
                 <div className="flex items-start gap-2 mb-2">
                   <CreditCard className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <span className="font-semibold text-amber-800 dark:text-amber-300 text-sm">
@@ -509,7 +536,7 @@ export function AsaasVinculoDialog({
             )}
 
             {precisaTerminal && proposta?.statusAsaasTerminal && (
-              <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800/30 p-4">
+              <div className="mb-3 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800/30 p-3">
                 <AlertTitle className="text-sm font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
                   <span>Assinatura cancelada no Asaas</span>
@@ -532,7 +559,7 @@ export function AsaasVinculoDialog({
             )}
 
             {p?.avisos && p.avisos.length > 0 && (
-              <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800/30 p-3">
+              <div className="mb-3 rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-800/30 p-2">
                 <AlertTitle className="text-sm font-semibold text-yellow-800 dark:text-yellow-300 flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
                   <span>Avisos</span>
@@ -546,7 +573,7 @@ export function AsaasVinculoDialog({
             )}
 
             {modo === "conflito" && p?.conflito && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800/30 p-4">
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800/30 p-3">
                 <AlertTitle className="text-sm font-semibold text-red-800 dark:text-red-300 flex items-center gap-1">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
                   <span>Conflito — não resolver automaticamente</span>

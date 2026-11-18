@@ -993,9 +993,141 @@ describe("AsaasVinculoDialog", () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Contato de faturamento inválido")).toBeInTheDocument(),
+      expect(screen.getByText(/Contato de faturamento inválido/)).toBeInTheDocument(),
     );
     expect(screen.getByText("Nenhum contato selecionado")).toBeInTheDocument();
+  });
+
+  it("preview 409 multiplos_admins sem lista: exibe mensagem informativa e nao trava", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        ok: false,
+        erro: "multiplos_admins_selecao_obrigatoria",
+      }),
+    });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText(/múltiplos admins/)).toBeInTheDocument(),
+    );
+    // Sem lista de admins: exibe mensagem informativa, mas nao exibe botoes de admin
+    expect(screen.queryByRole("button", { name: /Admin/ })).not.toBeInTheDocument();
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+  });
+
+  it("preview 409 multiplos_admins com lista: exibe admins, escolhe Admin 2, recarrega preview e limpa selecao", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 1", emailMascarado: "jo***@empresa.com" },
+      { id: "A2", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    const previewSemAdmin = {
+      ...empresaProvisionamento.preview,
+      empresa: {
+        ...empresaProvisionamento.preview.empresa,
+        adminEmailMascarado: null,
+      },
+    };
+    const previewComAdmin2 = {
+      ...previewSemAdmin,
+      token: "tok_admin2_v2",
+    };
+
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({
+          ok: false,
+          erro: "multiplos_admins_selecao_obrigatoria",
+          admins,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, preview: previewComAdmin2 }),
+      });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Admin 2/ })).toBeInTheDocument(),
+    );
+    const btnConfirmar = screen.getByRole("button", { name: /Confirmar ação/ });
+    expect(btnConfirmar).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: /Admin 2/ }));
+
+    // adminsExigidos limpo: bloco de escolha desaparece
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Escolha o contato de faturamento"),
+      ).not.toBeInTheDocument(),
+    );
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain('"adminId":"A2"');
+  });
+
+  it("erro de rede nao tipado exibe mensagem real e nao mascara conflito", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("falha de rede"));
+
+    renderDialog({
+      empresaId: "E9",
+      empresaNome: "Inexistente",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Erro ao carregar prévia")).toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("falha de rede")).toBeInTheDocument(),
+    );
+  });
+
+  it("fechar o modal reseta adminsErro e adminsExigidos", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 1", emailMascarado: "jo***@empresa.com" },
+      { id: "A2", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        ok: false,
+        erro: "multiplos_admins_selecao_obrigatoria",
+        admins,
+      }),
+    });
+
+    const onOpenChange = jest.fn();
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange,
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText("Escolha o contato de faturamento")).toBeInTheDocument(),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Cancelar/ }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("confirm envia adminId e primeiroVencimento no corpo", async () => {
