@@ -154,3 +154,91 @@ it("aprovar com RECEIVED confirmado: permite e escreve", async () => {
   expect(res.status).toBe(200);
   expect(updateMock).toHaveBeenCalledTimes(1);
 });
+
+// --- Cobertura `reativar` e casos positivos faltantes (QA) ---
+
+const empresaPausada = {
+  ...empresaSemAsaas,
+  id: "E3",
+  status: "PAUSADO",
+  liberacaoTemporariaAte: new Date("1970-01-01T00:00:00.000Z"),
+};
+
+it("reativar sem RECEIVED: rejeita 400, zero escrita", async () => {
+  findUniqueMock.mockResolvedValue(empresaPausada);
+
+  const res = await post({ action: "reativar", empresaId: "E3" });
+
+  expect(res.status).toBe(400);
+  expect(conferenciaMock).toHaveBeenCalled();
+  expect(updateMock).not.toHaveBeenCalled();
+  const body = (await res.json()) as { error: string };
+  expect(body.error).toMatch(/PAYMENT_RECEIVED/);
+});
+
+it("reativar com RECEIVED: restaura ATIVO e limpa marcador", async () => {
+  findUniqueMock.mockResolvedValue(empresaPausada);
+  conferenciaMock.mockResolvedValue({
+    confirmado: true,
+    fonte: "asaas",
+    pendente: false,
+  });
+
+  const res = await post({ action: "reativar", empresaId: "E3" });
+
+  expect(res.status).toBe(200);
+  expect(updateMock).toHaveBeenCalledTimes(1);
+  const chamada = updateMock.mock.calls[0][0] as { data: unknown };
+  expect(chamada.data).toMatchObject({
+    status: "ATIVO",
+    liberacaoTemporariaAte: null,
+  });
+});
+
+it("reativar CANCELADO mesmo com RECEIVED: rejeita 400", async () => {
+  findUniqueMock.mockResolvedValue({ ...empresaPausada, status: "CANCELADO" });
+  conferenciaMock.mockResolvedValue({
+    confirmado: true,
+    fonte: "asaas",
+    pendente: false,
+  });
+
+  const res = await post({ action: "reativar", empresaId: "E3" });
+
+  expect(res.status).toBe(400);
+  expect(updateMock).not.toHaveBeenCalled();
+});
+
+it("renovar com RECEIVED: permite e escreve novo vencimento", async () => {
+  findUniqueMock.mockResolvedValue(empresaComAsaas);
+  conferenciaMock.mockResolvedValue({
+    confirmado: true,
+    fonte: "asaas",
+    pendente: false,
+  });
+
+  const res = await post({ action: "renovar", empresaId: "E2" });
+
+  expect(res.status).toBe(200);
+  expect(updateMock).toHaveBeenCalledTimes(1);
+});
+
+it("updateVencimento com RECEIVED: permite e escreve", async () => {
+  findUniqueMock.mockResolvedValue(empresaComAsaas);
+  conferenciaMock.mockResolvedValue({
+    confirmado: true,
+    fonte: "asaas",
+    pendente: false,
+  });
+
+  const res = await post({
+    action: "updateVencimento",
+    empresaId: "E2",
+    novoVencimento: "2027-01-15",
+  });
+
+  expect(res.status).toBe(200);
+  expect(updateMock).toHaveBeenCalledTimes(1);
+  const chamada = updateMock.mock.calls[0][0] as { data: unknown };
+  expect(chamada.data).toMatchObject({ status: "ATIVO" });
+});
