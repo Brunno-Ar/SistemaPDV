@@ -14,13 +14,13 @@ import {
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
-/** Trial: vence no vencimento + TRIAL_TOLERANCE_DAYS (1 dia). */
+/** Trial: vence no dia exato do vencimento (0 dias de tolerância). */
 export const TOLERANCIA_TRIAL_DIAS = TRIAL_TOLERANCE_DAYS;
 
 /** Duração padrão do trial em dias (fonte única: lib/billing-policy). */
 export const TRIAL_DIAS_PADRAO = TRIAL_DAYS;
 
-/** Cobrança vencida: acesso até vencimento + OVERDUE_GRACE_DAYS (10 dias). */
+/** Cobrança vencida: bloqueio no dia exato do vencimento (0 dias de tolerância). */
 export const TOLERANCIA_PAGAMENTO_DIAS = OVERDUE_GRACE_DAYS;
 
 export type MotivoAcesso =
@@ -102,7 +102,7 @@ export function avaliarAcesso(
   if (!vencimento) {
     // Sem vencimento registrado. Apenas contas legadas com assinatura Asaas
     // (temAssinatura === true) derivam o fim do trial de empresaCriacao
-    // (createdAt) + tolerância de 1 dia — mecanismo piloto já aprovado.
+    // (createdAt) + tolerância de 0 dias (corte exato).
     // Qualquer outra conta ATIVO sem assinatura e sem vencimento falha
     // fechada: sem-vencimento, nunca "conta-gratuita" permanente nem cupom
     // sem prazo.
@@ -191,8 +191,8 @@ function statusAtualSincronizavel(statusAtual: string): StatusSincronizavel {
 
 /**
  * Reconciliacao de status a partir do Asaas (usada pelo master/sync).
- * Aplica as MESMAS tolerancias do runtime (trial +1d, plano +10d) via
- * avaliarAcesso, em vez de pausar no vencimento cru.
+ * Aplica as MESMAS regras do runtime (corte no vencimento, 0 dias de tolerância) via
+ * avaliarAcesso, sem janela adicional.
  *
  * SO `RECEIVED` ativa o plano (decisao do usuario). `CONFIRMED` NAO ativa:
  * mantem o status atual sem promover.

@@ -250,14 +250,16 @@ export async function POST(req: NextRequest) {
           : valido(due)
             ? due
             : venc;
-        const diasAtraso = calcularDiasAtraso(referencia);
 
-        if (deveBloquearPorAtraso(diasAtraso, GRACE_PERIOD_DAYS)) {
-          pausou = true;
-          await prisma.empresa.update({
-            where: { id: empresa.id },
-            data: { status: "PAUSADO", webhookEventId: eventId },
-          });
+        if (referencia) {
+          const diasAtraso = calcularDiasAtraso(referencia);
+          if (deveBloquearPorAtraso(diasAtraso, GRACE_PERIOD_DAYS)) {
+            pausou = true;
+            await prisma.empresa.update({
+              where: { id: empresa.id },
+              data: { status: "PAUSADO", webhookEventId: eventId },
+            });
+          }
         }
       }
 

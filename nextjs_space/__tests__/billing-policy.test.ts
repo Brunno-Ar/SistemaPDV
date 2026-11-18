@@ -18,8 +18,8 @@ const BASE = new Date("2026-11-12T12:00:00.000Z");
 describe("billing-policy (fonte unica dos prazos)", () => {
   it("valores confirmados pelo usuario", () => {
     expect(TRIAL_DAYS).toBe(14);
-    expect(TRIAL_TOLERANCE_DAYS).toBe(1);
-    expect(OVERDUE_GRACE_DAYS).toBe(10);
+    expect(TRIAL_TOLERANCE_DAYS).toBe(0);
+    expect(OVERDUE_GRACE_DAYS).toBe(0);
   });
 
   it("lib/access re-exporta os mesmos valores (sem divergencia)", () => {
@@ -48,7 +48,7 @@ describe("billing-policy (fonte unica dos prazos)", () => {
   });
 });
 
-describe("grace period de atraso (webhook PAYMENT_OVERDUE)", () => {
+describe("corte no vencimento sem tolerância (webhook PAYMENT_OVERDUE)", () => {
   it("conta dias de atraso a partir do vencimento", () => {
     const venc = new Date("2026-11-01T00:00:00.000Z");
     const agora = new Date("2026-11-11T00:00:00.000Z");
@@ -61,16 +61,16 @@ describe("grace period de atraso (webhook PAYMENT_OVERDUE)", () => {
     expect(calcularDiasAtraso("nao-e-data")).toBe(0);
   });
 
-  it("bloqueia só a partir de OVERDUE_GRACE_DAYS (10), nunca antes", () => {
-    expect(deveBloquearPorAtraso(9)).toBe(false);
-    expect(deveBloquearPorAtraso(10)).toBe(true);
-    expect(deveBloquearPorAtraso(11)).toBe(true);
+  it("bloqueia a partir de OVERDUE_GRACE_DAYS (0), isto é, no dia exato do vencimento", () => {
+    expect(deveBloquearPorAtraso(-1)).toBe(false); // antes do vencimento
+    expect(deveBloquearPorAtraso(0)).toBe(true);  // no dia exato do vencimento
+    expect(deveBloquearPorAtraso(1)).toBe(true);  // após o vencimento
   });
 
-  it("o limite vem da política, não de env divergente", () => {
-    // regressão: ASAAS_GRACE_PERIOD_DAYS=5 não pode reduzir a tolerância.
-    expect(OVERDUE_GRACE_DAYS).toBe(10);
-    expect(deveBloquearPorAtraso(7)).toBe(false);
-    expect(deveBloquearPorAtraso(7, 5)).toBe(true); // parâmetro explícito ainda funciona
+  it("o limite vem da política (0 dias), não de env divergente", () => {
+    expect(OVERDUE_GRACE_DAYS).toBe(0);
+    expect(deveBloquearPorAtraso(0)).toBe(true);
+    expect(deveBloquearPorAtraso(0, 5)).toBe(false); // parâmetro explícito ainda funciona
+    expect(deveBloquearPorAtraso(5, 5)).toBe(true);
   });
 });

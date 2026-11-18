@@ -27,12 +27,12 @@ export async function GET(request: NextRequest) {
     );
     const DIA_MS = 24 * 60 * 60 * 1000;
 
-    // Plano vencido: pausa após TOLERANCIA_PAGAMENTO_DIAS (10 dias).
+    // Plano vencido: pausa após vencimento sem tolerância (0 dias).
     const pagamentoCutoff = new Date(
       inicioDiaUtc - TOLERANCIA_PAGAMENTO_DIAS * DIA_MS,
     );
 
-    // Trial vencido: pausa após TOLERANCIA_TRIAL_DIAS (1 dia).
+    // Trial vencido: pausa após vencimento do trial sem tolerância (0 dias).
     const trialCutoff = new Date(
       inicioDiaUtc - TOLERANCIA_TRIAL_DIAS * DIA_MS,
     );

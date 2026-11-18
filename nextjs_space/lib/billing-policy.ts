@@ -6,14 +6,14 @@
  * vencimento gravado no banco e a data da 1a cobranca no Asaas.
  *
  * TRIAL_DAYS vem de NEXT_PUBLIC_TRIAL_DAYS (env), com fallback 14.
- *  - TRIAL_TOLERANCE_DAYS = 1  (acesso segue ativo ate 1 dia apos o fim do trial)
- *  - OVERDUE_GRACE_DAYS = 10   (cobranca regular bloqueia 10 dias apos o vencimento)
+ *  - TRIAL_TOLERANCE_DAYS = 0  (acesso encerra no dia exato do fim do trial, sem tolerância)
+ *  - OVERDUE_GRACE_DAYS = 0   (cobrança regular bloqueia no dia exato do vencimento, sem tolerância)
  */
 
 export const TRIAL_DAYS =
   Number(process.env.NEXT_PUBLIC_TRIAL_DAYS) || 14;
-export const TRIAL_TOLERANCE_DAYS = 1;
-export const OVERDUE_GRACE_DAYS = 10;
+export const TRIAL_TOLERANCE_DAYS = 0;
+export const OVERDUE_GRACE_DAYS = 0;
 
 /**
  * Preco mensal base EXATO (fonte unica). 50% = R$24,95.

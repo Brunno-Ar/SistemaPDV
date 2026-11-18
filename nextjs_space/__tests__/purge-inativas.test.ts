@@ -42,20 +42,20 @@ function evid(over: Partial<EvidenciasConta> = {}): EvidenciasConta {
   return { ...SEM_USO, ...over };
 }
 
-describe("expurgo: janela de 90 dias apos trial + tolerancia", () => {
-  it("fim do trial usa vencimentoPlano + tolerancia", () => {
+describe("expurgo: janela de 90 dias apos fim do trial (zero tolerancia)", () => {
+  it("fim do trial usa vencimentoPlano (sem tolerancia adicional)", () => {
     const fim = calcularFimTrial(conta());
-    expect(fim.toISOString()).toBe("2026-01-16T00:00:00.000Z");
+    expect(fim.toISOString()).toBe("2026-01-15T00:00:00.000Z");
   });
 
   it("sem vencimentoPlano, deriva de createdAt + TRIAL_DAYS", () => {
     const fim = calcularFimTrial(conta({ vencimentoPlano: null }));
-    expect(fim.toISOString()).toBe("2026-01-16T00:00:00.000Z");
+    expect(fim.toISOString()).toBe("2026-01-15T00:00:00.000Z");
   });
 
   it("data de elegibilidade = fim do trial + 90 dias", () => {
     expect(calcularDataElegibilidadeExpurgo(conta()).toISOString()).toBe(
-      "2026-04-16T00:00:00.000Z",
+      "2026-04-15T00:00:00.000Z",
     );
   });
 
@@ -63,12 +63,12 @@ describe("expurgo: janela de 90 dias apos trial + tolerancia", () => {
     const noLimite = avaliarElegibilidadeExpurgo(
       conta(),
       evid(),
-      new Date("2026-04-15T23:59:59Z"),
+      new Date("2026-04-14T23:59:59Z"),
     );
     expect(noLimite.elegivel).toBe(false);
     expect(noLimite.motivos).toContain("menos de 90 dias apos o fim do trial");
 
-    const apos = avaliarElegibilidadeExpurgo(conta(), evid(), new Date("2026-04-17T00:00:00Z"));
+    const apos = avaliarElegibilidadeExpurgo(conta(), evid(), new Date("2026-04-16T00:00:00Z"));
     expect(apos.elegivel).toBe(true);
     expect(apos.motivos).toEqual([]);
   });
