@@ -948,13 +948,16 @@ describe("AsaasVinculoDialog", () => {
     expect(btnConfirmar2).toBeDisabled();
   });
 
-  it("preview 409 multiplos_admins: exibe lista para escolher e bloqueia confirmação", async () => {
+  it("preview 409 conflito_vinculo (motivo multiplos_admins): exibe lista para escolher e bloqueia confirmação", async () => {
+    // Payload real do backend: erro "conflito_vinculo" + motivo
+    // "multiplos_admins_selecao_obrigatoria", sem lista de admins no corpo.
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 409,
       json: async () => ({
         ok: false,
-        erro: "multiplos_admins_selecao_obrigatoria",
+        erro: "conflito_vinculo",
+        motivo: "multiplos_admins_selecao_obrigatoria",
       }),
     });
 
@@ -998,13 +1001,16 @@ describe("AsaasVinculoDialog", () => {
     expect(screen.getByText("Nenhum contato selecionado")).toBeInTheDocument();
   });
 
-  it("preview 409 multiplos_admins sem lista: exibe mensagem informativa e nao trava", async () => {
+  it("preview 409 conflito_vinculo sem lista: exibe mensagem informativa e nao trava", async () => {
+    // Payload real do backend: erro "conflito_vinculo" + motivo
+    // "multiplos_admins_selecao_obrigatoria", sem lista de admins no corpo.
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 409,
       json: async () => ({
         ok: false,
-        erro: "multiplos_admins_selecao_obrigatoria",
+        erro: "conflito_vinculo",
+        motivo: "multiplos_admins_selecao_obrigatoria",
       }),
     });
 
@@ -1047,7 +1053,8 @@ describe("AsaasVinculoDialog", () => {
         status: 409,
         json: async () => ({
           ok: false,
-          erro: "multiplos_admins_selecao_obrigatoria",
+          erro: "conflito_vinculo",
+          motivo: "multiplos_admins_selecao_obrigatoria",
           admins,
         }),
       })
@@ -1158,7 +1165,8 @@ describe("AsaasVinculoDialog", () => {
       status: 409,
       json: async () => ({
         ok: false,
-        erro: "multiplos_admins_selecao_obrigatoria",
+        erro: "conflito_vinculo",
+        motivo: "multiplos_admins_selecao_obrigatoria",
         admins,
       }),
     });
@@ -1177,6 +1185,58 @@ describe("AsaasVinculoDialog", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Cancelar/ }));
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("fechar e reabrir o modal reseta o estado de 409 multiplos_admins e exibe preview", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 1", emailMascarado: "jo***@empresa.com" },
+      { id: "A2", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    // Primeira abertura: 409 conflito_vinculo com lista de admins.
+    // Reabertura: preview de sucesso.
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({
+          ok: false,
+          erro: "conflito_vinculo",
+          motivo: "multiplos_admins_selecao_obrigatoria",
+          admins,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, preview: empresaVinculada.preview }),
+      });
+
+    const props = {
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      onOpenChange: jest.fn(),
+    };
+    let open = true;
+    const { rerender } = render(<AsaasVinculoDialog {...props} open={open} />);
+
+    await waitFor(() =>
+      expect(screen.getByText("Escolha o contato de faturamento")).toBeInTheDocument(),
+    );
+
+    // Fecha o modal: o useEffect reseta adminsErro/adminsExigidos quando open vira false.
+    open = false;
+    rerender(<AsaasVinculoDialog {...props} open={open} />);
+    expect(screen.queryByText("Escolha o contato de faturamento")).not.toBeInTheDocument();
+
+    // Reabre o modal com preview de sucesso.
+    open = true;
+    rerender(<AsaasVinculoDialog {...props} open={open} />);
+
+    // Estado resetado: nao exibe mais o bloco de escolha de admin.
+    expect(screen.queryByText("Escolha o contato de faturamento")).not.toBeInTheDocument();
+    // Exibe o preview carregado na reabertura.
+    await waitFor(() =>
+      expect(screen.getByText("Empresa já vinculada ao Asaas")).toBeInTheDocument(),
+    );
   });
 
   it("confirm envia adminId e primeiroVencimento no corpo", async () => {

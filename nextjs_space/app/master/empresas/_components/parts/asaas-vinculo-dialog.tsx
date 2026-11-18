@@ -229,26 +229,6 @@ export function AsaasVinculoDialog({
     );
   }
 
-  // Erro fatal que impede exibição do dialog (sem preview e sem seleção de admin exigida)
-  if (!preview && !error && !adminsExigidos) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Prévia do Asaas - {empresaNome}</DialogTitle>
-          </DialogHeader>
-          <Alert variant="destructive">
-            <AlertTitle>Erro ao carregar prévia</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </DialogContent>
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Fechar</Button>
-        </DialogFooter>
-      </Dialog>
-    );
-  }
-
   const p = preview;
   const modo = p?.modo ?? "provisionamento";
   const proposta = p?.proposta;
