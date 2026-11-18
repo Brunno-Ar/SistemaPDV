@@ -29,6 +29,7 @@ import { montarPreview } from "@/lib/master-asaas";
 import {
   montarPreviewAsaas,
   AsaasPreviewError,
+  mensagemDoMotivo,
 } from "@/app/master/empresas/_components/parts/asaas-vinculo-service";
 
 const sessaoMock = getServerSession as jest.Mock;
@@ -197,5 +198,14 @@ describe("asaas-vinculo-service (cliente frontend)", () => {
     const res = await montarPreviewAsaas("E1", undefined, "A2");
     expect(res.modo).toBe("conflito");
     expect(res.conflito?.motivo).toBe("sem_documento");
+  });
+
+  it("mensagemDoMotivo converte codigo tecnico em texto humano", () => {
+    expect(mensagemDoMotivo("sem_documento")).toMatch(/CPF\/CNPJ/);
+    expect(mensagemDoMotivo("sem_email_admin")).toMatch(/e-mail/);
+    expect(mensagemDoMotivo("peixe_voador", "genérico")).toBe("genérico");
+    expect(mensagemDoMotivo(null, "genérico")).toBe("genérico");
+    // Nenhum texto humano pode repetir o codigo cru.
+    expect(mensagemDoMotivo("sem_documento")).not.toContain("sem_documento");
   });
 });

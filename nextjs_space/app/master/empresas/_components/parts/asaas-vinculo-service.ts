@@ -51,6 +51,18 @@ const MENSAGENS_MOTIVO: Record<string, string> = {
     "Outra execução vinculou esta assinatura no Asaas. Recarregue a prévia para ver o estado atual.",
 };
 
+/**
+ * Traduz codigo tecnico do backend em texto para o master.
+ * Desconhecido ou vazio cai no texto generico: codigo tecnico nunca vaza na UI.
+ */
+export function mensagemDoMotivo(
+  motivo: string | null | undefined,
+  fallback = "Não foi possível concluir a operação no Asaas. Revise o cadastro da empresa e tente de novo.",
+): string {
+  if (!motivo) return fallback;
+  return MENSAGENS_MOTIVO[motivo] ?? fallback;
+}
+
 /** Erro tipificado do preview: motivo estrutural do backend. */
 export class AsaasPreviewError extends Error {
   codigo: string;

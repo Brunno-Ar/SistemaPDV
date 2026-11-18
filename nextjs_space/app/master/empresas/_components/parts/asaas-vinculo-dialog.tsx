@@ -28,6 +28,7 @@ import {
   montarPreviewAsaas,
   confirmarPreviewAsaas,
   AsaasPreviewError,
+  mensagemDoMotivo,
 } from "./asaas-vinculo-service";
 import type {
   AsaasAdminResumo,
@@ -200,7 +201,10 @@ export function AsaasVinculoDialog({
       } else {
         setResultado({
           tipo: "erro",
-          mensagem: r.erro || "Não foi possível confirmar a ação.",
+          mensagem: mensagemDoMotivo(
+            r.conflito?.motivo ?? r.erro,
+            "Não foi possível confirmar a ação. Revise o cadastro da empresa e tente de novo.",
+          ),
         });
       }
     } catch (err) {
@@ -559,7 +563,10 @@ export function AsaasVinculoDialog({
                   <span>Conflito — não resolver automaticamente</span>
                 </AlertTitle>
                 <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                  {p.conflito.motivo}
+                  {mensagemDoMotivo(
+                    p.conflito.motivo,
+                    "Conflito no vínculo do Asaas. Corrija o cadastro da empresa antes de prosseguir.",
+                  )}
                 </p>
                 {p.conflito.candidatos.length > 0 && (
                   <ul className="list-disc list-inside text-xs text-red-600 dark:text-red-400 mt-1 space-y-0.5">
