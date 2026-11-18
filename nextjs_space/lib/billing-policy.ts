@@ -101,6 +101,26 @@ export function obterLimiteVencimentoSaoPaulo(
 }
 
 /**
+ * Limite EXCLUSIVO de uma data civil no fuso America/Sao_Paulo: 00:00:00.000
+ * do dia seguinte (UTC-3 ⇒ 03:00:00.000Z).
+ *
+ * Serve para campos comparados com `>` (ex.: `liberacaoTemporariaAte`), onde o
+ * valor gravado é o primeiro instante JÁ bloqueado. Com este limite o acesso
+ * vale até 23:59:59.999 de São Paulo do dia informado, inclusive.
+ */
+export function obterLimiteExclusivoSaoPaulo(
+  valor: string | Date | null | undefined,
+  diasAdicionais: number = 0,
+): Date | null {
+  const data = extrairDataCalendario(valor);
+  if (!data) return null;
+
+  return new Date(
+    Date.UTC(data.ano, data.mes - 1, data.dia + 1 + diasAdicionais, 3, 0, 0, 0),
+  );
+}
+
+/**
  * Retorna a meia-noite UTC correspondente ao início do dia civil atual
  * no fuso America/Sao_Paulo (UTC-3).
  * Usado por rotinas de cron para que o corte só alcance empresas cujo

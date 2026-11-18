@@ -6,6 +6,8 @@ export interface Empresa {
   status: "PENDENTE" | "ATIVO" | "PAUSADO" | "EM_TESTE";
   vencimentoPlano: string | null;
   diaVencimento: number;
+  /** Limite EXCLUSIVO de liberação manual (00:00 de São Paulo do dia seguinte). */
+  liberacaoTemporariaAte?: string | null;
   telefone: string | null;
   createdAt: string;
   faturamentoTotal: number;
