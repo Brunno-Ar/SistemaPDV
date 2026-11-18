@@ -44,17 +44,26 @@ export async function montarPreviewAsaas(
 
   const json = await res.json();
   if (!res.ok) {
-    const codigo = json.erro || "preview_falhou";
-    const mensagem = json.mensagem || json.erro || "Falha ao obter prévia";
     // 409 multiplos_admins_selecao_obrigatoria: preserva o motivo e, quando
     // o backend enviar, a lista de admins para selecao.
-    if (res.status === 409 && codigo === "multiplos_admins_selecao_obrigatoria") {
+    const isMultiplosAdmins =
+      res.status === 409 &&
+      (json.motivo === "multiplos_admins_selecao_obrigatoria" ||
+        json.erro === "multiplos_admins_selecao_obrigatoria");
+
+    if (isMultiplosAdmins) {
+      const mensagem =
+        json.mensagem ||
+        "A empresa tem múltiplos administradores. Selecione o contato de faturamento para continuar.";
       throw new AsaasPreviewError(
         "multiplos_admins_selecao_obrigatoria",
         mensagem,
         Array.isArray(json.admins) ? json.admins : undefined,
       );
     }
+
+    const codigo = json.motivo || json.erro || "preview_falhou";
+    const mensagem = json.mensagem || json.motivo || json.erro || "Falha ao obter prévia";
     throw new AsaasPreviewError(codigo, mensagem);
   }
   return json.preview;

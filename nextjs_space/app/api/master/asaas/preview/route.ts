@@ -35,6 +35,7 @@ async function responder(
         erro: resultado.erro,
         ...(resultado.motivo ? { motivo: resultado.motivo } : {}),
         ...(resultado.candidatos ? { candidatos: resultado.candidatos } : {}),
+        ...(resultado.admins ? { admins: resultado.admins } : {}),
       },
       { status: resultado.http },
     );

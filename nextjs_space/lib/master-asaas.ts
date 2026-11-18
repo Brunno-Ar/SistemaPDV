@@ -123,6 +123,7 @@ export type ResultadoPreview =
       erro: string;
       motivo?: string;
       candidatos?: CandidatoResumo[];
+      admins?: Array<{ id: string; nome: string | null; emailMascarado: string | null }>;
     };
 
 export type ResultadoConfirmacao = { http: number; body: Record<string, unknown> };
@@ -233,6 +234,7 @@ async function resolverAdmin(
       http: number;
       erro: string;
       motivo: string;
+      admins?: Array<{ id: string; nome: string | null; emailMascarado: string | null }>;
     }
 > {
   const admins = await buscarAdmins(empresaId);
@@ -271,6 +273,7 @@ async function resolverAdmin(
       http: 409,
       erro: "conflito_vinculo",
       motivo: "multiplos_admins_selecao_obrigatoria",
+      admins: adminsResumo,
     };
   }
 
@@ -364,6 +367,7 @@ export async function montarPreview(
       http: adminRes.http,
       erro: adminRes.erro,
       motivo: adminRes.motivo,
+      ...(adminRes.admins ? { admins: adminRes.admins } : {}),
     };
   }
 

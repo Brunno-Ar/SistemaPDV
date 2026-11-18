@@ -1081,6 +1081,55 @@ describe("AsaasVinculoDialog", () => {
     expect(ultimoBody).toContain('"adminId":"A2"');
   });
 
+  it("preview 409 com erro conflito_vinculo e motivo multiplos_admins: preserva admins e permite selecao", async () => {
+    const admins = [
+      { id: "A1", nome: "Admin 1", emailMascarado: "jo***@empresa.com" },
+      { id: "A2", nome: "Admin 2", emailMascarado: "ad***s@gmail.com" },
+    ];
+    const previewComAdmin1 = {
+      ...empresaProvisionamento.preview,
+      token: "tok_admin1_v1",
+    };
+
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({
+          ok: false,
+          erro: "conflito_vinculo",
+          motivo: "multiplos_admins_selecao_obrigatoria",
+          admins,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, preview: previewComAdmin1 }),
+      });
+
+    renderDialog({
+      empresaId: "E2",
+      empresaNome: "Adega FreeStyle Drinks",
+      open: true,
+      onOpenChange: jest.fn(),
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Admin 1/ })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: /Admin 2/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Admin 1/ }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText("Escolha o contato de faturamento"),
+      ).not.toBeInTheDocument(),
+    );
+    const ultimoBody = (global.fetch as jest.Mock).mock.calls.at(-1)?.[1]?.body;
+    expect(ultimoBody).toContain('"adminId":"A1"');
+  });
+
   it("erro de rede nao tipado exibe mensagem real e nao mascara conflito", async () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("falha de rede"));
 

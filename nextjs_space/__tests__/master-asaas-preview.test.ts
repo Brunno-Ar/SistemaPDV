@@ -440,6 +440,9 @@ describe("preview de empresa sem vinculo", () => {
     expect(r.http).toBe(409);
     expect(r.erro).toBe("conflito_vinculo");
     expect(r.motivo).toBe("multiplos_admins_selecao_obrigatoria");
+    expect(r.admins).toHaveLength(2);
+    expect(r.admins?.[0].id).toBe("admin-1");
+    expect(r.admins?.[1].id).toBe("admin-2");
   });
 
   it("multiplos admins com adminId explicito valido: sucesso e lista admins", async () => {
