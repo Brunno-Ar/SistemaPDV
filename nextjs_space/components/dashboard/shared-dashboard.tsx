@@ -34,6 +34,8 @@ interface SharedDashboardProps {
   metrics: DashboardMetrics | null;
   caixaData: CaixaData | null | undefined;
   loading: boolean;
+  /** "proprio" troca rótulos dos KPIs para o escopo do próprio usuário (caixa). */
+  escopo?: "empresa" | "proprio";
   children?: ReactNode;
 }
 
@@ -101,8 +103,10 @@ export function SharedDashboard({
   metrics,
   caixaData,
   loading,
+  escopo = "empresa",
   children,
 }: SharedDashboardProps) {
+  const meu = escopo === "proprio";
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header - sempre visível imediatamente */}
@@ -131,7 +135,7 @@ export function SharedDashboard({
             <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Vendas Hoje
+                  {meu ? "Minhas vendas hoje" : "Vendas Hoje"}
                 </CardTitle>
                 <div className="h-8 w-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                   <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -150,7 +154,7 @@ export function SharedDashboard({
             <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Vendas no Mês
+                  {meu ? "Minhas vendas no mês" : "Vendas no Mês"}
                 </CardTitle>
                 <div className="h-8 w-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
                   <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -169,7 +173,7 @@ export function SharedDashboard({
             <Card className="bg-white dark:bg-zinc-900 border-none shadow-sm rounded-xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Itens Vendidos
+                  {meu ? "Itens vendidos por mim" : "Itens Vendidos"}
                 </CardTitle>
                 <div className="h-8 w-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
                   <Package className="h-4 w-4 text-orange-600 dark:text-orange-400" />
