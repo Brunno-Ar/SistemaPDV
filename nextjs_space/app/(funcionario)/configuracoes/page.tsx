@@ -519,7 +519,7 @@ function empresaFields(
             value={form.cpfCnpj}
             onChange={(e) => handleChange("cpfCnpj", e.target.value)}
             placeholder="000.000.000-00 ou 00.000.000/0000-00"
-            error={errors.cpfCnpj || undefined}
+
           />
           {errors.cpfCnpj && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -534,7 +534,7 @@ function empresaFields(
             value={form.telefone}
             onChange={(e) => handleChange("telefone", e.target.value)}
             placeholder="(11) 90000-0000"
-            error={errors.telefone || undefined}
+
           />
           {errors.telefone && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -551,7 +551,7 @@ function empresaFields(
               handleChange("enderecoLogradouro", e.target.value)
             }
             placeholder="Av. Paulista, 1000"
-            error={errors.enderecoLogradouro || undefined}
+
           />
           {errors.enderecoLogradouro && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -568,7 +568,7 @@ function empresaFields(
             value={form.enderecoCep}
             onChange={(e) => handleChange("enderecoCep", e.target.value)}
             placeholder="01234-567"
-            error={errors.enderecoCep || undefined}
+
             maxLength={9}
           />
           {errors.enderecoCep && (
@@ -584,7 +584,7 @@ function empresaFields(
             value={form.enderecoBairro}
             onChange={(e) => handleChange("enderecoBairro", e.target.value)}
             placeholder="Bela Vista"
-            error={errors.enderecoBairro || undefined}
+
           />
           {errors.enderecoBairro && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -601,7 +601,7 @@ function empresaFields(
             value={form.enderecoCidade}
             onChange={(e) => handleChange("enderecoCidade", e.target.value)}
             placeholder="São Paulo"
-            error={errors.enderecoCidade || undefined}
+
           />
           {errors.enderecoCidade && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -617,7 +617,7 @@ function empresaFields(
             onChange={(e) => handleChange("enderecoUf", e.target.value)}
             placeholder="SP"
             maxLength={2}
-            error={errors.enderecoUf || undefined}
+
           />
           {errors.enderecoUf && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -633,7 +633,6 @@ function empresaFields(
           value={form.enderecoNumero}
           onChange={(e) => handleChange("enderecoNumero", e.target.value)}
           placeholder="S/N"
-          error={errors.enderecoNumero || undefined}
         />
         {errors.enderecoNumero && (
           <p className="text-xs text-red-500 dark:text-red-400">
