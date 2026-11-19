@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Lock, Building2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { RestartTourButton } from "@/components/restart-tour-button";
@@ -250,7 +251,7 @@ export default function ConfiguracoesPage() {
         </div>
 
         {/* Company Settings Section (Admin Only) */}
-        {session?.user?.role === "admin" && (
+        {session?.user?.role === "admin" && !!session?.user?.empresaId && (
           <CompanySettingsSection />
         )}
       </div>
@@ -258,21 +259,17 @@ export default function ConfiguracoesPage() {
   );
 }
 
-interface Endereco {
-  cep: string;
-  logradouro: string;
-  numero: string;
-  bairro: string;
-  cidade: string;
-  uf: string;
-}
-
 interface EmpresaData {
   id: string;
   nome: string;
   cpfCnpj: string | null;
   telefone: string | null;
-  endereco: Endereco | null;
+  enderecoCep: string | null;
+  enderecoLogradouro: string | null;
+  enderecoNumero: string | null;
+  enderecoBairro: string | null;
+  enderecoCidade: string | null;
+  enderecoUf: string | null;
 }
 
 function CompanySettingsSection() {
@@ -310,12 +307,12 @@ function CompanySettingsSection() {
           setForm({
             cpfCnpj: json.empresa.cpfCnpj || "",
             telefone: json.empresa.telefone || "",
-            enderecoCep: json.empresa.endereco?.cep || "",
-            enderecoLogradouro: json.empresa.endereco?.logradouro || "",
-            enderecoNumero: json.empresa.endereco?.numero || "",
-            enderecoBairro: json.empresa.endereco?.bairro || "",
-            enderecoCidade: json.empresa.endereco?.cidade || "",
-            enderecoUf: json.empresa.endereco?.uf || "",
+            enderecoCep: json.empresa.enderecoCep || "",
+            enderecoLogradouro: json.empresa.enderecoLogradouro || "",
+            enderecoNumero: json.empresa.enderecoNumero || "",
+            enderecoBairro: json.empresa.enderecoBairro || "",
+            enderecoCidade: json.empresa.enderecoCidade || "",
+            enderecoUf: json.empresa.enderecoUf || "",
           });
         }
       } catch {
@@ -342,7 +339,13 @@ function CompanySettingsSection() {
     }
 
     const digitsTel = onlyDigits(telefone);
-    if (telefone && digitsTel.length < 10 && digitsTel.length > 11) {
+    // ponytail: normaliza DDI 55 como faz o backend (master-empresa-contato);
+    // upgrade para libphonenumber se houver operação internacional
+    let telLimpo = digitsTel;
+    if ((digitsTel.length === 12 || digitsTel.length === 13) && digitsTel.startsWith("55")) {
+      telLimpo = digitsTel.slice(2);
+    }
+    if (telefone && telLimpo.length !== 10 && telLimpo.length !== 11) {
       next.telefone = "Telefone deve ter 10 ou 11 dígitos";
     }
 
@@ -375,14 +378,14 @@ function CompanySettingsSection() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cpfCnpj: onlyDigits(form.cpfCnpj) || undefined,
-          telefone: onlyDigits(form.telefone) || undefined,
-          enderecoLogradouro: form.enderecoLogradouro || undefined,
-          enderecoNumero: form.enderecoNumero || undefined,
-          enderecoBairro: form.enderecoBairro || undefined,
-          enderecoCidade: form.enderecoCidade || undefined,
-          enderecoUf: form.enderecoUf || undefined,
-          enderecoCep: onlyDigits(form.enderecoCep) || undefined,
+          cpfCnpj: onlyDigits(form.cpfCnpj),
+          telefone: onlyDigits(form.telefone),
+          enderecoLogradouro: form.enderecoLogradouro,
+          enderecoNumero: form.enderecoNumero,
+          enderecoBairro: form.enderecoBairro,
+          enderecoCidade: form.enderecoCidade,
+          enderecoUf: form.enderecoUf,
+          enderecoCep: onlyDigits(form.enderecoCep),
         }),
       });
 
@@ -425,8 +428,8 @@ function CompanySettingsSection() {
   const empresaVazia = empresa
     ? !empresa.cpfCnpj &&
       !empresa.telefone &&
-      !empresa.endereco?.cep &&
-      !empresa.endereco?.logradouro
+      !empresa.enderecoCep &&
+      !empresa.enderecoLogradouro
     : true;
 
   return (
@@ -516,7 +519,7 @@ function empresaFields(
             value={form.cpfCnpj}
             onChange={(e) => handleChange("cpfCnpj", e.target.value)}
             placeholder="000.000.000-00 ou 00.000.000/0000-00"
-            error={Boolean(errors.cpfCnpj)}
+            error={errors.cpfCnpj || undefined}
           />
           {errors.cpfCnpj && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -531,7 +534,7 @@ function empresaFields(
             value={form.telefone}
             onChange={(e) => handleChange("telefone", e.target.value)}
             placeholder="(11) 90000-0000"
-            error={Boolean(errors.telefone)}
+            error={errors.telefone || undefined}
           />
           {errors.telefone && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -548,7 +551,7 @@ function empresaFields(
               handleChange("enderecoLogradouro", e.target.value)
             }
             placeholder="Av. Paulista, 1000"
-            error={Boolean(errors.enderecoLogradouro)}
+            error={errors.enderecoLogradouro || undefined}
           />
           {errors.enderecoLogradouro && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -565,7 +568,7 @@ function empresaFields(
             value={form.enderecoCep}
             onChange={(e) => handleChange("enderecoCep", e.target.value)}
             placeholder="01234-567"
-            error={Boolean(errors.enderecoCep)}
+            error={errors.enderecoCep || undefined}
             maxLength={9}
           />
           {errors.enderecoCep && (
@@ -581,7 +584,7 @@ function empresaFields(
             value={form.enderecoBairro}
             onChange={(e) => handleChange("enderecoBairro", e.target.value)}
             placeholder="Bela Vista"
-            error={Boolean(errors.enderecoBairro)}
+            error={errors.enderecoBairro || undefined}
           />
           {errors.enderecoBairro && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -598,7 +601,7 @@ function empresaFields(
             value={form.enderecoCidade}
             onChange={(e) => handleChange("enderecoCidade", e.target.value)}
             placeholder="São Paulo"
-            error={Boolean(errors.enderecoCidade)}
+            error={errors.enderecoCidade || undefined}
           />
           {errors.enderecoCidade && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -614,7 +617,7 @@ function empresaFields(
             onChange={(e) => handleChange("enderecoUf", e.target.value)}
             placeholder="SP"
             maxLength={2}
-            error={Boolean(errors.enderecoUf)}
+            error={errors.enderecoUf || undefined}
           />
           {errors.enderecoUf && (
             <p className="text-xs text-red-500 dark:text-red-400">
@@ -630,7 +633,7 @@ function empresaFields(
           value={form.enderecoNumero}
           onChange={(e) => handleChange("enderecoNumero", e.target.value)}
           placeholder="S/N"
-          error={Boolean(errors.enderecoNumero)}
+          error={errors.enderecoNumero || undefined}
         />
         {errors.enderecoNumero && (
           <p className="text-xs text-red-500 dark:text-red-400">
