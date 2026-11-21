@@ -245,12 +245,6 @@ export default function RoleBasedLayout({
         id: "menu-vender",
       },
       {
-        label: "Minha Conta",
-        href: "/minha-conta",
-        icon: <User className="h-5 w-5 flex-shrink-0" />,
-        id: "menu-minha-conta",
-      },
-      {
         label: "Anotações",
         href: "/anotacoes",
         icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,

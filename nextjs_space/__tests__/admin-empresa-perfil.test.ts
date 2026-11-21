@@ -427,11 +427,20 @@ describe("Edição Cadastral da Empresa (Configurações)", () => {
       expect(res.status).toBe(403);
     });
 
-    it("/api/employee/analytics preserva acesso para caixa filtrando apenas vendas pessoais (userId)", async () => {
+    it("/api/employee/analytics bloqueia caixa com 403", async () => {
       sessaoMock.mockResolvedValue({
         user: { id: "u-caixa", role: "caixa", empresaId: "empresa-123" },
       });
-      // Mock das agregacoes do employee/analytics
+      const res = await GET_EMPLOYEE_ANALYTICS();
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json.error).toMatch(/Acesso negado/);
+    });
+
+    it("/api/employee/analytics preserva acesso para gerente com 200", async () => {
+      sessaoMock.mockResolvedValue({
+        user: { id: "u-gerente", role: "gerente", empresaId: "empresa-123" },
+      });
       (prisma as any).sale = {
         aggregate: jest.fn().mockResolvedValue({ _sum: { valorTotal: 0 }, _count: { id: 0 } }),
         findMany: jest.fn().mockResolvedValue([]),

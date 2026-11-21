@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,12 +17,30 @@ interface Sale {
 
 export default function MinhaContaPage() {
   const { data: session } = useSession();
+  const router = useRouter();
+
   const [sales, setSales] = useState<Sale[]>([]);
   const [salesMonth, setSalesMonth] = useState(0);
   const [metaMensal, setMetaMensal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const isCaixa = session?.user?.role === "caixa";
+
+  // Redirect imediato para caixa (não exibe dados financeiros).
   useEffect(() => {
+    if (isCaixa) {
+      router.replace("/dashboard");
+    }
+  }, [isCaixa, router]);
+
+  if (!session || isCaixa) return null;
+
+  // Caixa e sessão ausente nunca carregam vendas do analytics.
+  useEffect(() => {
+    if (isCaixa) {
+      setLoading(false);
+      return;
+    }
     async function fetchSales() {
       try {
         const res = await fetch("/api/employee/analytics");
@@ -38,7 +57,7 @@ export default function MinhaContaPage() {
       }
     }
     fetchSales();
-  }, []);
+  }, [isCaixa]);
 
   const calculateProgress = () => {
     if (metaMensal === 0) return 0;

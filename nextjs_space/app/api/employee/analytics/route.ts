@@ -19,6 +19,18 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const role = session.user.role;
+    if (
+      role === "caixa" ||
+      !role ||
+      (role !== "gerente" && role !== "admin" && role !== "master")
+    ) {
+      return NextResponse.json(
+        { error: "Acesso negado. Perfil não autorizado a visualizar métricas." },
+        { status: 403 },
+      );
+    }
+
     const userId = session.user.id;
     const empresaId = session.user.empresaId;
 

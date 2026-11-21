@@ -24,17 +24,18 @@ export function EmployeeOnboardingChecklist() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [resAnalytics, resCaixa] = await Promise.all([
-          fetch("/api/employee/analytics"),
+        // Contrato do onboarding: booleano não financeiro somente
+        const [resOnboarding, resCaixa] = await Promise.all([
+          fetch("/api/employee/onboarding-status", { cache: "no-store" }),
           fetch("/api/caixa", { cache: "no-store" }),
         ]);
 
         let hasSale = false;
         let hasCaixaAberto = false;
 
-        if (resAnalytics.ok) {
-          const json = await resAnalytics.json();
-          hasSale = (json.lastSales?.length ?? 0) > 0;
+        if (resOnboarding.ok) {
+          const json = await resOnboarding.json();
+          hasSale = !!json.hasSale;
         }
 
         if (resCaixa.ok) {

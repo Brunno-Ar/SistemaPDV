@@ -31,20 +31,20 @@ export default function DashboardClient() {
   );
   const [loading, setLoading] = useState(true);
 
+  const isCaixa = session?.user?.role === "caixa";
+
   const fetchData = async () => {
     try {
-      // 🚀 Otimização: Buscar TODOS os dados em paralelo
-      const [resAnalytics, resCaixa] = await Promise.all([
-        fetch("/api/employee/analytics"),
-        fetch("/api/caixa", { cache: "no-store" }),
-        // fetch("/api/avisos"), // Avisos já tem cache próprio ou não precisam de polling frequente, mas para simplificar pode ficar ou ser removido do loop crítico se pesar
-      ]);
-
-      if (resAnalytics.ok) {
-        const json = await resAnalytics.json();
-        setData(json);
+      // Caixa não consome analytics (métricas financeiras da empresa)
+      if (!isCaixa) {
+        const resAnalytics = await fetch("/api/employee/analytics");
+        if (resAnalytics.ok) {
+          const json = await resAnalytics.json();
+          setData(json);
+        }
       }
 
+      const resCaixa = await fetch("/api/caixa", { cache: "no-store" });
       if (resCaixa.ok) {
         const caixaJson = await resCaixa.json();
         setCaixaData(caixaJson.caixaAberto || null);
@@ -61,10 +61,11 @@ export default function DashboardClient() {
   useEffect(() => {
     fetchData(); // Initial fetch
 
-    // Auto-refresh a cada 5 segundos
-    const intervalId = setInterval(fetchData, 5000);
-
-    return () => clearInterval(intervalId);
+    // Auto-refresh desabilitado para caixa (sem polling de analytics)
+    if (!isCaixa) {
+      const intervalId = setInterval(fetchData, 5000);
+      return () => clearInterval(intervalId);
+    }
   }, []);
 
   const currentDate = new Date().toLocaleDateString("pt-BR", {
