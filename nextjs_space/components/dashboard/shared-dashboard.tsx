@@ -122,8 +122,8 @@ export function SharedDashboard({
       {/* Caixa Widget */}
       <MeuCaixa initialData={caixaData} />
 
-      {/* KPI Grid - omitido para caixa (sem métricas financeiras) */}
-      {escopo !== "proprio" && (
+      {/* KPI Grid - visível para todos os papéis */}
+      <>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {loading ? (
             <>
@@ -192,7 +192,7 @@ export function SharedDashboard({
             </>
           )}
         </div>
-      )}
+      </>
 
       {/* Main Area */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
@@ -212,7 +212,6 @@ export function SharedDashboard({
                 </span>
               </InteractiveHoverButton>
             </Link>
-            {escopo !== "proprio" && (
               <Link href="/minha-conta" className="w-full">
                 <InteractiveHoverButton className="w-full h-12 text-sm border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200">
                   <span className="flex items-center justify-center gap-2">
@@ -221,13 +220,11 @@ export function SharedDashboard({
                   </span>
                 </InteractiveHoverButton>
               </Link>
-            )}
           </CardContent>
         </Card>
 
-        {/* Chart - omitido para caixa (sem gráfico financeiro) */}
-        {escopo !== "proprio" && (
-          <>
+        {/* Chart - visível para todos os papéis */}
+        <>
             {loading ? (
               <ChartSkeleton />
             ) : (
@@ -286,7 +283,6 @@ export function SharedDashboard({
               </Card>
             )}
           </>
-        )}
       </div>
 
       {/* Mural de Avisos */}

@@ -21,9 +21,11 @@ export async function GET() {
 
     const role = session.user.role;
     if (
-      role === "caixa" ||
       !role ||
-      (role !== "gerente" && role !== "admin" && role !== "master")
+      (role !== "caixa" &&
+        role !== "gerente" &&
+        role !== "admin" &&
+        role !== "master")
     ) {
       return NextResponse.json(
         { error: "Acesso negado. Perfil não autorizado a visualizar métricas." },

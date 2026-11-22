@@ -49,8 +49,9 @@ export function MeuCaixa({
   simpleMode = false,
 }: MeuCaixaProps = {}) {
   const { data: session } = useSession();
+  const role = session?.user?.role;
   const [caixa, setCaixa] = useState<CaixaData | null>(initialData ?? null);
-  const [loading, setLoading] = useState(initialData === undefined);
+  const [loading, setLoading] = useState(initialData == null);
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
 
   // Inputs Gerais
@@ -94,7 +95,7 @@ export function MeuCaixa({
   }, []);
 
   useEffect(() => {
-    if (initialData === undefined) {
+    if (initialData == null) {
       fetchStatus();
     } else {
       setCaixa(initialData);
@@ -491,13 +492,14 @@ export function MeuCaixa({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 overflow-hidden">
-          {/* Card: Dinheiro em Caixa (calculado via Backend ou Fallback) */}
-          {(() => {
-            let saldoDinheiro = 0;
-            let totalVendas = 0;
-            let totalSuprimentos = 0;
-            let totalSangrias = 0;
+        {session && (role === "gerente" || role === "admin" || role === "master") && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 overflow-hidden">
+            {/* Card: Dinheiro em Caixa (calculado via Backend ou Fallback) */}
+            {(() => {
+              let saldoDinheiro = 0;
+              let totalVendas = 0;
+              let totalSuprimentos = 0;
+              let totalSangrias = 0;
 
             if (caixa.resumo) {
               // Usar dados precisos do backend
@@ -612,6 +614,7 @@ export function MeuCaixa({
             );
           })()}
         </div>
+      )}
 
         <div className="flex flex-col sm:flex-row gap-2 mb-6">
           <Button
