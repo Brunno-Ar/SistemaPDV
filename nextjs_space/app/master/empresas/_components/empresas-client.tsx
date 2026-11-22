@@ -16,6 +16,7 @@ import {
   SuccessPasswordDialog,
   AvisoDialog,
   UpdatePlanDialog,
+  EmpresaContatoDialog,
 } from "./parts";
 import { Empresa } from "./parts/types";
 import type { AsaasAdminResumo } from "./parts/asaas-vinculo-types";
@@ -42,6 +43,10 @@ export default function EmpresasClient() {
   const [updatePlanDialogOpen, setUpdatePlanDialogOpen] = useState(false);
   const [empresaToUpdatePlan, setEmpresaToUpdatePlan] =
     useState<Empresa | null>(null);
+  const [contatoDialogOpen, setContatoDialogOpen] = useState(false);
+  const [contatoEmpresaSelecionada, setContatoEmpresaSelecionada] = useState<
+    Empresa | null
+  >(null);
   const [avisoData, setAvisoData] = useState({
     mensagem: "",
     importante: false,
@@ -372,6 +377,11 @@ export default function EmpresasClient() {
     }
   };
 
+  const handleEditarContato = (empresa: Empresa) => {
+    setContatoEmpresaSelecionada(empresa);
+    setContatoDialogOpen(true);
+  };
+
   const formatDate = (date: string | null) => {
     if (!date) return "-";
     const d = new Date(date);
@@ -484,6 +494,7 @@ export default function EmpresasClient() {
           setEmpresaToUpdatePlan(empresa);
           setUpdatePlanDialogOpen(true);
         }}
+        onEditarContato={handleEditarContato}
         formatDate={formatDate}
         formatCurrency={formatCurrency}
         isInadimplente={isInadimplente}
@@ -614,6 +625,15 @@ export default function EmpresasClient() {
               });
             }
           }}
+        />
+      )}
+
+      {contatoEmpresaSelecionada && (
+        <EmpresaContatoDialog
+          open={contatoDialogOpen}
+          onOpenChange={setContatoDialogOpen}
+          empresa={contatoEmpresaSelecionada}
+          onAtualizar={fetchEmpresas}
         />
       )}
     </div>

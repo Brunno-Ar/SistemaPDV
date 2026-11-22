@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { asaas } from "@/lib/asaas";
 import { mascararEmail } from "@/lib/asaas-vinculo";
+import { editarEmpresaContato } from "@/lib/master-empresa-contato";
 import bcrypt from "bcryptjs";
 
 // GET - Listar todas as empresas (apenas master)
@@ -390,6 +391,45 @@ export async function DELETE(request: NextRequest) {
     console.error("Erro ao excluir empresa:", error);
     return NextResponse.json(
       { error: `Erro ao excluir empresa: ${error.message || error}` },
+      { status: 500 },
+    );
+  }
+}
+
+// PATCH - Atualizar dados cadastrais de contato (CPF/CNPJ e telefone) da empresa (apenas master)
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== "master") {
+      return NextResponse.json(
+        { error: "Acesso negado. Apenas usuários master." },
+        { status: 403 },
+      );
+    }
+
+    const body = await request.json();
+    const resultado = await editarEmpresaContato(body);
+
+    if (!resultado.ok) {
+      return NextResponse.json(
+        { error: resultado.erro },
+        { status: resultado.status },
+      );
+    }
+
+    revalidatePath("/master/empresas");
+    revalidatePath(`/master/empresas/${resultado.empresa.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: "Dados cadastrais atualizados com sucesso",
+      empresa: resultado.empresa,
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar dados cadastrais da empresa:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
       { status: 500 },
     );
   }
