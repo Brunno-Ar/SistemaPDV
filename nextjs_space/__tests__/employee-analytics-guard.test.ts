@@ -50,16 +50,50 @@ describe("RBAC de Métricas e Status de Onboarding do Funcionário", () => {
       expect(json.error).toBe("Unauthorized");
     });
 
-    it("bloqueia caixa com 403 antes de consultar dados", async () => {
+    it("permite acesso 200 para papel caixa com métricas filtradas apenas pelo seu userId e empresaId", async () => {
       sessaoMock.mockResolvedValue({
-        user: { id: "u-caixa", role: "caixa", empresaId: "emp-1" },
+        user: { id: "u-caixa-1", role: "caixa", empresaId: "emp-1" },
       });
+      (prisma.sale.aggregate as jest.Mock).mockResolvedValue({
+        _sum: { valorTotal: 350 },
+        _count: { id: 3 },
+      });
+      (prisma.sale.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.saleItem.aggregate as jest.Mock).mockResolvedValue({
+        _sum: { quantidade: 5 },
+      });
+      (prisma.aviso.findMany as jest.Mock).mockResolvedValue([]);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({ metaMensal: 2000 });
+
       const res = await GET_EMPLOYEE_ANALYTICS();
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.error).toMatch(/Acesso negado/);
-      expect(prisma.sale.aggregate).not.toHaveBeenCalled();
-      expect(prisma.sale.findMany).not.toHaveBeenCalled();
+      expect(json.salesToday).toBe(350);
+      expect(json.totalItemsSold).toBe(5);
+      expect(json.metaMensal).toBe(2000);
+
+      expect(prisma.sale.aggregate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: "u-caixa-1",
+            empresaId: "emp-1",
+          }),
+        }),
+      );
+      expect(prisma.saleItem.aggregate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            sale: expect.objectContaining({
+              userId: "u-caixa-1",
+              empresaId: "emp-1",
+            }),
+          }),
+        }),
+      );
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: "u-caixa-1" },
+        select: { metaMensal: true },
+      });
     });
 
     it("falha fechada com 403 para role inválido ou indefinido", async () => {
@@ -68,7 +102,15 @@ describe("RBAC de Métricas e Status de Onboarding do Funcionário", () => {
       });
       const res = await GET_EMPLOYEE_ANALYTICS();
       expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json.error).toMatch(/Acesso negado/);
       expect(prisma.sale.aggregate).not.toHaveBeenCalled();
+
+      sessaoMock.mockResolvedValue({
+        user: { id: "u-sem-role", role: "", empresaId: "emp-1" } as any,
+      });
+      const resVazio = await GET_EMPLOYEE_ANALYTICS();
+      expect(resVazio.status).toBe(403);
     });
 
     it("retorna 400 se empresaId não estiver presente para papel permitido", async () => {

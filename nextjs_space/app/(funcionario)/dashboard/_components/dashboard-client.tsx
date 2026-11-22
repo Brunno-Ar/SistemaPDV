@@ -35,13 +35,10 @@ export default function DashboardClient() {
 
   const fetchData = async () => {
     try {
-      // Caixa não consome analytics (métricas financeiras da empresa)
-      if (!isCaixa) {
-        const resAnalytics = await fetch("/api/employee/analytics");
-        if (resAnalytics.ok) {
-          const json = await resAnalytics.json();
-          setData(json);
-        }
+      const resAnalytics = await fetch("/api/employee/analytics");
+      if (resAnalytics.ok) {
+        const json = await resAnalytics.json();
+        setData(json);
       }
 
       const resCaixa = await fetch("/api/caixa", { cache: "no-store" });

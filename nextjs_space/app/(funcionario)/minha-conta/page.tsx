@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,27 +16,18 @@ interface Sale {
 
 export default function MinhaContaPage() {
   const { data: session } = useSession();
-  const router = useRouter();
 
   const [sales, setSales] = useState<Sale[]>([]);
   const [salesMonth, setSalesMonth] = useState(0);
   const [metaMensal, setMetaMensal] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const isCaixa = session?.user?.role === "caixa";
+  // Página aberta para todos os papéis (caixa vê métricas pessoais).
+  // Hooks permanecem incondicionais; o render é condicionado abaixo.
 
-  // Redirect imediato para caixa (não exibe dados financeiros).
+  // Carrega vendas/meta do analytics (escopo userId+empresaId para caixa).
   useEffect(() => {
-    if (isCaixa) {
-      router.replace("/dashboard");
-    }
-  }, [isCaixa, router]);
-
-  if (!session || isCaixa) return null;
-
-  // Caixa e sessão ausente nunca carregam vendas do analytics.
-  useEffect(() => {
-    if (isCaixa) {
+    if (!session) {
       setLoading(false);
       return;
     }
@@ -57,14 +47,14 @@ export default function MinhaContaPage() {
       }
     }
     fetchSales();
-  }, [isCaixa]);
+  }, [session]);
 
   const calculateProgress = () => {
     if (metaMensal === 0) return 0;
     return Math.min((salesMonth / metaMensal) * 100, 100);
   };
 
-  if (loading) {
+  if (!session || loading) {
     return (
       <div className="max-w-4xl mx-auto p-4 space-y-4">
         <Skeleton className="h-10 w-48" />

@@ -250,6 +250,11 @@ export default function RoleBasedLayout({
         icon: <StickyNote className="h-5 w-5 flex-shrink-0" />,
       },
       {
+        label: "Minha Conta",
+        href: "/minha-conta",
+        icon: <User className="h-5 w-5 flex-shrink-0" />,
+      },
+      {
         label: "Configurações",
         href: "/configuracoes",
         icon: <Settings className="h-5 w-5 flex-shrink-0" />,
